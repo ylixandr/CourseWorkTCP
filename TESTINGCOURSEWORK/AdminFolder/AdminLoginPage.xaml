@@ -1,0 +1,82 @@
+﻿<Window x:Class="CourseWorkTest.AdminLoginPage"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Login" Height="478" Width="300">
+
+    <Grid Margin="20,20,20,1">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Label Content="Вход"
+               FontFamily="Times New Roman"
+               FontSize="40"
+               Foreground="Black"
+               HorizontalAlignment="Center"
+               Margin="0,0,0,20"
+               Grid.Row="0"/>
+
+        <Label Content="Введите логин"
+               FontSize="20"
+               HorizontalAlignment="Left"
+               Margin="0,0,0,5"
+               Grid.Row="1"/>
+        <TextBox x:Name="loginTextBox"
+                 Height="25"
+                 Margin="0,0,0,10"
+                 Grid.Row="2"/>
+
+        <Label Content="Введите пароль"
+               FontSize="20"
+               HorizontalAlignment="Left"
+               Margin="0,0,0,5"
+               Grid.Row="3"/>
+        <PasswordBox x:Name="passwordTextBox"
+                     Height="25"
+                     Margin="0,0,0,10"
+                     Grid.Row="4"/>
+
+        <Label Content="Код"
+               FontSize="20"
+               HorizontalAlignment="Left"
+               Margin="0,0,0,5"
+               Grid.Row="5"/>
+        <TextBox x:Name="codeTextBox"
+                 Height="25"
+                 Margin="0,0,0,10"
+                 Grid.Row="6"/>
+
+        <Button Content="Войти"
+                Height="40"
+                FontSize="16"
+                FontWeight="Bold"
+                Foreground="White"
+                Background="#852594"
+                BorderThickness="2"
+                BorderBrush="#852594"
+                Margin="0,10,0,0"
+                Click="Button_Click"
+                Grid.Row="7"/>
+
+        <Label Content="Очистить поля"
+               FontSize="14"
+               Foreground="Blue"
+               HorizontalAlignment="Right"
+               VerticalAlignment="Center"
+               Cursor="Hand"
+               Margin="0,10,10,0"
+               MouseDown="Clear_MouseDown"
+               Grid.Row="8"/>
+    </Grid>
+</Window>

@@ -1,0 +1,70 @@
+﻿<Window x:Class="TESTINGCOURSEWORK.ClientRegPage"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TESTINGCOURSEWORK"
+        mc:Ignorable="d"
+              Title="RegistrationPage" Height="439" Width="300">
+    <Grid Margin="0,-3,0,-6" >
+        <Grid.RowDefinitions>
+            <RowDefinition Height="54*"/>
+            <RowDefinition Height="32*"/>
+            <RowDefinition Height="46*"/>
+            <RowDefinition Height="25*"/>
+            <RowDefinition Height="37*"/>
+            <RowDefinition Height="43*"/>
+            <RowDefinition Height="76*"/>
+            <RowDefinition Height="119*"/>
+        </Grid.RowDefinitions>
+
+        <Label MouseDown="Account_Alreary_Exists_MouseDown" Margin="10,2,60,42" Foreground="Blue" RenderTransformOrigin="0.5,0.5" Grid.Row="1" Grid.RowSpan="2">
+            <Label.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform ScaleY="1"/>
+                    <SkewTransform/>
+                    <RotateTransform/>
+                    <TranslateTransform/>
+                </TransformGroup>
+            </Label.RenderTransform> Уже есть аккаунт?
+        </Label>
+        <Label FontFamily="Times New Roman" FontSize="40" Foreground="Black" HorizontalAlignment="Center" Margin="0,10,0,30" Grid.RowSpan="2" Width="222">Регистрация</Label>
+        <Label FontSize="20"  Margin="0,26,0,34" Content="" Grid.Row="1" Grid.RowSpan="4"/>
+        <Label FontSize="20"  Margin="0,14,0,8" Content="Введите логин" Grid.Row="2" Grid.RowSpan="2"/>
+        <TextBox x:Name="LoginTextBox" Margin="10,4,30,1" RenderTransformOrigin="0.5,0.5" Grid.Row="3">
+            <TextBox.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform/>
+                    <SkewTransform/>
+                    <RotateTransform Angle="0.442"/>
+                    <TranslateTransform/>
+                </TransformGroup>
+            </TextBox.RenderTransform>
+        </TextBox>
+
+        <Button  Content="Зарегистрироваться"
+FontSize="16"
+FontWeight="Bold"
+Foreground="White"
+Background="#852594"
+
+BorderThickness="2"
+BorderBrush="#852594"
+Margin="65,25,65,59" RenderTransformOrigin="0.476,-0.453" Grid.Row="7" Click="Button_Click"/>
+        <Label FontSize="20"  Margin="0,3,0,34" Content="Введите Пароль" Grid.Row="4" Grid.RowSpan="2"/>
+        <Label FontSize="20"  Margin="0,8,0,11" Content="Повторите пароль " Grid.Row="6"/>
+        <Label  MouseDown="Label_MouseDown" Margin="10,62,60,99" Foreground="Blue" RenderTransformOrigin="0.5,0.5" Grid.Row="6" Grid.RowSpan="2" Content=" Очистить поля">
+            <Label.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform ScaleY="1"/>
+                    <SkewTransform/>
+                    <RotateTransform/>
+                    <TranslateTransform/>
+                </TransformGroup>
+            </Label.RenderTransform>
+        </Label>
+        <PasswordBox x:Name="passwordTextBox" Margin="10,9,39,14" RenderTransformOrigin="0.5,0.5" Grid.Row="5"/>
+        <PasswordBox x:Name="passwordTextBox_repeated" Margin="10,45,39,11" RenderTransformOrigin="0.5,0.5" Grid.Row="6"/>
+
+    </Grid>
+</Window>

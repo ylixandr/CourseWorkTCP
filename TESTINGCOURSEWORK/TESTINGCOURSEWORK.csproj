@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="blue.jpg" />
+    <None Remove="Images\fone.jpg" />
+    <None Remove="Images\fone2.jpg" />
+    <None Remove="Images\MAINLOGO.png" />
+    <None Remove="Images\Meneger.jpg" />
+    <None Remove="Images\StartPage\logo-person.png" />
+    <None Remove="Images\StartPage\pink.jpg" />
+    <None Remove="Images\StartPage\postman.png" />
+    <None Remove="Images\StartPage\red.jpeg" />
+    <None Remove="Images\StartPage\setting.png" />
+    <None Remove="Images\StartPage\white.jpeg" />
+    <None Remove="manager.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EPPlus" Version="7.4.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="blue.jpg" />
+    <Resource Include="Images\fone.jpg" />
+    <Resource Include="Images\fone2.jpg" />
+    <Resource Include="Images\MAINLOGO.png" />
+    <Resource Include="Images\Meneger.jpg" />
+    <Resource Include="Images\StartPage\logo-person.png" />
+    <Resource Include="Images\StartPage\pink.jpg" />
+    <Resource Include="Images\StartPage\postman.png" />
+    <Resource Include="Images\StartPage\red.jpeg" />
+    <Resource Include="Images\StartPage\setting.png" />
+    <Resource Include="Images\StartPage\white.jpeg" />
+    <Resource Include="manager.png" />
+  </ItemGroup>
+
+</Project>

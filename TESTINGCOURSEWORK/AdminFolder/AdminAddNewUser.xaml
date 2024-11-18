@@ -1,0 +1,29 @@
+﻿<Window x:Class="TESTINGCOURSEWORK.AdminAddNewUser"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TESTINGCOURSEWORK" xmlns:sys="clr-namespace:System;assembly=netstandard"
+        mc:Ignorable="d"
+        Title="AdminAddNewUser" Height="215" Width="279">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="23*"/>
+            <RowDefinition Height="37*"/>
+            <RowDefinition Height="34*"/>
+            <RowDefinition Height="40*"/>
+            <RowDefinition Height="65*"/>
+        </Grid.RowDefinitions>
+        <Button Content="Добавить" HorizontalAlignment="Center" Margin="0,26,0,0" VerticalAlignment="Top" Height="21" Width="83" Click="Button_Click" Grid.Row="4"/>
+        <Label Content="Login" HorizontalAlignment="Right" Margin="0,7,213,0" VerticalAlignment="Top" Grid.Row="1"/>
+        <TextBox x:Name="loginTextBox" TextWrapping="Wrap"  Margin="70,11,0,8" Grid.Row="1" HorizontalAlignment="Left" Width="182"/>
+        <PasswordBox x:Name="PasswordTextBox"   Margin="70,11,0,5" Grid.Row="2" HorizontalAlignment="Left" Width="182"/>
+        <Label Content="Password" HorizontalAlignment="Right" Margin="0,7,209,0" VerticalAlignment="Top" Grid.Row="2"/>
+        <Label Content="Role ID" HorizontalAlignment="Left" Margin="0,13,0,0" VerticalAlignment="Top" Grid.Row="3"/>
+        <Button Click="Back_Button_Click" Content="&lt;" Margin="248,0,0,2" RenderTransformOrigin="0.441,0.696" HorizontalAlignment="Left" Width="21"/>
+        <TextBox x:Name="RoleID" TextWrapping="Wrap"  Margin="70,22,0,0" Grid.Row="3" HorizontalAlignment="Left" Width="182"/>
+        <Label FontSize="6" Margin="70,5,37,39" Grid.Row="4" Content="1 - админ, 2 - менеджер, 3 - пользователь"></Label>
+
+
+    </Grid>
+</Window>

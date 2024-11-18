@@ -1,0 +1,98 @@
+﻿<Window FontFamily="Times New Roman" x:Class="CourseWorkTest.StartPage"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:CourseWorkTest"
+        mc:Ignorable="d"
+        Title="StartPage" Height="522" Width="1158">
+    <Grid  >
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Button x:Name="client_Button" Click="client_Button_Click"  Grid.Column="0">
+            <Grid  >
+                <Image Source="blue.jpg" Stretch="Fill">
+                    <Image.Effect>
+                        <BlurEffect Radius="20"/>
+                    </Image.Effect>
+                </Image>
+                <Image Margin="42,144,42,193" Source="/Images/StartPage/logo-person.png" Stretch="Fill" RenderTransformOrigin="0.5,0.5">
+                    <Image.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform ScaleX="-1"/>
+                            <SkewTransform/>
+                            <RotateTransform/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </Image.RenderTransform>
+                </Image>
+                <Label FontWeight="Black" FontSize="40" Margin="64,317,34,0" RenderTransformOrigin="0.5,0.5" Height="59" VerticalAlignment="Top">
+                    <Label.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform ScaleY="1"/>
+                            <SkewTransform/>
+                            <RotateTransform/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </Label.RenderTransform> Клиент
+                </Label>
+
+            </Grid>
+        </Button>
+
+
+
+        <Button Grid.Column="1" Click="Manager_Button_Click">
+
+            <Grid >
+                <Image  Source="/Images/StartPage/pink.jpg" Stretch="Fill">
+                    <Image.Effect>
+                        <BlurEffect Radius="40"/>
+                    </Image.Effect>
+                </Image>
+                <Image Margin="42,144,42,193" Source="manager.png" Stretch="Fill"/>
+                <Label FontWeight="Black" FontSize="40" Margin="40,314,10,0" Content="Менеджер&#xD;&#xA;" Height="55" VerticalAlignment="Top"/>
+            </Grid>
+
+        </Button>
+
+
+        <Button Click="admin_Button_Click" Grid.Column="2">
+            <Grid>
+                <Image Stretch="Fill" Source="/Images/StartPage/red.jpeg" >
+                    <Image.Effect>
+                        <BlurEffect Radius="50"/>
+                    </Image.Effect>
+                </Image>
+                <Image Margin="42,144,42,193" Source="/Images/StartPage/setting.png" Stretch="Fill" RenderTransformOrigin="0.5,0.5">
+                    <Image.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform Angle="1.399"/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </Image.RenderTransform>
+                </Image>
+                <Label FontWeight="Black" FontSize="35" Margin="10,319,10,0" Height="68" VerticalAlignment="Top">Администратор</Label>
+            </Grid>
+        </Button>
+        <Button Grid.Column="3">
+            <Grid >
+                <Image Stretch="Fill"  Source="/Images/StartPage/white.jpeg" >
+                    <Image.Effect>
+                        <BlurEffect Radius="40"/>
+                    </Image.Effect>
+                </Image>
+                <Image Margin="42,144,42,193" Source="/Images/StartPage/postman.png" Stretch="Fill"/>
+                <Label FontWeight="Black" FontSize="35" Margin="20,314,0,0" Height="68" VerticalAlignment="Top">Поставщик</Label>
+            </Grid>
+
+        </Button>
+
+    </Grid>
+</Window>

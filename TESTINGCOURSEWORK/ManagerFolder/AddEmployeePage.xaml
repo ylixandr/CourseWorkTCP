@@ -1,0 +1,56 @@
+﻿<Window x:Class="TESTINGCOURSEWORK.ManagerFolder.AddEmployeePage"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TESTINGCOURSEWORK.ManagerFolder"
+        mc:Ignorable="d"
+        Title="AddEmployeePage" Height="349" Width="342">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Имя -->
+        <TextBlock Text="Имя:" Grid.Row="0" Grid.Column="0" Margin="0,5"/>
+        <TextBox x:Name="FirstNameTextBox"  Grid.Row="0" Grid.Column="1" Margin="5" />
+
+        <!-- Фамилия -->
+        <TextBlock Text="Фамилия:" Grid.Row="1" Grid.Column="0" Margin="0,5"/>
+        <TextBox x:Name="LastNameTextBox" Grid.Row="1" Grid.Column="1" Margin="5" />
+
+        <!-- Отчество -->
+        <TextBlock Text="Отчество:" Grid.Row="2" Grid.Column="0" Margin="0,5"/>
+        <TextBox x:Name="MiddleNameTextBox" Grid.Row="2" Grid.Column="1" Margin="5" />
+
+        <!-- Зарплата -->
+        <TextBlock Text="Зарплата:" Grid.Row="3" Grid.Column="0" Margin="0,5"/>
+        <TextBox x:Name="SalaryTextBox" Grid.Row="3" Grid.Column="1" Margin="5" />
+
+        <!-- Дата рождения -->
+        <TextBlock Text="Дата рождения:" Grid.Row="4" Grid.Column="0" Margin="0,5"/>
+        <DatePicker x:Name="BirthDatePicker" Grid.Row="4" Grid.Column="1" Margin="5" />
+
+        <!-- Позиция -->
+        <TextBlock Text="Позиция:" Grid.Row="5" Grid.Column="0" Margin="0,5"/>
+        <TextBox x:Name="PositionTextBox" Grid.Row="5" Grid.Column="1" Margin="5" />
+
+        <!-- Дата найма -->
+        <TextBlock Text="Дата найма:" Grid.Row="6" Grid.Column="0" Margin="0,5"/>
+        <DatePicker x:Name="HireDatePicker" Grid.Row="6" Grid.Column="1" Margin="5" />
+
+        <!-- Кнопка отправки -->
+        <Button Content="Сохранить" Grid.Row="7" Grid.ColumnSpan="2" Margin="5" Width="100" Height="30" HorizontalAlignment="Center" Click="SaveButton_Click"/>
+    </Grid>
+</Window>
