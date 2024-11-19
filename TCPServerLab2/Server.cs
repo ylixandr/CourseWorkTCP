@@ -267,7 +267,43 @@ public class Server
                         byte[] responseData = Encoding.UTF8.GetBytes(jsonReport);
                         await stream.WriteAsync(responseData, 0, responseData.Length);
                     }
+
                 }
+                else if (credentials[0] == "deleteTransaction" && int.TryParse(credentials[1], out int transactionId))
+                {
+                    Console.WriteLine($"Запрос на удаление транзакции ID: {transactionId}");
+                    string response = await DeleteTransactionByIdAsync(transactionId) ? "Transaction deleted" : "Failed to delete transaction";
+                    byte[] responseData = Encoding.UTF8.GetBytes(response);
+                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                }
+                else if (credentials[0] == "addEmployee")
+                {
+                    try
+                    {
+                        string firstName = credentials[1];
+                        string lastName = credentials[2];
+                        string middleName = credentials[3];
+                        decimal salary = decimal.Parse(credentials[4]);
+                        DateOnly birthDate = DateOnly.Parse(credentials[5]);
+                        string position = credentials[6];
+                        DateOnly hireDate = DateOnly.Parse(credentials[7]);
+
+                        Console.WriteLine($"Получен запрос на добавление сотрудника: {firstName} {lastName}");
+
+                        string response = await AddEmployeeAsync(firstName, lastName, middleName, salary, birthDate, position, hireDate)
+                            ? "Success"
+                            : "Error";
+                        byte[] responseData = Encoding.UTF8.GetBytes(response);
+                        await stream.WriteAsync(responseData, 0, responseData.Length);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Ошибка обработки запроса: {ex.Message}");
+                        byte[] responseData = Encoding.UTF8.GetBytes("Error");
+                        await stream.WriteAsync(responseData, 0, responseData.Length);
+                    }
+                }
+
 
 
             }
@@ -314,6 +350,34 @@ public class Server
         }
     }
 
+    private async Task<bool> AddEmployeeAsync(string firstName, string lastName, string middleName, decimal salary, DateOnly birthDate, string position, DateOnly hireDate)
+    {
+        try
+        {
+            using (var context = new TestjsonContext())
+            {
+                var newEmployee = new Employee
+                {
+                    FirstName = firstName,
+                    LastName = lastName,
+                    MiddleName = middleName,
+                    Salary = salary,
+                    BirthDate = birthDate,
+                    Position = position,
+                    HireDate = hireDate
+                };
+
+                context.Employees.Add(newEmployee);
+                await context.SaveChangesAsync();
+                return true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка добавления сотрудника: {ex.Message}");
+            return false;
+        }
+    }
 
     private async Task<bool> ValidateAdminUserAsync(string username, string password, string code)
     {
@@ -347,6 +411,28 @@ public class Server
                 if (user != null)
                 {
                     dbContext.Employees.Remove(user);
+                    await dbContext.SaveChangesAsync();
+                    return true;
+                }
+            }
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при удалении пользователя: {ex.Message}");
+            return false;
+        }
+    }
+    private async Task<bool> DeleteTransactionByIdAsync(int transactionId)
+    {
+        try
+        {
+            using (var dbContext = new TestjsonContext())
+            {
+                var transaction = await dbContext.Transactions.FindAsync(transactionId);
+                if (transaction != null)
+                {
+                    dbContext.Transactions.Remove(transaction);
                     await dbContext.SaveChangesAsync();
                     return true;
                 }

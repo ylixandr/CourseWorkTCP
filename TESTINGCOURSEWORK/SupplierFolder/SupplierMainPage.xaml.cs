@@ -12,16 +12,21 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace TESTINGCOURSEWORK.ClientFolder
+namespace TESTINGCOURSEWORK.SupplierFolder
 {
     /// <summary>
-    /// Логика взаимодействия для ClientMainPage.xaml
+    /// Логика взаимодействия для SupplierMainPage.xaml
     /// </summary>
-    public partial class ClientMainPage : Window
+    public partial class SupplierMainPage : Window
     {
-        public ClientMainPage()
+        public SupplierMainPage()
         {
             InitializeComponent();
+        }
+
+        private void Create_Button_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

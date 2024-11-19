@@ -13,18 +13,17 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace TESTINGCOURSEWORK
+namespace TESTINGCOURSEWORK.SupplierFolder
 {
     /// <summary>
-    /// Логика взаимодействия для ClentRegPage.xaml
+    /// Логика взаимодействия для SupplierRegistrationPage.xaml
     /// </summary>
-    public partial class ClientRegPage : Window
+    public partial class SupplierRegistrationPage : Window
     {
-        public ClientRegPage()
+        public SupplierRegistrationPage()
         {
             InitializeComponent();
         }
-
         private void Label_MouseDown(object sender, MouseButtonEventArgs e)
         {
             LoginTextBox.Text = "";
@@ -70,7 +69,7 @@ namespace TESTINGCOURSEWORK
 
         private void Account_Alreary_Exists_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            ClientLoginPage loginPage = new ClientLoginPage();
+            SupplierLoginPage loginPage = new SupplierLoginPage();
             loginPage.Show();
             this.Hide();
         }

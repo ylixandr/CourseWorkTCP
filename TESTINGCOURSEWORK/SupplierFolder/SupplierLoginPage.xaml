@@ -1,12 +1,12 @@
-﻿<Window x:Class="TESTINGCOURSEWORK.ClientLoginPage"
+﻿<Window x:Class="TESTINGCOURSEWORK.SupplierFolder.SupplierLoginPage"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:TESTINGCOURSEWORK"
+        xmlns:local="clr-namespace:TESTINGCOURSEWORK.SupplierFolder"
         mc:Ignorable="d"
-        Title="ClientLoginPage" Height="400" Width="300">
-    <Grid  >
+          Title="ClientLoginPage" Height="405" Width="300">
+    <Grid Margin="0,0,0,21"  >
         <Grid.RowDefinitions>
             <RowDefinition Height="72*"/>
             <RowDefinition Height="53*"/>
@@ -14,13 +14,13 @@
             <RowDefinition Height="29*"/>
             <RowDefinition Height="41*"/>
             <RowDefinition Height="35*"/>
-            <RowDefinition Height="31*"/>
-            <RowDefinition Height="75*"/>
+            <RowDefinition Height="44*"/>
+
         </Grid.RowDefinitions>
-        <Label FontFamily="Times New Roman" FontSize="40" Foreground="Black" HorizontalAlignment="Center" Margin="0,25,0,47" Grid.RowSpan="2">Вход</Label>
+        <Label FontFamily="Times New Roman" FontSize="40" Foreground="Black" HorizontalAlignment="Center" Margin="0,25,0,47" Grid.RowSpan="2" Width="94">Вход</Label>
         <Label FontSize="20"  Margin="10,6,35,10" Grid.Row="1">Введите логин</Label>
         <Label FontSize="20"  Margin="0,46,0,30" Grid.Row="2" Grid.RowSpan="3">Введите пароль</Label>
-        <TextBox x:Name="loginTextBox" Height="20" Margin="25,19,41,9" RenderTransformOrigin="0.5,0.5" Grid.Row="2">
+        <TextBox x:Name="loginTextBox" Margin="25,19,41,9" RenderTransformOrigin="0.5,0.5" Grid.Row="2">
             <TextBox.RenderTransform>
                 <TransformGroup>
                     <ScaleTransform/>
@@ -32,7 +32,6 @@
         </TextBox>
 
         <Button  Content="Войти"
- Height="40"
  FontSize="16"
  FontWeight="Bold"
  Foreground="White"
@@ -40,8 +39,8 @@
  
  BorderThickness="2"
  BorderBrush="#852594"
- Margin="65,14,65,21" Grid.Row="7" Click="Button_Click_1"/>
-        <PasswordBox x:Name="passwordTextBox" Height="20" Margin="35,16,35,5" RenderTransformOrigin="0.5,0.5" Grid.Row="4"/>
-        <Label MouseDown="RegistrationLabel_MouseDown" Grid.Row="5" Margin="137,35,-4,0" Grid.RowSpan="2" Foreground="Blue"  >Еще нет аккаунта?</Label>
+ Margin="62,4,68,0" Grid.Row="6" Click="Button_Click_1"/>
+        <PasswordBox x:Name="passwordTextBox" Margin="35,16,35,5" RenderTransformOrigin="0.5,0.5" Grid.Row="4"/>
+        <Label MouseDown="RegistrationLabel_MouseDown" Grid.Row="5" Margin="141,2,-8,1" Foreground="Blue"  >Еще нет аккаунта?</Label>
     </Grid>
 </Window>

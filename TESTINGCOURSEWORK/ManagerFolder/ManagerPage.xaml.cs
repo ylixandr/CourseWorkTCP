@@ -77,7 +77,9 @@ namespace TESTINGCOURSEWORK
 
         private void Add_Button_Click(object sender, RoutedEventArgs e)
         {
-
+            AddEmployeePage addEmployeePage = new AddEmployeePage();
+            addEmployeePage.Show();
+            this.Hide();
         }
 
         private async void Delete_Button_Click(object sender, RoutedEventArgs e)
@@ -248,9 +250,32 @@ namespace TESTINGCOURSEWORK
 
         }
 
-        private void DeleteTransactionButton_Click(object sender, RoutedEventArgs e)
+        private async  void DeleteTransactionButton_Click(object sender, RoutedEventArgs e)
         {
+            if (TransactionDataGrid.SelectedItem is TCPServerLab2.Transaction selectedTransaction)
+            {
+                // Формирование сообщения для сервера
+                string loginData = $"deleteTransaction:{selectedTransaction.Id}";
 
+                // Отправка сообщения на сервер
+                string response = await NetworkService.Instance.SendMessageAsync(loginData);
+
+                // Проверка ответа сервера
+                if (response == "Transaction deleted")
+                {
+                    MessageBox.Show(" Транзакция успешно удалена");
+                    // Обновление отображения
+                    (TransactionDataGrid.ItemsSource as ObservableCollection<TCPServerLab2.Transaction>)?.Remove(selectedTransaction);
+                }
+                else
+                {
+                    MessageBox.Show("Не удалось удалить транзакцию.");
+                }
+            }
+            else
+            {
+                MessageBox.Show("Пожалуйста, выберите транзакцию");
+            }
         }
 
         private async void GenerateReportButton_Click(object sender, RoutedEventArgs e)
@@ -265,14 +290,16 @@ namespace TESTINGCOURSEWORK
 
                 // Формирование текста отчета
                 var reportText = new StringBuilder();
-                reportText.AppendLine($"Баланс компании: {report.Balance:C}");
+                reportText.AppendLine("=== Финансовый отчет ===");
+                reportText.AppendLine($"Баланс компании (начальный): {report.Balance:C}");
+                reportText.AppendLine($"Баланс после всех операций: {report.Balance + report.IncomeSum - report.ExpenseSum:C}");
                 reportText.AppendLine($"Общее количество транзакций: {report.TotalTransactions}");
                 reportText.AppendLine($"Общая сумма поступлений: {report.IncomeSum:C}");
                 reportText.AppendLine($"Общая сумма списаний: {report.ExpenseSum:C}");
                 reportText.AppendLine($"Средняя сумма транзакции: {report.AverageTransaction:C}");
                 reportText.AppendLine($"Самая крупная транзакция: {report.MaxTransaction?.Amount:C} ({report.MaxTransaction?.Description})");
                 reportText.AppendLine($"Самая мелкая транзакция: {report.MinTransaction?.Amount:C} ({report.MinTransaction?.Description})");
-                reportText.AppendLine("\nТранзакции по месяцам:");
+                reportText.AppendLine("\n=== Транзакции по месяцам ===");
                 foreach (var month in report.MonthlySummary)
                 {
                     reportText.AppendLine($"Месяц: {month.Month}");
@@ -280,18 +307,39 @@ namespace TESTINGCOURSEWORK
                     reportText.AppendLine($"  Поступления: {month.Income:C}");
                     reportText.AppendLine($"  Списания: {month.Expense:C}");
                 }
-                reportText.AppendLine("\nОшибки или подозрительные транзакции:");
+                reportText.AppendLine("\n=== Ошибки или подозрительные транзакции ===");
                 foreach (var error in report.Errors)
                 {
                     reportText.AppendLine($"  Тип: {error.TransactionType}, Сумма: {error.Amount:C}");
                 }
 
-                // Отображение отчета
+                // Показ отчета в окне
                 MessageBox.Show(reportText.ToString(), "Отчетность", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // Сохранение отчета в текстовый файл
+                SaveReportToFile(reportText.ToString());
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Ошибка генерации отчета: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void SaveReportToFile(string reportContent)
+        {
+            try
+            {
+                // Путь для сохранения файла
+                string filePath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "FinancialReport.txt");
+
+                // Запись в файл
+                File.WriteAllText(filePath, reportContent);
+
+                MessageBox.Show($"Отчет сохранен на рабочем столе как {filePath}", "Сохранение отчета", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка сохранения отчета: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

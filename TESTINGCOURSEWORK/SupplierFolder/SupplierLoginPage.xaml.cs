@@ -13,22 +13,21 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace TESTINGCOURSEWORK
+namespace TESTINGCOURSEWORK.SupplierFolder
 {
     /// <summary>
-    /// Логика взаимодействия для ClientLoginPage.xaml
+    /// Логика взаимодействия для SupplierLoginPage.xaml
     /// </summary>
-    public partial class ClientLoginPage : Window
+    public partial class SupplierLoginPage : Window
     {
-        public ClientLoginPage()
+        public SupplierLoginPage()
         {
             InitializeComponent();
         }
-
         private void RegistrationLabel_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            ClientRegPage clientRegPage = new ClientRegPage();
-            clientRegPage.Show();
+            SupplierRegistrationPage supplierRegistrationPage = new SupplierRegistrationPage();
+            supplierRegistrationPage.Show();
             this.Hide();
         }
 
@@ -64,8 +63,8 @@ namespace TESTINGCOURSEWORK
 
             if (response == "Success")
             {
-                AdminPage adminPage = new AdminPage();
-                adminPage.Show();
+                SupplierMainPage supplierMainPage = new SupplierMainPage();
+                supplierMainPage.Show();
                 this.Hide();
             }
             else

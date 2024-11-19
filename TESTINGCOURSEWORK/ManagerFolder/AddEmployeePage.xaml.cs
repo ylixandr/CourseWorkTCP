@@ -24,9 +24,38 @@ namespace TESTINGCOURSEWORK.ManagerFolder
             InitializeComponent();
         }
 
-        private void SaveButton_Click(object sender, RoutedEventArgs e)
+        private async void SaveButton_Click(object sender, RoutedEventArgs e)
         {
+            try
+            {
+                string firstName = FirstNameTextBox.Text;
+                string lastName = LastNameTextBox.Text;
+                string middleName = MiddleNameTextBox.Text;
+                decimal salary = decimal.Parse(SalaryTextBox.Text);
+                DateTime birthDate = BirthDatePicker.SelectedDate ?? throw new Exception("Выберите дату рождения.");
+                string position = PositionTextBox.Text;
+                DateTime hireDate = HireDatePicker.SelectedDate ?? throw new Exception("Выберите дату найма.");
 
+                string message = $"addEmployee:{firstName}:{lastName}:{middleName}:{salary}:{birthDate:yyyy-MM-dd}:{position}:{hireDate:yyyy-MM-dd}";
+
+                var response = await NetworkService.Instance.SendMessageAsync(message);
+                if (response == "Success")
+                {
+                    MessageBox.Show("Сотрудник успешно добавлен!", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                    ManagerPage managerPage = new ManagerPage();
+                    managerPage.Show();
+                    this.Close();
+                }
+                else
+                {
+                    MessageBox.Show("Ошибка при добавлении сотрудника.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }
+

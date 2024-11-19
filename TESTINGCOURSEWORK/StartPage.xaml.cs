@@ -47,5 +47,10 @@ namespace CourseWorkTest
             clientRegPage.Show();
             this.Hide();
         }
+
+        private void Supplier_Button_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }
