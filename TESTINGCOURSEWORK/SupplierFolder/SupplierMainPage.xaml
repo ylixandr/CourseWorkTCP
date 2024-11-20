@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TESTINGCOURSEWORK.SupplierFolder"
         mc:Ignorable="d"
-          Title="ClientMainPage" Height="450" Width="800">
+          Title="ClientMainPage" Height="443" Width="867">
     <Grid RenderTransformOrigin="0.587,0.482" Margin="0,0,-13,0">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="209*"/>
@@ -23,7 +23,7 @@
             <RowDefinition Height="60"/>
 
         </Grid.RowDefinitions>
-        <Grid x:Name ="topEditingPanel"  Grid.ColumnSpan="4" Visibility="Visible">
+        <Grid x:Name ="topEditingPanel"  Grid.ColumnSpan="4" Visibility="Hidden">
             <Image Margin="194,0,0,10" Source="/blue.jpg" Stretch="Fill" >
                 <Image.Effect>
                     <BlurEffect Radius="10"/>
@@ -36,26 +36,77 @@
 
 
         </Grid>
-   
-        <DataGrid x:Name="TransactionDataGrid" Grid.Row="1" Grid.ColumnSpan="4" Margin="205,0,14,10"
- Grid.RowSpan="6" Height="350" VerticalAlignment="Bottom" 
- AutoGenerateColumns="False" HeadersVisibility="Column" 
- ColumnHeaderHeight="40" RowHeight="30"
- CanUserAddRows="False" CanUserDeleteRows="False"
- IsReadOnly="True"
- ItemsSource="{Binding Transactions}" Visibility="Hidden">
 
-            <!-- Настройка колонок и заголовков -->
+        <DataGrid x:Name="ApplicationDataGrid" Grid.Row="1" Grid.ColumnSpan="4" Margin="223,0,14,36"
+          Grid.RowSpan="6" Height="324" VerticalAlignment="Bottom"
+          AutoGenerateColumns="False" HeadersVisibility="Column" 
+          ColumnHeaderHeight="40" RowHeight="30"
+          CanUserAddRows="False" CanUserDeleteRows="False"
+          IsReadOnly="True" ItemsSource="{Binding Applications}" Visibility="Hidden">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50"/>
-                <DataGridTextColumn Header="Дата транзакции" Binding="{Binding TransactionDate, StringFormat=d}" Width="150"/>
-                <DataGridTextColumn Header="Сумма" Binding="{Binding Amount}" Width="100"/>
-                <DataGridTextColumn Header="Тип транзакции" Binding="{Binding TransactionType}" Width="150"/>
-                <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="200"/>
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="Auto"/>
+                <DataGridTextColumn Header="Название продукта" Binding="{Binding ProductName}" Width="Auto"/>
+                <DataGridTextColumn Header="Количество" Binding="{Binding Quantity}" Width="Auto"/>
+                <DataGridTextColumn Header="Единица измерения" Binding="{Binding UnitOfMeasurement}" Width="Auto"/>
+                <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="Auto"/>
+                <DataGridTextColumn Header="Сумма" Binding="{Binding TotalPrice}" Width="Auto"/>
+                <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="Auto">
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Status}" Value="Одобрено">
+                                    <Setter Property="Background" Value="Green"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="Отклонено">
+                                    <Setter Property="Background" Value="Red"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="Ожидает">
+                                    <Setter Property="Background" Value="Yellow"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Дата подачи" Binding="{Binding DateSubmitted}" Width="Auto"/>
             </DataGrid.Columns>
         </DataGrid>
 
-       
+        <DataGrid x:Name="HistoryDataGrid" Grid.Row="1" Grid.ColumnSpan="4" Margin="205,0,14,10"
+          Grid.RowSpan="6" Height="350" VerticalAlignment="Bottom"
+          AutoGenerateColumns="False" HeadersVisibility="Column"
+          ColumnHeaderHeight="40" RowHeight="30"
+          CanUserAddRows="False" CanUserDeleteRows="False"
+          IsReadOnly="True" ItemsSource="{Binding ApplicationHistory}" Visibility="Hidden">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="Auto"/>
+                <DataGridTextColumn Header="Название продукта" Binding="{Binding ProductName}" Width="Auto"/>
+                <DataGridTextColumn Header="Количество" Binding="{Binding Quantity}" Width="Auto"/>
+                <DataGridTextColumn Header="Единица измерения" Binding="{Binding UnitOfMeasurement}" Width="Auto"/>
+                <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="Auto"/>
+                <DataGridTextColumn Header="Сумма" Binding="{Binding TotalPrice}" Width="Auto"/>
+                <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="Auto">
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Status}" Value="Одобрено">
+                                    <Setter Property="Background" Value="Green"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="Отклонено">
+                                    <Setter Property="Background" Value="Red"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="Ожидает">
+                                    <Setter Property="Background" Value="Yellow"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Дата подачи" Binding="{Binding DateSubmitted}" Width="Auto"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+
+
         <Image Margin="5,0,10,0" Source="/blue.jpg" Stretch="Fill" Grid.RowSpan="7">
             <Image.Effect>
                 <BlurEffect Radius="10"/>
@@ -67,14 +118,14 @@
 
 
 
-        <Label  Margin="0,11,0,10" FontSize="24" RenderTransformOrigin="0.162,0.648" HorizontalAlignment="Center" FontWeight="Bold" Content="Учет продукции&#xD;&#xA;" Grid.Row="2" Width="201"/>
+        <!--<Label  Margin="0,11,0,10" FontSize="24" RenderTransformOrigin="0.162,0.648" HorizontalAlignment="Center" FontWeight="Bold" Content="Учет продукции&#xD;&#xA;" Grid.Row="2" Width="201"/>-->
 
-      
-        <Button Click="Balance_Button_Click"  FontWeight="Bold" FontSize="24" Background="Transparent"  BorderBrush="Transparent" Grid.Row="3" Content="Учет баланса" Margin="0,0,17,0"></Button>
+
+        <!--<Button Click="Balance_Button_Click"  FontWeight="Bold" FontSize="24" Background="Transparent"  BorderBrush="Transparent" Grid.Row="3" Content="Учет баланса" Margin="0,0,17,0"></Button>
         
         <Button  Background="Transparent" BorderBrush="Transparent" Click="Employee_Button_Click" Margin="40,5,0,5" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" HorizontalAlignment="Left" Content="Персонал" Grid.Row="4" Width="124"></Button>
         <Label />
-        <Label  Margin="49,5,0,5" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" HorizontalAlignment="Left" Content="Налог" Grid.Row="5" Width="80"/>
+        <Label  Margin="49,5,0,5" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" HorizontalAlignment="Left" Content="Налог" Grid.Row="5" Width="80"/>-->
 
 
 

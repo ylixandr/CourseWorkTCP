@@ -13,5 +13,7 @@ public partial class Account
 
     public int RoleId { get; set; }
 
+    public virtual ICollection<Application> Applications { get; set; } = new List<Application>();
+
     public virtual Role Role { get; set; } = null!;
 }

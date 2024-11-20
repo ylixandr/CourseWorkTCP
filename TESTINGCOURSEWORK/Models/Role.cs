@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using TESTINGCOURSEWORK;
 
-namespace TCPServerLab2;
+namespace TESTINGCOURSEWORK.Models;
 
 public partial class Role
 {

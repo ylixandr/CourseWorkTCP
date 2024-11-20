@@ -16,8 +16,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using TCPServerLab2;
 using TESTINGCOURSEWORK.ManagerFolder;
+using TESTINGCOURSEWORK.Models;
 
 namespace TESTINGCOURSEWORK
 {
@@ -26,8 +26,8 @@ namespace TESTINGCOURSEWORK
     /// </summary>
     public partial class ManagerPage : Window
     {
-        private ObservableCollection<TCPServerLab2.Transaction> transactions;
-        public ObservableCollection<TCPServerLab2.Transaction> Transactions { get { return transactions; } set { transactions = value; } }
+        private ObservableCollection<Models.Transaction> transactions;
+        public ObservableCollection<Models.Transaction> Transactions { get { return transactions; } set { transactions = value; } }
 
         private ObservableCollection<Employee> employees;
         public ObservableCollection<Employee> Employees
@@ -180,9 +180,9 @@ namespace TESTINGCOURSEWORK
                 }
                 else
                 {
-                    List<TCPServerLab2.Transaction>? transactions = new List<TCPServerLab2.Transaction>();
-                    transactions = JsonConvert.DeserializeObject<List<TCPServerLab2.Transaction>>(response);
-                    Transactions = new ObservableCollection<TCPServerLab2.Transaction>(transactions);
+                    List<Models.Transaction>? transactions = new List<Models.Transaction>();
+                    transactions = JsonConvert.DeserializeObject<List<Models.Transaction>>(response);
+                    Transactions = new ObservableCollection<Models.Transaction>(transactions);
                     TransactionDataGrid.ItemsSource = Transactions;
 
                 }
@@ -210,7 +210,7 @@ namespace TESTINGCOURSEWORK
                 }
 
                 // Десериализация данных из JSON
-                var transactions = JsonConvert.DeserializeObject<List<TCPServerLab2.Transaction>>(transactionsJson);
+                var transactions = JsonConvert.DeserializeObject<List<Models.Transaction>>(transactionsJson);
 
                 // Создание и сохранение Excel-файла
                 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
@@ -252,7 +252,7 @@ namespace TESTINGCOURSEWORK
 
         private async  void DeleteTransactionButton_Click(object sender, RoutedEventArgs e)
         {
-            if (TransactionDataGrid.SelectedItem is TCPServerLab2.Transaction selectedTransaction)
+            if (TransactionDataGrid.SelectedItem is Models.Transaction selectedTransaction)
             {
                 // Формирование сообщения для сервера
                 string loginData = $"deleteTransaction:{selectedTransaction.Id}";
@@ -265,7 +265,7 @@ namespace TESTINGCOURSEWORK
                 {
                     MessageBox.Show(" Транзакция успешно удалена");
                     // Обновление отображения
-                    (TransactionDataGrid.ItemsSource as ObservableCollection<TCPServerLab2.Transaction>)?.Remove(selectedTransaction);
+                    (TransactionDataGrid.ItemsSource as ObservableCollection<Models.Transaction>)?.Remove(selectedTransaction);
                 }
                 else
                 {
@@ -361,5 +361,171 @@ namespace TESTINGCOURSEWORK
             TransactionDataGrid.Visibility = Visibility.Hidden;
             //topEditingPanelForTransactions.Visibility = Visibility.Hidden;
         }
+
+        private void supplier_Button_Click(object sender, RoutedEventArgs e)
+        {
+            HideAllGrid();
+            topManagerPanel.Visibility = Visibility.Visible;
+            try
+            {
+                
+
+                // Делаем видимыми верхнюю панель и DataGrid
+                
+                ManagerApplicationDataGrid.Visibility = Visibility.Visible;
+
+                // Загружаем данные о необработанных заявках
+                LoadUnprocessedApplications();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка: {ex.Message}");
+            }
+        }
+
+
+        private async void Approve_Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (ManagerApplicationDataGrid.SelectedItem is not ApplicationViewModel selectedApplication)
+            {
+                MessageBox.Show("Пожалуйста, выберите заявку для обработки.");
+                return;
+            }
+
+            try
+            {
+                string response = await NetworkService.Instance.SendMessageAsync($"approveApplication:{selectedApplication.Id}");
+                if (response == "Success")
+                {
+                    MessageBox.Show("Заявка одобрена.");
+                    LoadUnprocessedApplications(); // Обновляем данные в DataGrid
+                }
+                else
+                {
+                    MessageBox.Show("Ошибка при одобрении заявки.");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка: {ex.Message}");
+            }
+        }
+
+
+        private async void Reject_Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (ManagerApplicationDataGrid.SelectedItem is not ApplicationViewModel selectedApplication)
+            {
+                MessageBox.Show("Пожалуйста, выберите заявку для обработки.");
+                return;
+            }
+
+            try
+            {
+                string response = await NetworkService.Instance.SendMessageAsync($"rejectApplication:{selectedApplication.Id}");
+                if (response == "Success")
+                {
+                    MessageBox.Show("Заявка отклонена.");
+                    LoadUnprocessedApplications(); // Обновляем данные в DataGrid
+                }
+                else
+                {
+                    MessageBox.Show("Ошибка при отклонении заявки.");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка: {ex.Message}");
+            }
+        }
+
+
+
+        private async void LoadUnprocessedApplications()
+        {
+            try
+            {
+                string response = await NetworkService.Instance.SendMessageAsync("getUnprocessedApplications");
+                if (response == "NoData")
+                {
+                    ManagerApplicationDataGrid.ItemsSource = null;
+                    MessageBox.Show("Нет необработанных заявок.");
+                }
+                else
+                {
+                    var applications = JsonConvert.DeserializeObject<List<ApplicationViewModel>>(response);
+
+                    // Если нужно отфильтровать только заявки с заполненным количеством и ед. измерения:
+                    applications = applications.Where(app => app.Quantity > 0 && !string.IsNullOrEmpty(app.UnitOfMeasurement)).ToList();
+
+                    ManagerApplicationDataGrid.ItemsSource = applications;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка: {ex.Message}");
+            }
+        }
+
+
+        private async void ExportReportApp_Button_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string command = "export_applications";
+                string applicationsJson = await NetworkService.Instance.SendMessageAsync(command);
+
+                if (applicationsJson == "Error")
+                {
+                    MessageBox.Show("Ошибка при получении данных о заявках.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                var applications = JsonConvert.DeserializeObject<List<ApplicationViewModel>>(applicationsJson);
+
+                ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+                using (var package = new ExcelPackage())
+                {
+                    ExcelWorksheet worksheet = package.Workbook.Worksheets.Add("Applications");
+
+                    worksheet.Cells[1, 1].Value = "ID";
+                    worksheet.Cells[1, 2].Value = "Логин";
+                    worksheet.Cells[1, 3].Value = "Контактная информация";
+                    worksheet.Cells[1, 4].Value = "Название продукта";
+                    worksheet.Cells[1, 5].Value = "Описание";
+                    worksheet.Cells[1, 6].Value = "Сумма";
+                    worksheet.Cells[1, 7].Value = "Количество";
+                    worksheet.Cells[1, 8].Value = "Ед. измерения";
+                    worksheet.Cells[1, 9].Value = "Статус";
+                    worksheet.Cells[1, 10].Value = "Дата подачи";
+
+                    int row = 2;
+                    foreach (var application in applications)
+                    {
+                        worksheet.Cells[row, 1].Value = application.Id;
+                        worksheet.Cells[row, 2].Value = application.Login;
+                        worksheet.Cells[row, 3].Value = application.ContactInfo;
+                        worksheet.Cells[row, 4].Value = application.ProductName;
+                        worksheet.Cells[row, 5].Value = application.Description;
+                        worksheet.Cells[row, 6].Value = application.TotalPrice;
+                        worksheet.Cells[row, 7].Value = application.Quantity; // Новое поле
+                        worksheet.Cells[row, 8].Value = application.UnitOfMeasurement; // Новое поле
+                        worksheet.Cells[row, 9].Value = application.Status;
+                        worksheet.Cells[row, 10].Value = application.DateSubmitted;
+                        row++;
+                    }
+
+                    string filePath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "ApplicationsReport.xlsx");
+                    package.SaveAs(new FileInfo(filePath));
+                    MessageBox.Show($"Файл сохранен на рабочем столе как {filePath}", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Произошла ошибка: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
     }
 }

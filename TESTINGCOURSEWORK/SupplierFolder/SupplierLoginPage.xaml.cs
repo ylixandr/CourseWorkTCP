@@ -54,6 +54,7 @@ namespace TESTINGCOURSEWORK.SupplierFolder
 
         private async void Button_Click_1(object sender, RoutedEventArgs e)
         {
+
             string username = loginTextBox.Text;
             string password = passwordTextBox.Password;
 
@@ -61,8 +62,16 @@ namespace TESTINGCOURSEWORK.SupplierFolder
 
             string response = await NetworkService.Instance.SendMessageAsync(loginData);
 
-            if (response == "Success")
+            if (response.StartsWith("Success:"))
             {
+                // Разбираем ответ от сервера: Success:UserId
+                string[] parts = response.Split(':');
+                int userId = int.Parse(parts[1]);
+
+                // Сохраняем данные текущего пользователя
+                CurrentUser.SetUser(userId, username);
+
+                // Переход на главную страницу
                 SupplierMainPage supplierMainPage = new SupplierMainPage();
                 supplierMainPage.Show();
                 this.Hide();
@@ -72,5 +81,7 @@ namespace TESTINGCOURSEWORK.SupplierFolder
                 MessageBox.Show("Invalid credentials");
             }
         }
+
+
     }
 }

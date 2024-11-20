@@ -1,0 +1,28 @@
+﻿using System;
+using System.Collections.Generic;
+using TESTINGCOURSEWORK.Models;
+
+namespace TCPServerLab2;
+
+public partial class Application
+{
+    public int Id { get; set; }
+
+    public int? AccountId { get; set; }
+
+    public string? ContactInfo { get; set; }
+
+    public string? ProductName { get; set; }
+
+    public string? Description { get; set; }
+
+    public decimal? TotalPrice { get; set; }
+
+    public int? StatusId { get; set; }
+
+    public DateTime? DateSubmitted { get; set; }
+
+    public virtual Account? Account { get; set; }
+
+    public virtual Status? Status { get; set; }
+}

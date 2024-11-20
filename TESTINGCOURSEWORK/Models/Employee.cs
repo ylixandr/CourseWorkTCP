@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace TCPServerLab2;
+namespace TESTINGCOURSEWORK.Models;
 
 public partial class Employee
 {

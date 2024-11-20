@@ -19,11 +19,15 @@ public partial class TestjsonContext : DbContext
 
     public virtual DbSet<AdminPanel> AdminPanels { get; set; }
 
+    public virtual DbSet<Application> Applications { get; set; }
+
     public virtual DbSet<Balance> Balances { get; set; }
 
     public virtual DbSet<Employee> Employees { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
+
+    public virtual DbSet<Status> Statuses { get; set; }
 
     public virtual DbSet<Transaction> Transactions { get; set; }
 
@@ -63,6 +67,27 @@ public partial class TestjsonContext : DbContext
                 .IsFixedLength();
         });
 
+        modelBuilder.Entity<Application>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Applicat__3214EC0781B00B3C");
+
+            entity.Property(e => e.ContactInfo).HasMaxLength(255);
+            entity.Property(e => e.DateSubmitted).HasColumnType("datetime");
+            entity.Property(e => e.ProductName).HasMaxLength(255);
+            entity.Property(e => e.TotalPrice).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.UnitOfMeasurement).HasMaxLength(50);
+
+            entity.HasOne(d => d.Account).WithMany(p => p.Applications)
+                .HasForeignKey(d => d.AccountId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Applicati__Accou__3864608B");
+
+            entity.HasOne(d => d.Status).WithMany(p => p.Applications)
+                .HasForeignKey(d => d.StatusId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Applicati__Statu__395884C4");
+        });
+
         modelBuilder.Entity<Balance>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Balance__3214EC0733AAA219");
@@ -98,6 +123,13 @@ public partial class TestjsonContext : DbContext
         {
             entity.Property(e => e.RoleId).ValueGeneratedNever();
             entity.Property(e => e.RoleName).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<Status>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Statuses__3214EC073AFCCA6F");
+
+            entity.Property(e => e.StatusName).HasMaxLength(50);
         });
 
         modelBuilder.Entity<Transaction>(entity =>

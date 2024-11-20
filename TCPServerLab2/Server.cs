@@ -112,17 +112,24 @@ public class Server
 
                 else if (credentials[0] == "loginUser")
                 {
-                    Console.WriteLine("loged user here it is");
+                    Console.WriteLine("Обрабатываю запрос на вход в систему...");
                     string username = credentials[1];
                     string password = credentials[2];
 
+                    Console.WriteLine($"Получены учетные данные - Username: {username}, Password: {password}");
 
-                    Console.WriteLine($"Получены данные от клиента {clientIp} - Username: {username}, Password: {password}, ");
-
-                    string response = await ValidateUserAsync(username, password) ? "Success" : "Invalid credentials";
-                    byte[] responseData = Encoding.UTF8.GetBytes(response);
-                    await stream.WriteAsync(responseData, 0, responseData.Length);
-
+                    var user = await ValidateUserAsync(username, password);
+                    if (user != null)
+                    {
+                        string response = $"Success:{user.Id}"; // Возвращаем UserId в ответе
+                        byte[] responseData = Encoding.UTF8.GetBytes(response);
+                        await stream.WriteAsync(responseData, 0, responseData.Length);
+                    }
+                    else
+                    {
+                        byte[] responseData = Encoding.UTF8.GetBytes("Invalid credentials");
+                        await stream.WriteAsync(responseData, 0, responseData.Length);
+                    }
                 }
                 else if (receivedData == "getUsers")
                 {
@@ -303,6 +310,150 @@ public class Server
                         await stream.WriteAsync(responseData, 0, responseData.Length);
                     }
                 }
+                else if (credentials[0] == "addApplication")
+                {
+                    try
+                    {
+                        // Распаковываем данные из сообщения
+                        string login = credentials[1];
+                        string contactInfo = credentials[2];
+                        string productName = credentials[3];
+                        string description = credentials[4];
+                        decimal totalPrice = decimal.Parse(credentials[5]);
+                        int quantity = int.Parse(credentials[6]); // Новое поле: Количество
+                        string unitOfMeasurement = credentials[7]; // Новое поле: Единица измерения
+
+                        Console.WriteLine($"Получен запрос на добавление заявки от {login} на продукт: {productName}");
+
+                        // Вызываем метод для добавления заявки
+                        string response = await AddApplicationAsync(login, contactInfo, productName, description, totalPrice, quantity, unitOfMeasurement)
+                            ? "Success"
+                            : "Error";
+
+                        // Отправляем ответ клиенту
+                        byte[] responseData = Encoding.UTF8.GetBytes(response);
+                        await stream.WriteAsync(responseData, 0, responseData.Length);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Ошибка обработки запроса: {ex.Message}");
+                        byte[] responseData = Encoding.UTF8.GetBytes("Error");
+                        await stream.WriteAsync(responseData, 0, responseData.Length);
+                    }
+                }
+
+                else if (credentials[0] == "getApplications")
+                {
+                    // Извлекаем UserId из запроса
+                    if (int.TryParse(credentials[1], out int appUserId))
+                    {
+                        Console.WriteLine($"Запрос на получение заявок для пользователя с ID: {appUserId}");
+                        try
+                        {
+                            string jsonData = await GetApplicationsByUserId(appUserId); // Получаем данные о заявках пользователя
+                            byte[] responseData = Encoding.UTF8.GetBytes(jsonData); // Преобразуем в байты
+                            await stream.WriteAsync(responseData, 0, responseData.Length); // Отправляем клиенту
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Ошибка при обработке заявок: {ex.Message}");
+                            byte[] errorResponse = Encoding.UTF8.GetBytes("Error");
+                            await stream.WriteAsync(errorResponse, 0, errorResponse.Length);
+                        }
+                    }
+                    else
+                    {
+                        byte[] errorResponse = Encoding.UTF8.GetBytes("InvalidUserId");
+                        await stream.WriteAsync(errorResponse, 0, errorResponse.Length);
+                    }
+                }
+
+                else if (credentials[0] == "getUnprocessedApplications")
+                {
+                    Console.WriteLine("Запрос на получение необработанных заявок");
+
+                    try
+                    {
+                        string jsonData = await GetUnprocessedApplications(); // Получаем данные о необработанных заявках
+                        byte[] responseData = Encoding.UTF8.GetBytes(jsonData); // Преобразуем в байты
+                        await stream.WriteAsync(responseData, 0, responseData.Length); // Отправляем клиенту
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Ошибка при обработке необработанных заявок: {ex.Message}");
+                        byte[] errorResponse = Encoding.UTF8.GetBytes("ServerError");
+                        await stream.WriteAsync(errorResponse, 0, errorResponse.Length);
+                    }
+                }
+
+
+                else if (credentials[0] == "deleteApplication" && int.TryParse(credentials[1], out int applicationId))
+                {
+                    Console.WriteLine($"Запрос на удаление заявки ID: {applicationId}");
+
+                    try
+                    {
+                        string response;
+                        if (await DeleteApplicationByIdAsync(applicationId))
+                        {
+                            response = "Application deleted";
+                        }
+                        else
+                        {
+                            response = "Application not found or could not be deleted";
+                        }
+
+                        byte[] responseData = Encoding.UTF8.GetBytes(response);
+                        await stream.WriteAsync(responseData, 0, responseData.Length);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Ошибка при обработке удаления: {ex.Message}");
+                        byte[] errorResponse = Encoding.UTF8.GetBytes("Error deleting application");
+                        await stream.WriteAsync(errorResponse, 0, errorResponse.Length);
+                    }
+                }
+                else if (credentials[0] == "getApplicationHistory")
+                {
+                    if (int.TryParse(credentials[1], out int HistuserId))
+                    {
+                        Console.WriteLine($"Запрос на историю заявок для пользователя с ID: {HistuserId}");
+                        string jsonData = await GetApplicationHistoryByUserId(HistuserId); // Получаем историю заявок
+                        byte[] responseData = Encoding.UTF8.GetBytes(jsonData); // Преобразуем в байты
+                        await stream.WriteAsync(responseData, 0, responseData.Length); // Отправляем клиенту
+                    }
+                    else
+                    {
+                        byte[] errorResponse = Encoding.UTF8.GetBytes("InvalidUserId");
+                        await stream.WriteAsync(errorResponse, 0, errorResponse.Length);
+                    }
+                }
+               
+                else if (receivedData.StartsWith("approveApplication"))
+                {
+                    int approveApplicationId = int.Parse(receivedData.Split(':')[1]);
+                    await ApproveApplication(approveApplicationId);
+                    byte[] responseData = Encoding.UTF8.GetBytes("Success");
+                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                }
+                else if (receivedData.StartsWith("rejectApplication"))
+                {
+                    int rejectApplicationId = int.Parse(receivedData.Split(':')[1]);
+                    await RejectApplication(rejectApplicationId);
+                    byte[] responseData = Encoding.UTF8.GetBytes("Success");
+                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                }
+                else if (receivedData == "export_applications")
+                {
+                    Console.WriteLine("Запрос на экспорт всех заявок.");
+                    string jsonData = await GetAllApplicationsForExport();
+
+                    // Если данные есть, отправляем их клиенту
+                    byte[] responseData = Encoding.UTF8.GetBytes(jsonData);
+                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                }
+
+
 
 
 
@@ -315,16 +466,327 @@ public class Server
             client.Close();
         }
     }
-
-    private async Task<bool> ValidateUserAsync(string username, string password)
+    private async Task<string> GetAllApplicationsForExport()
     {
         using (var dbContext = new TestjsonContext())
         {
+            var applications = await dbContext.Applications
+                .Include(a => a.Account)  // Подключаем Account для логина
+                .Include(a => a.Status)   // Подключаем Status для статуса заявки
+                .Select(a => new
+                {
+                    a.Id,
+                    Login = a.Account.Login,
+                    a.ContactInfo,
+                    a.ProductName,
+                    a.Description,
+                    a.TotalPrice,
+                    a.Quantity,               // Новое поле
+                    a.UnitOfMeasurement,      // Новое поле
+                    Status = a.Status.StatusName,
+                    DateSubmitted = a.DateSubmitted.HasValue
+                        ? a.DateSubmitted.Value.ToString("dd.MM.yyyy HH:mm:ss")
+                        : null
+                })
+                .ToListAsync();
 
-            var user = await dbContext.Accounts
-                                       .SingleOrDefaultAsync(u => u.Login == username && u.Password == password && u.RoleId == 3);
-            return user != null;
+            return applications.Count == 0 ? "Error" : JsonConvert.SerializeObject(applications);
+        }
+    }
 
+   
+
+
+    private async Task ApproveApplication(int applicationId)
+    {
+        using (var dbContext = new TestjsonContext())
+        {
+            var application = await dbContext.Applications.FindAsync(applicationId);
+            if (application != null)
+            {
+                application.StatusId = 2; // ID статуса "Одобрено"
+                await dbContext.SaveChangesAsync();
+            }
+        }
+    }
+
+    private async Task RejectApplication(int applicationId)
+    {
+        using (var dbContext = new TestjsonContext())
+        {
+            var application = await dbContext.Applications.FindAsync(applicationId);
+            if (application != null)
+            {
+                application.StatusId = 3; // ID статуса "Отклонено"
+                await dbContext.SaveChangesAsync();
+            }
+        }
+    }
+    //private async Task<string> GetUnprocessedApplications()
+    //{
+    //    using (var dbContext = new TestjsonContext())
+    //    {
+    //        // Фильтруем заявки, которые находятся в статусе "Ожидает"
+    //        var applications = await dbContext.Applications
+    //            .Include(a => a.Account)  // Для получения логина пользователя
+    //            .Include(a => a.Status)   // Для получения названия статуса
+    //            .Where(a => a.StatusId == 1) // ID статуса "Ожидает"
+    //            .Select(a => new
+    //            {
+    //                a.Id,
+    //                Login = a.Account.Login,  // Логин пользователя
+    //                a.ContactInfo,
+    //                a.ProductName,
+    //                a.Description,
+    //                a.TotalPrice,
+    //                Status = a.Status.StatusName,   // Название статуса
+    //                DateSubmitted = a.DateSubmitted.HasValue
+    //                    ? a.DateSubmitted.Value.ToString("dd.MM.yyyy")
+    //                    : null // Форматируем дату
+    //            })
+    //            .ToListAsync();
+
+    //        // Если данных нет, возвращаем "NoData"
+    //        return applications.Count == 0 ? "NoData" : JsonConvert.SerializeObject(applications);
+    //    }
+    //}
+    private async Task<string> GetUnprocessedApplications()
+    {
+        using (var dbContext = new TestjsonContext())
+        {
+            var applications = await dbContext.Applications
+                .Include(a => a.Account)
+                .Include(a => a.Status)
+                .Where(a => a.StatusId == 1) // ID статуса "Ожидает"
+                .Select(a => new
+                {
+                    a.Id,
+                    Login = a.Account.Login,
+                    a.ContactInfo,
+                    a.ProductName,
+                    a.Description,
+                    a.TotalPrice,
+                    a.Quantity,               // Новое поле
+                    a.UnitOfMeasurement,      // Новое поле
+                    Status = a.Status.StatusName,
+                    DateSubmitted = a.DateSubmitted.HasValue
+                        ? a.DateSubmitted.Value.ToString("dd.MM.yyyy")
+                        : null
+                })
+                .ToListAsync();
+
+            return applications.Count == 0 ? "NoData" : JsonConvert.SerializeObject(applications);
+        }
+    }
+
+
+
+    private async Task<string> GetAllApplications()
+    {
+        using (var dbContext = new TestjsonContext())
+        {
+            var applications = await dbContext.Applications
+                .Include(a => a.Account)
+                .Where(a => a.DateSubmitted >= DateTime.Now.AddDays(-3))
+                .Select(a => new
+                {
+                    a.Id,
+                    Login = a.Account.Login,
+                    a.ContactInfo,
+                    a.ProductName,
+                    a.Description,
+                    a.TotalPrice,
+                    a.Status,
+                    a.Quantity, // Новое поле
+                    a.UnitOfMeasurement, // Новое поле
+                    DateSubmitted = a.DateSubmitted.HasValue
+                        ? a.DateSubmitted.Value.ToString("dd.MM.yyyy")
+                        : null
+                })
+                .ToListAsync();
+
+            return applications.Count == 0 ? "NoData" : JsonConvert.SerializeObject(applications);
+        }
+    }
+
+    private async Task<string> GetApplicationsByUserId(int userId)
+    {
+        using (var dbContext = new TestjsonContext()) // Используйте ваш контекст
+        {
+            var threeDaysAgo = DateTime.Now.AddDays(-3);
+
+            // Фильтруем заявки только для указанного пользователя
+            var applications = await dbContext.Applications
+                .Include(a => a.Account)  // Подключаем Account для получения логина
+                .Include(a => a.Status)   // Подключаем Status для получения названия статуса
+                .Where(a => a.AccountId == userId &&
+                            a.DateSubmitted.HasValue &&
+                            a.DateSubmitted.Value >= threeDaysAgo) // Убедимся, что DateSubmitted не null
+                .Select(a => new
+                {
+                    a.Id,
+                    Login = a.Account.Login,  // Логин пользователя
+                    a.ContactInfo,
+                    a.ProductName,
+                    a.Description,
+                    a.TotalPrice,
+                    a.Quantity,              // Новое поле: Количество
+                    a.UnitOfMeasurement,     // Новое поле: Единица измерения
+                    Status = a.Status.StatusName,   // Название статуса заявки
+                    DateSubmitted = a.DateSubmitted.HasValue
+                        ? a.DateSubmitted.Value.ToString("dd.MM.yyyy")
+                        : null // Форматируем дату как строку
+                })
+                .ToListAsync();
+
+            // Возвращаем результат
+            if (applications.Count == 0)
+            {
+                return "NoData";
+            }
+
+            return JsonConvert.SerializeObject(applications);
+        }
+    }
+
+
+    private async Task<string> GetApplicationHistoryByUserId(int userId)
+    {
+        using (var dbContext = new TestjsonContext()) // Используем контекст базы данных
+        {
+            // Выбираем заявки текущего пользователя
+            var applications = await dbContext.Applications
+                .Include(a => a.Account)  // Подключаем Account для получения логина
+                .Include(a => a.Status)   // Подключаем Status для получения названия статуса
+                .Where(a => a.AccountId == userId) // Фильтруем по UserId
+                .Select(a => new
+                {
+                    a.Id,
+                    Login = a.Account.Login,        // Логин пользователя
+                    a.ContactInfo,                 // Контактная информация
+                    a.ProductName,                 // Название продукта
+                    a.Description,                 // Описание продукта
+                    a.TotalPrice,                  // Общая цена
+                    a.Quantity,                    // Количество
+                    a.UnitOfMeasurement,           // Единица измерения
+                    Status = a.Status.StatusName,  // Название статуса заявки
+                    DateSubmitted = a.DateSubmitted.HasValue
+                        ? a.DateSubmitted.Value.ToString("dd.MM.yyyy")
+                        : null                      // Форматируем дату как строку
+                })
+                .ToListAsync();
+
+            // Если заявок нет, возвращаем "NoData", иначе сериализуем их
+            return applications.Count == 0 ? "NoData" : JsonConvert.SerializeObject(applications);
+        }
+    }
+
+        private async Task<bool> DeleteApplicationByIdAsync(int applicationId)
+    {
+        try
+        {
+            using (var dbContext = new TestjsonContext())
+            {
+                // Попробуем найти заявку
+                var application = await dbContext.Applications.FindAsync(applicationId);
+                if (application == null)
+                {
+                    Console.WriteLine($"Заявка с ID {applicationId} не найдена.");
+                    return false;
+                }
+
+                // Удаляем заявку
+                dbContext.Applications.Remove(application);
+                await dbContext.SaveChangesAsync();
+
+                Console.WriteLine($"Заявка с ID {applicationId} успешно удалена.");
+                return true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при удалении заявки с ID {applicationId}: {ex.Message}");
+            return false;
+        }
+    }
+
+    private async Task<bool> DeleteEmployeeByIdAsync(int employeeId)
+    {
+        try
+        {
+            using (var dbContext = new TestjsonContext())
+            {
+                var user = await dbContext.Employees.FindAsync(employeeId);
+                if (user != null)
+                {
+                    dbContext.Employees.Remove(user);
+                    await dbContext.SaveChangesAsync();
+                    return true;
+                }
+            }
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при удалении пользователя: {ex.Message}");
+            return false;
+        }
+    }
+
+    private async Task<bool> AddApplicationAsync(string login, string contactInfo, string productName, string description, decimal totalPrice, int quantity, string unitOfMeasurement)
+    {
+        try
+        {
+            using (var context = new TestjsonContext())
+            {
+                // Получаем пользователя по логину
+                var account = await context.Accounts.FirstOrDefaultAsync(a => a.Login == login);
+                if (account == null)
+                    throw new Exception("Пользователь не найден.");
+
+                // Проверяем корректность количества и единицы измерения
+                if (quantity <= 0)
+                    throw new Exception("Количество должно быть больше нуля.");
+                if (string.IsNullOrWhiteSpace(unitOfMeasurement))
+                    throw new Exception("Единица измерения не может быть пустой.");
+
+                // Создаем новую заявку
+                var application = new Application
+                {
+                    AccountId = account.Id,
+                    ContactInfo = contactInfo,
+                    ProductName = productName,
+                    Description = description,
+                    TotalPrice = totalPrice,
+                    Quantity = quantity, // Сохраняем количество
+                    UnitOfMeasurement = unitOfMeasurement, // Сохраняем единицу измерения
+                    StatusId = 1, // Статус по умолчанию
+                    DateSubmitted = DateTime.Now
+                };
+
+                // Добавляем заявку в базу
+                context.Applications.Add(application);
+                await context.SaveChangesAsync();
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при добавлении заявки: {ex.Message}");
+            return false;
+        }
+    }
+
+
+
+
+    private async Task<Account> ValidateUserAsync(string username, string password)
+    {
+        using (var dbContext = new TestjsonContext())
+        {
+            return await dbContext.Accounts
+                .SingleOrDefaultAsync(u => u.Login == username && u.Password == password && u.RoleId == 3);
         }
     }
     private async Task<bool> ValidateManagerUserAsync(string username, string password, string code)
@@ -401,28 +863,7 @@ public class Server
 
         }
     }
-    private async Task<bool> DeleteEmployeeByIdAsync(int employeeId)
-    {
-        try
-        {
-            using (var dbContext = new TestjsonContext())
-            {
-                var user = await dbContext.Employees.FindAsync(employeeId);
-                if (user != null)
-                {
-                    dbContext.Employees.Remove(user);
-                    await dbContext.SaveChangesAsync();
-                    return true;
-                }
-            }
-            return false;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Ошибка при удалении пользователя: {ex.Message}");
-            return false;
-        }
-    }
+   
     private async Task<bool> DeleteTransactionByIdAsync(int transactionId)
     {
         try
@@ -564,6 +1005,10 @@ public class Server
 
 
     }
+    
+   
+
+
     private async Task<string> GetEmployeeDataAsync()
     {
         using (var dbContext = new TestjsonContext())
@@ -592,11 +1037,6 @@ public class Server
             // Сериализуем список пользователей в JSON
             return users.Count == 0 ? "NoData" : JsonConvert.SerializeObject(users);
         }
-
-
-
-
-
 
     }
 }

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TCPServerLab2;
 
-namespace TESTINGCOURSEWORK
+namespace TESTINGCOURSEWORK.Models
 {
     public class Account
     {
@@ -14,6 +14,6 @@ namespace TESTINGCOURSEWORK
         public string? Password { get; set; }
         public int RoleId { get; set; }
 
-        
+
     }
 }
