@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography.Pkcs;
 using System.Text;
 using System.Threading.Tasks;
 using TCPServerLab2;
@@ -452,6 +453,180 @@ public class Server
                     byte[] responseData = Encoding.UTF8.GetBytes(jsonData);
                     await stream.WriteAsync(responseData, 0, responseData.Length);
                 }
+                
+                else if (receivedData == "getProductData")
+                {
+                    Console.WriteLine("Запрос на получение данных о продукции");
+                    string jsonData = await GetProductData(); // Получаем данные о продукции
+                    byte[] responseData = Encoding.UTF8.GetBytes(jsonData); // Преобразуем в байты
+                    await stream.WriteAsync(responseData, 0, responseData.Length); // Отправляем клиенту
+                }
+
+              
+                
+                else if (credentials[0] == "getApplications")
+                {
+                    try
+                    {
+                        using (var dbContext = new TestjsonContext())
+                        {
+                            var applications = dbContext.Applications.Include(a => a.Status).ToList();
+                            var jsonResponse = JsonConvert.SerializeObject(applications);
+
+                            byte[] responseData = Encoding.UTF8.GetBytes(jsonResponse);
+                            await stream.WriteAsync(responseData, 0, responseData.Length);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        byte[] responseData = Encoding.UTF8.GetBytes("Error: " + ex.Message);
+                        await stream.WriteAsync(responseData, 0, responseData.Length);
+                    }
+                }
+
+                else if (credentials[0] == "getApplicationsApproved")
+                {
+                    Console.WriteLine("Запрос на получение необработанных заявок");
+
+                    try
+                    {
+                        string jsonData = await GetApprovedApplications(); 
+                        byte[] responseData = Encoding.UTF8.GetBytes(jsonData); // Преобразуем в байты
+                        await stream.WriteAsync(responseData, 0, responseData.Length); // Отправляем клиенту
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Ошибка при обработке  заявок: {ex.Message}");
+                        byte[] errorResponse = Encoding.UTF8.GetBytes("ServerError");
+                        await stream.WriteAsync(errorResponse, 0, errorResponse.Length);
+                    }
+                }
+                else if (credentials[0] == "addProduct")
+                {
+                    try
+                    {
+                        // Распаковываем данные из сообщения
+                        string productName = credentials[1];
+                        string unitOfMeasurement = credentials[2];
+                        int quantity = int.Parse(credentials[3]);
+                        decimal unitPrice = decimal.Parse(credentials[4]);
+
+
+                        Console.WriteLine($"Получен запрос на добавление продукта ");
+
+                        // Вызываем метод для добавления заявки
+                        string response = await AddProductAsync(productName, unitOfMeasurement, quantity, unitPrice)
+                            ? "Success"
+                            : "Error";
+
+                        // Отправляем ответ клиенту
+                        byte[] responseData = Encoding.UTF8.GetBytes(response);
+                        await stream.WriteAsync(responseData, 0, responseData.Length);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Ошибка обработки запроса: {ex.Message}");
+                        byte[] responseData = Encoding.UTF8.GetBytes("Error");
+                        await stream.WriteAsync(responseData, 0, responseData.Length);
+                    }
+                }
+                else if (receivedData.StartsWith("adjustStock"))
+                {
+                    Console.WriteLine("Запрос на корректировку склада.");
+
+                    try
+                    {
+                        string jsonRequest = receivedData.Substring("adjustStock:".Length);
+                        var stockRequest = JsonConvert.DeserializeObject<StockAdjustmentRequest>(jsonRequest);
+
+                        using (var dbContext = new TestjsonContext())
+                        {
+                            var product = dbContext.Products.FirstOrDefault(p => p.ProductId == stockRequest.ProductId);
+                            if (product != null)
+                            {
+                                if (stockRequest.TransactionType == "Приход")
+                                {
+                                    product.Quantity -= stockRequest.Quantity;
+                                }
+                                else if (stockRequest.TransactionType == "Расход")
+                                {
+                                    product.Quantity += stockRequest.Quantity;
+                                }
+
+                                // Update LastUpdated field
+                                product.LastUpdated = DateTime.Now;
+
+                                // Save transaction
+                                var transaction = new ProductTransaction
+                                {
+                                    ProductId = stockRequest.ProductId,
+                                    Quantity = stockRequest.Quantity,
+                                    TransactionType = stockRequest.TransactionType,
+                                    Description = stockRequest.Description,
+                                    TransactionDate = DateTime.Now
+                                };
+
+                                dbContext.ProductTransactions.Add(transaction);
+                                dbContext.SaveChanges();
+                            }
+                        }
+
+                        byte[] responseData = Encoding.UTF8.GetBytes("Success");
+                        await stream.WriteAsync(responseData, 0, responseData.Length);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Ошибка при обработке запроса корректировки склада: {ex.Message}");
+                        byte[] errorResponse = Encoding.UTF8.GetBytes("Error: " + ex.Message);
+                        await stream.WriteAsync(errorResponse, 0, errorResponse.Length);
+                    }
+                }
+                else if (receivedData == "export_products")
+                {
+                    Console.WriteLine("Отправка данных о продуктах для экспорта в Excel");
+
+                    try
+                    {
+                        using (var context = new TestjsonContext())
+                        {
+                            var products = context.Products.ToList();
+                            string json = JsonConvert.SerializeObject(products);
+                            byte[] responseData = Encoding.UTF8.GetBytes(json);
+                            await stream.WriteAsync(responseData, 0, responseData.Length);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Ошибка при экспорте продуктов: {ex.Message}");
+                        byte[] errorResponse = Encoding.UTF8.GetBytes("Error");
+                        await stream.WriteAsync(errorResponse, 0, errorResponse.Length);
+                    }
+                }
+
+                else if (receivedData == "export_transactions_Prod")
+                {
+                    Console.WriteLine("Отправка данных о транзакциях для экспорта в Excel");
+
+                    try
+                    {
+                        using (var context = new TestjsonContext())
+                        {
+                            var transactions = context.ProductTransactions
+                                .OrderByDescending(t => t.TransactionDate)
+                                .ToList();
+
+                            string json = JsonConvert.SerializeObject(transactions);
+                            byte[] responseData = Encoding.UTF8.GetBytes(json);
+                            await stream.WriteAsync(responseData, 0, responseData.Length);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Ошибка при экспорте транзакций: {ex.Message}");
+                        byte[] errorResponse = Encoding.UTF8.GetBytes("Error");
+                        await stream.WriteAsync(errorResponse, 0, errorResponse.Length);
+                    }
+                }
 
 
 
@@ -466,6 +641,61 @@ public class Server
             client.Close();
         }
     }
+    private async Task<bool> AddProductAsync(string productName, string unitOfMeasurement, int quantity,  decimal unitPrice)
+    {
+        try
+        {
+            using (var context = new TestjsonContext())
+            {
+                
+                // Создаем новую заявку
+                var product = new Product
+                {
+                    ProductName = productName,
+                    UnitOfMeasurement = unitOfMeasurement,
+                    Quantity = quantity,
+                    Description = "",
+                    UnitPrice = unitPrice,
+                    LastUpdated = DateTime.Now,
+                    
+                };
+
+                // Добавляем заявку в базу
+                context.Products.Add(product);
+                await context.SaveChangesAsync();
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при добавлении заявки: {ex.Message}");
+            return false;
+        }
+    }
+
+    private async Task<string> GetProductData()
+    {
+        using (var dbContext = new TestjsonContext())
+        {
+            // Создаем проекцию с выбором только необходимых полей для продукции
+            var products = await dbContext.Products
+                .Select(p => new
+                {
+                    p.ProductId,
+                    p.ProductName,
+                    p.Description,
+                    p.Quantity,
+                    p.UnitOfMeasurement,
+                    p.UnitPrice
+                })
+                .ToListAsync();
+
+            // Сериализуем список продукции в JSON
+            return products.Count == 0 ? "NoData" : JsonConvert.SerializeObject(products);
+        }
+    }
+        
     private async Task<string> GetAllApplicationsForExport()
     {
         using (var dbContext = new TestjsonContext())
@@ -558,6 +788,34 @@ public class Server
                 .Include(a => a.Account)
                 .Include(a => a.Status)
                 .Where(a => a.StatusId == 1) // ID статуса "Ожидает"
+                .Select(a => new
+                {
+                    a.Id,
+                    Login = a.Account.Login,
+                    a.ContactInfo,
+                    a.ProductName,
+                    a.Description,
+                    a.TotalPrice,
+                    a.Quantity,               // Новое поле
+                    a.UnitOfMeasurement,      // Новое поле
+                    Status = a.Status.StatusName,
+                    DateSubmitted = a.DateSubmitted.HasValue
+                        ? a.DateSubmitted.Value.ToString("dd.MM.yyyy")
+                        : null
+                })
+                .ToListAsync();
+
+            return applications.Count == 0 ? "NoData" : JsonConvert.SerializeObject(applications);
+        }
+    }
+    private async Task<string> GetApprovedApplications()
+    {
+        using (var dbContext = new TestjsonContext())
+        {
+            var applications = await dbContext.Applications
+                .Include(a => a.Account)
+                .Include(a => a.Status)
+                .Where(a => a.StatusId == 2) // ID статуса "Ожидает"
                 .Select(a => new
                 {
                     a.Id,

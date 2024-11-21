@@ -25,9 +25,15 @@ public partial class TestjsonContext : DbContext
 
     public virtual DbSet<Employee> Employees { get; set; }
 
+    public virtual DbSet<Product> Products { get; set; }
+
+    public virtual DbSet<ProductTransaction> ProductTransactions { get; set; }
+
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<Status> Statuses { get; set; }
+
+    public virtual DbSet<StockAdjustmentRequest> StockAdjustmentRequests { get; set; }
 
     public virtual DbSet<Transaction> Transactions { get; set; }
 
@@ -119,6 +125,36 @@ public partial class TestjsonContext : DbContext
             entity.Property(e => e.Salary).HasColumnType("decimal(10, 2)");
         });
 
+        modelBuilder.Entity<Product>(entity =>
+        {
+            entity.HasKey(e => e.ProductId).HasName("PK__Products__B40CC6CD599DAFB3");
+
+            entity.Property(e => e.Description).HasMaxLength(255);
+            entity.Property(e => e.LastUpdated)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.ProductName).HasMaxLength(100);
+            entity.Property(e => e.Quantity).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.UnitOfMeasurement).HasMaxLength(50);
+            entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 2)");
+        });
+
+        modelBuilder.Entity<ProductTransaction>(entity =>
+        {
+            entity.HasKey(e => e.TransactionId).HasName("PK__ProductT__55433A6B0308EB69");
+
+            entity.Property(e => e.Description).HasMaxLength(255);
+            entity.Property(e => e.Quantity).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.TransactionDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.TransactionType).HasMaxLength(50);
+
+            entity.HasOne(d => d.Product).WithMany(p => p.ProductTransactions)
+                .HasForeignKey(d => d.ProductId)
+                .HasConstraintName("FK__ProductTr__Produ__40058253");
+        });
+
         modelBuilder.Entity<Role>(entity =>
         {
             entity.Property(e => e.RoleId).ValueGeneratedNever();
@@ -130,6 +166,21 @@ public partial class TestjsonContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__Statuses__3214EC073AFCCA6F");
 
             entity.Property(e => e.StatusName).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<StockAdjustmentRequest>(entity =>
+        {
+            entity.HasKey(e => e.RequestId).HasName("PK__StockAdj__33A8517ADCD2675B");
+
+            entity.Property(e => e.Quantity).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.RequestDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.TransactionType).HasMaxLength(50);
+
+            entity.HasOne(d => d.Product).WithMany(p => p.StockAdjustmentRequests)
+                .HasForeignKey(d => d.ProductId)
+                .HasConstraintName("FK_StockAdjustmentRequests_Products");
         });
 
         modelBuilder.Entity<Transaction>(entity =>

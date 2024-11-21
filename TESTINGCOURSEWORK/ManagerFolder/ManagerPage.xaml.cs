@@ -16,6 +16,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+
 using TESTINGCOURSEWORK.ManagerFolder;
 using TESTINGCOURSEWORK.Models;
 
@@ -28,6 +29,7 @@ namespace TESTINGCOURSEWORK
     {
         private ObservableCollection<Models.Transaction> transactions;
         public ObservableCollection<Models.Transaction> Transactions { get { return transactions; } set { transactions = value; } }
+        public ObservableCollection<TCPServerLab2.Product> Products { get; set; } = new ObservableCollection<TCPServerLab2.Product>();
 
         private ObservableCollection<Employee> employees;
         public ObservableCollection<Employee> Employees
@@ -527,5 +529,193 @@ namespace TESTINGCOURSEWORK
             }
         }
 
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void AddProductButton_Click(object sender, RoutedEventArgs e)
+        {
+            AddProductWindow addProductWindow = new AddProductWindow();
+            addProductWindow.Show();
+            this.Hide();
+        }
+
+        private async void AddFromApplicationsButton_Click(object sender, RoutedEventArgs e)
+        {
+           SelectApplicationsPage selectApplicationsPage    = new SelectApplicationsPage();
+            selectApplicationsPage.ShowDialog();
+            this.Hide();
+        }
+
+        private async void AdjustStockButton_Click(object sender, RoutedEventArgs e)
+        {
+
+            try
+            {
+                // Отправляем запрос на сервер для получения данных о продукции
+                string response = await NetworkService.Instance.SendMessageAsync("getProductData");
+
+                // Если данных нет, показываем сообщение
+                if (response == "NoData")
+                {
+                    ProductDataGrid.ItemsSource = null;
+                    MessageBox.Show("Нет данных о продукции.");
+                }
+                else
+                {
+                    // Десериализация данных в список продуктов
+                    var products = JsonConvert.DeserializeObject<ObservableCollection<TCPServerLab2.Product>>(response);
+
+                    // Привязка данных к DataGrid
+                    ObservableCollection<TCPServerLab2.Product> products1 = products;
+                    AdjustStockWindow adjustStockWindow = new AdjustStockWindow(products1);
+                    adjustStockWindow.Show();
+                    this.Hide();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при загрузке данных о продукции: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+        }
+
+        private void Button_Click_Accounting(object sender, RoutedEventArgs e)
+        {
+            // Показать верхнюю панель
+            ProductGrid.Visibility = Visibility.Visible;
+
+            // Показать DataGrid для учета продукции
+            ProductDataGrid.Visibility = Visibility.Visible;
+
+            // Загружаем данные для учета продукции (например, из базы данных или другого источника)
+            LoadProductData();
+        }
+        private async void LoadProductData()
+        {
+            try
+            {
+                // Отправляем запрос на сервер для получения данных о продукции
+                string response = await NetworkService.Instance.SendMessageAsync("getProductData");
+
+                // Если данных нет, показываем сообщение
+                if (response == "NoData")
+                {
+                    ProductDataGrid.ItemsSource = null;
+                    MessageBox.Show("Нет данных о продукции.");
+                }
+                else
+                {
+                    // Десериализация данных в список продуктов
+                    var products = JsonConvert.DeserializeObject<List<TCPServerLab2.Product>>(response);
+
+                    // Привязка данных к DataGrid
+                    ProductDataGrid.ItemsSource = products;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при загрузке данных о продукции: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void ExportToExcelButtonProd_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Запрос на экспорт продуктов
+                string productsCommand = "export_products";
+                string productsJson = await NetworkService.Instance.SendMessageAsync(productsCommand);
+
+                if (productsJson == "Error")
+                {
+                    MessageBox.Show("Ошибка при получении данных о продуктах.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                // Десериализация данных о продуктах из JSON
+                var products = JsonConvert.DeserializeObject<List<TCPServerLab2.Product>>(productsJson);
+
+                // Запрос на экспорт транзакций
+                string transactionsCommand = "export_transactionsProd";
+                string transactionsJson = await NetworkService.Instance.SendMessageAsync(transactionsCommand);
+
+                if (transactionsJson == "Error")
+                {
+                    MessageBox.Show("Ошибка при получении данных о транзакциях.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                // Десериализация данных о транзакциях из JSON
+                var transactions = JsonConvert.DeserializeObject<List<TCPServerLab2.ProductTransaction>>(transactionsJson);
+
+                // Создание и сохранение Excel-файла
+                ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+                using (var package = new ExcelPackage())
+                {
+                    //// Добавление первой таблицы - Продукты
+                    //ExcelWorksheet productsWorksheet = package.Workbook.Worksheets.Add("Products");
+
+                    //// Заголовки для таблицы продуктов
+                    //productsWorksheet.Cells[1, 1].Value = "ProductId";
+                    //productsWorksheet.Cells[1, 2].Value = "ProductName";
+                    //productsWorksheet.Cells[1, 3].Value = "Description";
+                    //productsWorksheet.Cells[1, 4].Value = "Quantity";
+                    //productsWorksheet.Cells[1, 5].Value = "UnitOfMeasurement";
+                    //productsWorksheet.Cells[1, 6].Value = "UnitPrice";
+                    //productsWorksheet.Cells[1, 7].Value = "LastUpdated";
+
+                    // Заполнение данными о продуктах
+                    int row = 2;
+                    //foreach (var product in products)
+                    //{
+                    //    productsWorksheet.Cells[row, 1].Value = product.ProductId;
+                    //    productsWorksheet.Cells[row, 2].Value = product.ProductName;
+                    //    productsWorksheet.Cells[row, 3].Value = product.Description;
+                    //    productsWorksheet.Cells[row, 4].Value = product.Quantity;
+                    //    productsWorksheet.Cells[row, 5].Value = product.UnitOfMeasurement;
+                    //    productsWorksheet.Cells[row, 6].Value = product.UnitPrice;
+                    //    productsWorksheet.Cells[row, 7].Value = product.LastUpdated?.ToString("yyyy-MM-dd HH:mm:ss");
+                    //    row++;
+                    //}
+
+                    // Добавление второй таблицы - Транзакции
+                    ExcelWorksheet transactionsWorksheet = package.Workbook.Worksheets.Add("Transactions");
+
+                    // Заголовки для таблицы транзакций
+                    transactionsWorksheet.Cells[1, 1].Value = "TransactionId";
+                    transactionsWorksheet.Cells[1, 2].Value = "ProductId";
+                    transactionsWorksheet.Cells[1, 3].Value = "Quantity";
+                    transactionsWorksheet.Cells[1, 4].Value = "TransactionType";
+                    transactionsWorksheet.Cells[1, 5].Value = "Description";
+                    transactionsWorksheet.Cells[1, 6].Value = "TransactionDate";
+
+                    // Заполнение данными о транзакциях
+                    row = 2;
+                    foreach (var transaction in transactions)
+                    {
+                        transactionsWorksheet.Cells[row, 1].Value = transaction.TransactionId;
+                        transactionsWorksheet.Cells[row, 2].Value = transaction.ProductId;
+                        transactionsWorksheet.Cells[row, 3].Value = transaction.Quantity;
+                        transactionsWorksheet.Cells[row, 4].Value = transaction.TransactionType;
+                        transactionsWorksheet.Cells[row, 5].Value = transaction.Description;
+                        transactionsWorksheet.Cells[row, 6].Value = transaction.TransactionDate?.ToString("yyyy-MM-dd HH:mm:ss");
+                        row++;
+                    }
+
+                    // Сохранение Excel файла
+                    string filePath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "Products_Transactions.xlsx");
+                    package.SaveAs(new FileInfo(filePath));
+
+                    MessageBox.Show($"Файл сохранен на рабочем столе как {filePath}", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Произошла ошибка: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
     }
 }

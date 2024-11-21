@@ -15,6 +15,19 @@ public class NetworkService
         _client = new TcpClient("127.0.0.1", 12345); // Подключение к серверу
         _stream = _client.GetStream();
     }
+    public async Task<string> SendMessageAsync(string message, string jsonData)
+    {
+        // Формируем полное сообщение, например, комбинируя команду и данные
+        string fullMessage = $"{message}:{jsonData}";
+
+        byte[] data = Encoding.UTF8.GetBytes(fullMessage);
+        await _stream.WriteAsync(data, 0, data.Length);
+
+        byte[] buffer = new byte[4096];
+        int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length);
+
+        return Encoding.UTF8.GetString(buffer, 0, bytesRead);
+    }
 
     public async Task<string> SendMessageAsync(string message)
     {

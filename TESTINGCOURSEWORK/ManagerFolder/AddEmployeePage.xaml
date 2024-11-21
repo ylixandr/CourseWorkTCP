@@ -52,5 +52,6 @@
 
         <!-- Кнопка отправки -->
         <Button Content="Сохранить" Grid.Row="7" Grid.ColumnSpan="2" Margin="5" Width="100" Height="30" HorizontalAlignment="Center" Click="SaveButton_Click"/>
+        <Button Grid.Row="7" Background="Transparent" BorderBrush="Transparent" Content="Назад" Width="50" Height="50" Foreground="Blue" Click="BackButton_Click"/>
     </Grid>
 </Window>

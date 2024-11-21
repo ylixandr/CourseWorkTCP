@@ -145,6 +145,48 @@
             Content="Отклонить заявку" Margin="8,34,19,28" Click="Reject_Button_Click" Grid.Column="2"/>
             <Button BorderBrush="Transparent" Background="Transparent" FontSize="16" FontWeight="Bold" Content="Сформировать отчет" Margin="3,34,5,28" Click="ExportReportApp_Button_Click" Grid.Column="3"/>
         </Grid>
+        <Grid x:Name="ProductGrid" Visibility="Hidden" Grid.ColumnSpan="4" HorizontalAlignment="Left" Margin="255,0,0,4" Width="749">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition></ColumnDefinition>
+                <ColumnDefinition></ColumnDefinition>
+                <ColumnDefinition></ColumnDefinition>
+                <ColumnDefinition></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+
+             
+            <Image Grid.ColumnSpan="4" Margin="0,0,-9,0" Source="/blue.jpg" Stretch="Fill">
+                <Image.Effect>
+                    <BlurEffect Radius="10"/>
+                </Image.Effect>
+            </Image>
+
+            
+            <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="14" Content="Экспорт в Excel" Grid.Column="0" Margin="1,5,9,5" Click="ExportToExcelButtonProd_Click"/>
+            <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="14" Content="Добавить продукт" Grid.Column="1" Margin="6,5,12,5" Click="AddProductButton_Click"/>
+            <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="14" Content="Добавить из заявок" Grid.Column="2" Margin="5,5,12,5" Click="AddFromApplicationsButton_Click"/>
+            <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="14" Content="Приход/Расход" Grid.Column="3" Margin="5,5,12,5" Click="AdjustStockButton_Click"/>
+        </Grid>
+
+        <!-- DataGrid для отображения продукции -->
+        <DataGrid x:Name="ProductDataGrid" Grid.Row="1" Grid.ColumnSpan="3" Margin="1,0,14,10"
+          Grid.RowSpan="6" Height="350" VerticalAlignment="Bottom" 
+          AutoGenerateColumns="False" HeadersVisibility="Column" 
+          ColumnHeaderHeight="40" RowHeight="30"
+          CanUserAddRows="False" CanUserDeleteRows="False"
+          IsReadOnly="True"
+          ItemsSource="{Binding Products}" Visibility="Hidden" Grid.Column="1">
+
+            <!-- Настройка колонок для продукции -->
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding ProductId}" Visibility="Hidden" Width="*"/>
+                <DataGridTextColumn Header="Название продукта" Binding="{Binding ProductName}" Width="*"/>
+                <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="*"/>
+                <DataGridTextColumn Header="Количество" Binding="{Binding Quantity}" Width="*"/>
+                <DataGridTextColumn Header="Ед. измерения" Binding="{Binding UnitOfMeasurement}" Width="*"/>
+                <DataGridTextColumn Header="Цена за единицу" Binding="{Binding UnitPrice}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
 
 
         <Image Margin="5,0,7,0" Source="/blue.jpg" Stretch="Fill" Grid.RowSpan="7">
@@ -153,14 +195,11 @@
             </Image.Effect>
         </Image>
         <Image Margin="25,10,40,10" Source="/Images/MAINLOGO.png" Stretch="Fill"/>
-        <Button x:Name="supplierButtonClick"  Background="Transparent" BorderBrush="Transparent" VerticalAlignment="Center" HorizontalAlignment="Left" Click="supplier_Button_Click" Margin="31,0,0,0" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Поставщики" Grid.Row="1" Width="150" />
+        <Button x:Name="supplierButtonClick"  Background="Transparent" BorderBrush="Transparent" VerticalAlignment="Center" HorizontalAlignment="Center" Click="supplier_Button_Click" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Поставщики" Grid.Row="1" Width="150" />
+        <Button Click="Button_Click_Accounting" Background="Transparent" BorderBrush="Transparent" Grid.Row="2" Content="Учет продукции" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
 
 
-
-
-        <Label  Margin="0,11,0,10" FontSize="24" RenderTransformOrigin="0.162,0.648" HorizontalAlignment="Center" FontWeight="Bold" Content="Учет продукции&#xD;&#xA;" Grid.Row="2" Width="209"/>
-
-        <Grid x:Name="EditorGrid" Visibility="Hidden" Grid.ColumnSpan="4" HorizontalAlignment="Left" Margin="215,0,0,4" Width="789">
+        <Grid x:Name="EditorGrid" Visibility="Hidden" Grid.ColumnSpan="4" HorizontalAlignment="Left" Margin="255,0,0,4" Width="749">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition></ColumnDefinition>
                 <ColumnDefinition></ColumnDefinition>
@@ -180,10 +219,10 @@
 
 
         </Grid>
-        <Button Click="Balance_Button_Click"  FontWeight="Bold" FontSize="24" Background="Transparent"  BorderBrush="Transparent" Grid.Row="3" Content="Учет баланса" Margin="0,0,17,0"></Button>
+        <Button Click="Balance_Button_Click"  FontWeight="Bold" FontSize="24" Background="Transparent" HorizontalAlignment="Center"  BorderBrush="Transparent" Grid.Row="3" Content="Учет баланса"></Button>
         <!--<Label  Margin="20,6,0,15" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Учет баланса;" HorizontalAlignment="Left" Grid.Row="3" Width="158"/>-->
-        <Button  Background="Transparent" BorderBrush="Transparent" Click="Employee_Button_Click" Margin="40,5,0,5" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" HorizontalAlignment="Left" Content="Персонал" Grid.Row="4" Width="124"></Button>
-        <Label />
+        <Button  Background="Transparent" BorderBrush="Transparent" Click="Employee_Button_Click" HorizontalAlignment="Center" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Персонал" Grid.Row="4" Width="124"></Button>
+
         <Label  Margin="49,5,0,5" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" HorizontalAlignment="Left" Content="Налог" Grid.Row="5" Width="80"/>
 
 

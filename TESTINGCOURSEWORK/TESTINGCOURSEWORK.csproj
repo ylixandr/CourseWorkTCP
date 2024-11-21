@@ -29,6 +29,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\TCPServerLab2\TCPServerLab2.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="blue.jpg" />
     <Resource Include="Images\fone.jpg" />
     <Resource Include="Images\fone2.jpg" />

@@ -56,6 +56,13 @@ namespace TESTINGCOURSEWORK.ManagerFolder
                 MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        private void BackButton_Click(object sender, RoutedEventArgs e)
+        {
+            ManagerPage managerPage = new ManagerPage();
+            managerPage.Show();
+            this.Hide();
+        }
     }
 }
 
