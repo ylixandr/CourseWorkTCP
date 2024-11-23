@@ -1,4 +1,7 @@
-﻿using Newtonsoft.Json;
+﻿using LiveCharts;
+using LiveCharts.Defaults;
+using LiveCharts.Wpf;
+using Newtonsoft.Json;
 using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
@@ -27,12 +30,19 @@ namespace TESTINGCOURSEWORK
     /// </summary>
     public partial class ManagerPage : Window
     {
+        public ObservableCollection<PieSeries> TransactionData { get; set; } = new ObservableCollection<PieSeries>();
+
+        // Сумма входящих и исходящих транзакций для PieChart
+        public ObservableCollection<double> IncomingValues { get; set; } = new ObservableCollection<double>();
+        public ObservableCollection<double> OutgoingValues { get; set; } = new ObservableCollection<double>();
+
+        public ObservableCollection<ChartPoint> BalanceData { get; set; } = new ObservableCollection<ChartPoint>();
         private ObservableCollection<Models.Transaction> transactions;
         public ObservableCollection<Models.Transaction> Transactions { get { return transactions; } set { transactions = value; } }
         public ObservableCollection<TCPServerLab2.Product> Products { get; set; } = new ObservableCollection<TCPServerLab2.Product>();
 
-        private ObservableCollection<Employee> employees;
-        public ObservableCollection<Employee> Employees
+        private ObservableCollection<TCPServerLab2.Employee> employees;
+        public ObservableCollection<TCPServerLab2.Employee> Employees
 
         {
             get { return employees; }
@@ -64,9 +74,9 @@ namespace TESTINGCOURSEWORK
                 }
                 else
                 {
-                    List<Employee>? users = new List<Employee>();
-                    users = JsonConvert.DeserializeObject<List<Employee>>(response);
-                    Employees = new ObservableCollection<Employee>(users);
+                    List<TCPServerLab2.Employee>? users = new List<TCPServerLab2.Employee>();
+                    users = JsonConvert.DeserializeObject<List<TCPServerLab2.Employee>>(response);
+                    Employees = new ObservableCollection<TCPServerLab2.Employee>(users);
                     EmployeeDataGrid.ItemsSource = Employees;
 
                 }
@@ -158,7 +168,7 @@ namespace TESTINGCOURSEWORK
                 MessageBox.Show($"Файл сохранен на рабочем столе как {filePath}");
             }
 
-            
+
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -166,7 +176,7 @@ namespace TESTINGCOURSEWORK
 
         }
 
-        private async  void Balance_Button_Click(object sender, RoutedEventArgs e)
+        private async void Balance_Button_Click(object sender, RoutedEventArgs e)
         {
             HideAllGrid();
             EditorGrid.Visibility = Visibility.Visible;
@@ -252,7 +262,7 @@ namespace TESTINGCOURSEWORK
 
         }
 
-        private async  void DeleteTransactionButton_Click(object sender, RoutedEventArgs e)
+        private async void DeleteTransactionButton_Click(object sender, RoutedEventArgs e)
         {
             if (TransactionDataGrid.SelectedItem is Models.Transaction selectedTransaction)
             {
@@ -351,7 +361,7 @@ namespace TESTINGCOURSEWORK
             AddTransactionPage addTransactionPage = new AddTransactionPage();
             addTransactionPage.Show();
             this.Hide();
-            
+
         }
 
         private void HideAllGrid()
@@ -361,7 +371,12 @@ namespace TESTINGCOURSEWORK
             topEditingPanel.Visibility = Visibility.Hidden;
             EmployeeDataGrid.Visibility = Visibility.Hidden;
             TransactionDataGrid.Visibility = Visibility.Hidden;
-            //topEditingPanelForTransactions.Visibility = Visibility.Hidden;
+            ManagerApplicationDataGrid.Visibility = Visibility.Hidden;
+            topManagerPanel.Visibility = Visibility.Hidden;
+            ProductGrid.Visibility = Visibility.Hidden;
+            ProductDataGrid.Visibility = Visibility.Hidden;
+            Financial_EditorGrid.Visibility = Visibility.Hidden;
+
         }
 
         private void supplier_Button_Click(object sender, RoutedEventArgs e)
@@ -370,10 +385,10 @@ namespace TESTINGCOURSEWORK
             topManagerPanel.Visibility = Visibility.Visible;
             try
             {
-                
+
 
                 // Делаем видимыми верхнюю панель и DataGrid
-                
+
                 ManagerApplicationDataGrid.Visibility = Visibility.Visible;
 
                 // Загружаем данные о необработанных заявках
@@ -543,7 +558,7 @@ namespace TESTINGCOURSEWORK
 
         private async void AddFromApplicationsButton_Click(object sender, RoutedEventArgs e)
         {
-           SelectApplicationsPage selectApplicationsPage    = new SelectApplicationsPage();
+            SelectApplicationsPage selectApplicationsPage = new SelectApplicationsPage();
             selectApplicationsPage.ShowDialog();
             this.Hide();
         }
@@ -583,6 +598,7 @@ namespace TESTINGCOURSEWORK
 
         private void Button_Click_Accounting(object sender, RoutedEventArgs e)
         {
+            HideAllGrid();
             // Показать верхнюю панель
             ProductGrid.Visibility = Visibility.Visible;
 
@@ -655,31 +671,31 @@ namespace TESTINGCOURSEWORK
 
                 using (var package = new ExcelPackage())
                 {
-                    //// Добавление первой таблицы - Продукты
-                    //ExcelWorksheet productsWorksheet = package.Workbook.Worksheets.Add("Products");
+                    // Добавление первой таблицы - Продукты
+                    ExcelWorksheet productsWorksheet = package.Workbook.Worksheets.Add("Products");
 
-                    //// Заголовки для таблицы продуктов
-                    //productsWorksheet.Cells[1, 1].Value = "ProductId";
-                    //productsWorksheet.Cells[1, 2].Value = "ProductName";
-                    //productsWorksheet.Cells[1, 3].Value = "Description";
-                    //productsWorksheet.Cells[1, 4].Value = "Quantity";
-                    //productsWorksheet.Cells[1, 5].Value = "UnitOfMeasurement";
-                    //productsWorksheet.Cells[1, 6].Value = "UnitPrice";
-                    //productsWorksheet.Cells[1, 7].Value = "LastUpdated";
+                    // Заголовки для таблицы продуктов
+                    productsWorksheet.Cells[1, 1].Value = "ProductId";
+                    productsWorksheet.Cells[1, 2].Value = "ProductName";
+                    productsWorksheet.Cells[1, 3].Value = "Description";
+                    productsWorksheet.Cells[1, 4].Value = "Quantity";
+                    productsWorksheet.Cells[1, 5].Value = "UnitOfMeasurement";
+                    productsWorksheet.Cells[1, 6].Value = "UnitPrice";
+                    productsWorksheet.Cells[1, 7].Value = "LastUpdated";
 
-                    // Заполнение данными о продуктах
+                    //Заполнение данными о продуктах
                     int row = 2;
-                    //foreach (var product in products)
-                    //{
-                    //    productsWorksheet.Cells[row, 1].Value = product.ProductId;
-                    //    productsWorksheet.Cells[row, 2].Value = product.ProductName;
-                    //    productsWorksheet.Cells[row, 3].Value = product.Description;
-                    //    productsWorksheet.Cells[row, 4].Value = product.Quantity;
-                    //    productsWorksheet.Cells[row, 5].Value = product.UnitOfMeasurement;
-                    //    productsWorksheet.Cells[row, 6].Value = product.UnitPrice;
-                    //    productsWorksheet.Cells[row, 7].Value = product.LastUpdated?.ToString("yyyy-MM-dd HH:mm:ss");
-                    //    row++;
-                    //}
+                    foreach (var product in products)
+                    {
+                        productsWorksheet.Cells[row, 1].Value = product.ProductId;
+                        productsWorksheet.Cells[row, 2].Value = product.ProductName;
+                        productsWorksheet.Cells[row, 3].Value = product.Description;
+                        productsWorksheet.Cells[row, 4].Value = product.Quantity;
+                        productsWorksheet.Cells[row, 5].Value = product.UnitOfMeasurement;
+                        productsWorksheet.Cells[row, 6].Value = product.UnitPrice;
+                        productsWorksheet.Cells[row, 7].Value = product.LastUpdated?.ToString("yyyy-MM-dd HH:mm:ss");
+                        row++;
+                    }
 
                     // Добавление второй таблицы - Транзакции
                     ExcelWorksheet transactionsWorksheet = package.Workbook.Worksheets.Add("Transactions");
@@ -717,5 +733,19 @@ namespace TESTINGCOURSEWORK
                 MessageBox.Show($"Произошла ошибка: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        private void Finance_Button_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void Salary_Button_Click(object sender, RoutedEventArgs e)
+        {
+            SalaryPage salaryPage = new SalaryPage();
+            salaryPage.ShowDialog();
+        }
+
+
     }
+  
 }

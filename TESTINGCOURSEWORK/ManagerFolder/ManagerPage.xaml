@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TESTINGCOURSEWORK"
+        xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         mc:Ignorable="d"
         Title="ManagerPage" Height="472" Width="1005">
     <Grid RenderTransformOrigin="0.587,0.482" Margin="0,0,-13,0">
@@ -23,21 +24,24 @@
             <RowDefinition Height="60"/>
 
         </Grid.RowDefinitions>
+
         <Grid x:Name ="topEditingPanel"  Grid.ColumnSpan="4" Visibility="Hidden">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="221*"/>
-                <ColumnDefinition Width="195*"/>
-                <ColumnDefinition Width="261*"/>
-                <ColumnDefinition Width="186*"/>
+                <ColumnDefinition Width="254*"/>
+                <ColumnDefinition Width="212*"/>
+                <ColumnDefinition Width="145*"/>
+                <ColumnDefinition Width="204*"/>
+                <ColumnDefinition Width="204*"/>
             </Grid.ColumnDefinitions>
-            <Image Margin="194,0,0,10" Source="/blue.jpg" Stretch="Fill" Grid.ColumnSpan="4" >
+            <Image Margin="194,0,0,10" Source="/blue.jpg" Stretch="Fill" Grid.ColumnSpan="5" >
                 <Image.Effect>
                     <BlurEffect Radius="10"/>
                 </Image.Effect>
             </Image>
             <Button BorderBrush="Transparent" Background="Transparent" FontSize="24"  FontWeight="Bold" Content="Экспорт в Excel" Margin="8,34,7,28" Click="Exxport_Button_Click" Grid.Column="1" />
             <Button BorderBrush="Transparent" Background="Transparent" FontSize="24"  FontWeight="Bold" Content="Уволить" Margin="12,34,23,28" Click="Delete_Button_Click" Grid.Column="2"/>
-            <Button  BorderBrush="Transparent" Background="Transparent" FontSize="24"  FontWeight="Bold" Content="Добавить" Margin="10,34,0,28" Click="Add_Button_Click" Grid.Column="3"/>
+            <Button  BorderBrush="Transparent" Background="Transparent" FontSize="24"  FontWeight="Bold" Content="Добавить" Margin="10,34,27,28" Click="Add_Button_Click" Grid.Column="3"/>
+            <Button  BorderBrush="Transparent" Background="Transparent" FontSize="24"  FontWeight="Bold" Content="Начислить" Margin="10,34,27,28" Click="Salary_Button_Click" Grid.Column="5"/>
 
 
 
@@ -153,14 +157,14 @@
                 <ColumnDefinition></ColumnDefinition>
             </Grid.ColumnDefinitions>
 
-             
+
             <Image Grid.ColumnSpan="4" Margin="0,0,-9,0" Source="/blue.jpg" Stretch="Fill">
                 <Image.Effect>
                     <BlurEffect Radius="10"/>
                 </Image.Effect>
             </Image>
 
-            
+
             <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="14" Content="Экспорт в Excel" Grid.Column="0" Margin="1,5,9,5" Click="ExportToExcelButtonProd_Click"/>
             <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="14" Content="Добавить продукт" Grid.Column="1" Margin="6,5,12,5" Click="AddProductButton_Click"/>
             <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="14" Content="Добавить из заявок" Grid.Column="2" Margin="5,5,12,5" Click="AddFromApplicationsButton_Click"/>
@@ -222,8 +226,28 @@
         <Button Click="Balance_Button_Click"  FontWeight="Bold" FontSize="24" Background="Transparent" HorizontalAlignment="Center"  BorderBrush="Transparent" Grid.Row="3" Content="Учет баланса"></Button>
         <!--<Label  Margin="20,6,0,15" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Учет баланса;" HorizontalAlignment="Left" Grid.Row="3" Width="158"/>-->
         <Button  Background="Transparent" BorderBrush="Transparent" Click="Employee_Button_Click" HorizontalAlignment="Center" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Персонал" Grid.Row="4" Width="124"></Button>
+        <Button Click="Finance_Button_Click" Content="Финансы" BorderBrush="Transparent" Background="Transparent" FontSize="24" FontWeight="Bold" Grid.Row="5"/>
+        <Grid x:Name="Financial_EditorGrid" Visibility="Hidden" Grid.ColumnSpan="4" HorizontalAlignment="Left" Margin="255,0,0,4" Width="749">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition></ColumnDefinition>
+                <ColumnDefinition></ColumnDefinition>
+                <ColumnDefinition></ColumnDefinition>
+                <ColumnDefinition></ColumnDefinition>
+            </Grid.ColumnDefinitions>
 
-        <Label  Margin="49,5,0,5" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" HorizontalAlignment="Left" Content="Налог" Grid.Row="5" Width="80"/>
+            <Image Grid.ColumnSpan="4" Margin="0,0,-9,0" Source="/blue.jpg" Stretch="Fill">
+                <Image.Effect>
+                    <BlurEffect Radius="10"/>
+                </Image.Effect>
+            </Image>
+            <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="14" Content="Зарплата" Grid.Column="0" Margin="1,5,9,5" Click="ExportToExcelButton_Click"/>
+            <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="14" Content="Удалить транзакцию" Grid.Column="1" Margin="6,5,12,5" Click="DeleteTransactionButton_Click"/>
+            <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="14" Content="Отчетность" Width="100" Margin="5" Grid.Column="2" Click="GenerateReportButton_Click"/>
+            <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="12"  Content="Добавить транзакцию" Width="150" Margin="5" Grid.Column="3" Click="AddTransactionButton_Click"/>
+
+
+        </Grid>
+
 
 
 

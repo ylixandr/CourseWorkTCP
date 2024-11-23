@@ -1,0 +1,29 @@
+﻿<Window x:Class="TESTINGCOURSEWORK.ManagerFolder.SalaryPage"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TESTINGCOURSEWORK.ManagerFolder"
+        mc:Ignorable="d"
+        Title="SalaryPage" Height="213" Width="420">
+    <Grid Margin="10">
+        <!-- Инструкция -->
+        <TextBlock Text="Выберите дату начисления зарплаты сотрудникам" 
+                   FontSize="14" FontWeight="Bold" 
+                   HorizontalAlignment="Center" Margin="0,0,0,20" 
+                   VerticalAlignment="Top" />
+
+        <!-- Выбор даты -->
+        <DatePicker Name="SalaryDatePicker" 
+                    HorizontalAlignment="Center" 
+                    VerticalAlignment="Center" />
+
+        <!-- Кнопка "Начислить" -->
+        <Button Content="Начислить" 
+                HorizontalAlignment="Center" 
+                VerticalAlignment="Bottom" 
+                Margin="0,0,0,20" 
+                Width="120" Height="35" 
+                Click="OnCalculateSalaryClick" />
+    </Grid>
+</Window>

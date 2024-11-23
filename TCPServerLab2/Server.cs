@@ -7,6 +7,7 @@ using System.Security.Cryptography.Pkcs;
 using System.Text;
 using System.Threading.Tasks;
 using TCPServerLab2;
+using TESTINGCOURSEWORK.Models;
 
 public class Server
 {
@@ -189,6 +190,22 @@ public class Server
                         // Добавление транзакции в базу данных
                         using (var context = new TestjsonContext())
                         {
+                            var balance = context.Balances.FirstOrDefault();
+
+                            if(transactionType == "Пополнение")
+                            {
+                                balance.Amount += amount;
+                            }
+                            else if(balance.Amount > amount)
+                            {
+                                balance.Amount -= amount;
+                            }
+                            else
+                            {
+                               
+                                throw new Exception("Недостаточно средств на балансе для выплаты зарплаты.");
+                                
+                            }
                             var transaction = new Transaction
                             {
                                 TransactionDate = DateTime.Now,
@@ -627,10 +644,71 @@ public class Server
                         await stream.WriteAsync(errorResponse, 0, errorResponse.Length);
                     }
                 }
+                else if (receivedData.StartsWith("calculate_salary"))
+                {
+                    Console.WriteLine("Запрос на начисление зарплаты.");
 
+                    try
+                    {
+                        string jsonData = receivedData.Substring("calculate_salary:".Length);
+                        var salaryRequest = JsonConvert.DeserializeObject<SalaryRecord>(jsonData);
 
+                        using (var dbContext = new TestjsonContext())
+                        {
+                            var employees = dbContext.Employees.Where(e => e.Salary.HasValue).ToList();
+                            var balance = dbContext.Balances.FirstOrDefault();
 
+                            if (balance == null)
+                            {
+                                throw new Exception("Баланс компании не найден.");
+                            }
 
+                            decimal totalSalary = 0;
+                            List<SalaryRecord> salaryRecords = new();
+
+                            foreach (var employee in employees)
+                            {
+                                decimal dailySalary = employee.Salary.Value;
+                                decimal daysInMonth = DateTime.DaysInMonth(salaryRequest.Date.Year, salaryRequest.Date.Month);
+                                decimal employeeSalary = dailySalary * daysInMonth;
+
+                                salaryRecords.Add(new SalaryRecord
+                                {
+                                    LastName = employee.LastName ?? "Неизвестно",
+                                    Salary = employeeSalary
+                                });
+
+                                totalSalary += employeeSalary;
+                            }
+
+                            // Вычет подоходного налога (13%)
+                            decimal taxAmount = totalSalary * 0.13M;
+                            decimal netSalary = totalSalary - taxAmount;
+
+                            if (balance.Amount < netSalary)
+                            {
+                                throw new Exception("Недостаточно средств на балансе для выплаты зарплаты.");
+                            }
+
+                            // Обновление баланса
+                            balance.Amount -= netSalary;
+                            dbContext.SaveChanges();
+
+                            // Отправка JSON с данными
+                            string jsonResponse = JsonConvert.SerializeObject(salaryRecords);
+                            byte[] responseData = Encoding.UTF8.GetBytes(jsonResponse);
+                            await stream.WriteAsync(responseData, 0, responseData.Length);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Ошибка при начислении зарплаты: {ex.Message}");
+                        byte[] responseData = Encoding.UTF8.GetBytes($"Error: {ex.Message}");
+                        await stream.WriteAsync(responseData, 0, responseData.Length);
+                    }
+                }
+                
+               
 
             }
         }
@@ -641,6 +719,7 @@ public class Server
             client.Close();
         }
     }
+   
     private async Task<bool> AddProductAsync(string productName, string unitOfMeasurement, int quantity,  decimal unitPrice)
     {
         try
