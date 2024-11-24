@@ -93,10 +93,54 @@ namespace TESTINGCOURSEWORK
             addEmployeePage.Show();
             this.Hide();
         }
+        private async void DeleteProductMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (ProductDataGrid.SelectedItem is TCPServerLab2.Product selectedProduct)
+            {
+                // Подтверждение удаления
+                var result = MessageBox.Show($"Вы уверены, что хотите удалить продукт: {selectedProduct.ProductName}?",
+                                              "Удаление продукта",
+                                              MessageBoxButton.YesNo,
+                                              MessageBoxImage.Warning);
+                if (result == MessageBoxResult.Yes)
+                {
+                    try
+                    {
+                        // Формируем запрос на сервер
+                        string request = $"deleteProduct:{selectedProduct.ProductId}";
+                        string response = await NetworkService.Instance.SendMessageAsync(request);
+
+                        // Проверяем ответ сервера
+                        if (response == "Product deleted")
+                        {
+                            MessageBox.Show("Продукт успешно удалён.");
+
+                            (ProductDataGrid.ItemsSource as ObservableCollection<TCPServerLab2.Product>)?.Remove(selectedProduct);
+                            ProductDataGrid.Items.Refresh();
+                            
+                        }
+                        else
+                        {
+                            MessageBox.Show("Не удалось удалить продукт. Сервер вернул ошибку.");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Ошибка при удалении продукта: {ex.Message}");
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("Пожалуйста, выберите продукт перед удалением.");
+            }
+        }
+
+
 
         private async void Delete_Button_Click(object sender, RoutedEventArgs e)
         {
-            if (EmployeeDataGrid.SelectedItem is Employee selectedEmployee)
+            if (EmployeeDataGrid.SelectedItem is TCPServerLab2.Employee selectedEmployee)
             {
                 // Формирование сообщения для сервера
                 string loginData = $"deleteEmployee:{selectedEmployee.EmployeeId}";
@@ -109,7 +153,7 @@ namespace TESTINGCOURSEWORK
                 {
                     MessageBox.Show("Работник успешно уволен.");
                     // Обновление отображения
-                    (EmployeeDataGrid.ItemsSource as ObservableCollection<Employee>)?.Remove(selectedEmployee);
+                    (EmployeeDataGrid.ItemsSource as ObservableCollection<TCPServerLab2.Employee>)?.Remove(selectedEmployee);
                 }
                 else
                 {
@@ -376,6 +420,7 @@ namespace TESTINGCOURSEWORK
             ProductGrid.Visibility = Visibility.Hidden;
             ProductDataGrid.Visibility = Visibility.Hidden;
             Financial_EditorGrid.Visibility = Visibility.Hidden;
+            graphicsGrid.Visibility = Visibility.Hidden;
 
         }
 
@@ -736,6 +781,9 @@ namespace TESTINGCOURSEWORK
 
         private void Finance_Button_Click(object sender, RoutedEventArgs e)
         {
+            HideAllGrid();
+            graphicsGrid.Visibility = Visibility.Visible;
+
 
         }
 
@@ -745,7 +793,128 @@ namespace TESTINGCOURSEWORK
             salaryPage.ShowDialog();
         }
 
+        private async  void TransactionChartButton_Click(object sender, RoutedEventArgs e)
+        {
+            SalaryBarChart.Visibility = Visibility.Hidden;
+            StatusPieChart.Visibility = Visibility.Hidden;
+            try
+            {
+                // Отправляем запрос на сервер
+                string response = await NetworkService.Instance.SendMessageAsync("getTransactionSummary");
 
+                if (response == "NoData")
+                {
+                    MessageBox.Show("Нет данных для отображения.");
+                    return;
+                }
+                TransactionPieChart.Visibility = Visibility.Visible;
+                // Десериализация данных
+                var transactionData = JsonConvert.DeserializeObject<List<TCPServerLab2.TransactionSummary>>(response);
+
+                // Очищаем старые серии
+                TransactionPieChart.Series.Clear();
+
+                // Создаём серии для каждого типа транзакций
+                foreach (var data in transactionData)
+                {
+                    TransactionPieChart.Series.Add(new PieSeries
+                    {
+                        Title = data.TransactionType,
+                        Values = new ChartValues<decimal> { data.TotalAmount },
+                        DataLabels = true,
+                        LabelPoint = chartPoint => $"{chartPoint.Y} ({chartPoint.Participation:P})"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка: {ex.Message}");
+            }
+        }
+
+        private async void StatusChartButton_Click(object sender, RoutedEventArgs e)
+        {
+            TransactionPieChart.Visibility = Visibility.Hidden;
+            SalaryBarChart.Visibility = Visibility.Hidden;
+
+            try
+            {
+                // Отправляем запрос на сервер
+                string response = await NetworkService.Instance.SendMessageAsync("getApplicationStatusSummary");
+
+                if (response == "NoData")
+                {
+                    MessageBox.Show("Нет данных для отображения.");
+                    return;
+                }
+
+                StatusPieChart.Visibility = Visibility.Visible;
+                // Десериализация данных
+                var statusData = JsonConvert.DeserializeObject<List<TCPServerLab2.StatusSummary>>(response);
+
+                // Очищаем старые серии
+                StatusPieChart.Series.Clear();
+
+                // Создаем серию для каждого статуса
+                foreach (var data in statusData)
+                {
+                    StatusPieChart.Series.Add(new PieSeries
+                    {
+                        Title = data.StatusName,
+                        Values = new ChartValues<int> { data.Count },
+                        DataLabels = true,
+                        LabelPoint = chartPoint => $"{chartPoint.Y} ({chartPoint.Participation:P})"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка: {ex.Message}");
+            }
+        }
+
+        private async  void SalaryChartButton_Click(object sender, RoutedEventArgs e)
+        {
+            TransactionPieChart.Visibility = Visibility.Hidden;
+            
+            StatusPieChart.Visibility = Visibility.Hidden;
+            try
+            {
+                // Отправляем запрос на сервер
+                string response = await NetworkService.Instance.SendMessageAsync("getEmployeeSalaries");
+
+                if (response == "NoData")
+                {
+                    MessageBox.Show("Нет данных для отображения.");
+                    return;
+                }
+                SalaryBarChart.Visibility = Visibility.Visible;
+                // Десериализация данных
+                var salaryData = JsonConvert.DeserializeObject<List<TCPServerLab2.EmployeeSalary>>(response);
+
+                // Заполняем данные для графика
+                var employeeNames = salaryData.Select(e => $"{e.FirstName} {e.LastName}").ToArray();
+                var salaries = salaryData.Select(e => (double)e.Salary).ToArray();
+
+                SalaryBarChart.Series = new SeriesCollection
+        {
+            new ColumnSeries
+            {
+                Title = "Зарплаты",
+                Values = new ChartValues<double>(salaries)
+            }
+        };
+
+                SalaryBarChart.AxisX[0].Labels = employeeNames;
+
+                // Настраиваем формат отображения зарплат
+                SalaryBarChart.AxisY[0].LabelFormatter = value => $"{value:C}";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка: {ex.Message}");
+            }
+        }
     }
   
 }

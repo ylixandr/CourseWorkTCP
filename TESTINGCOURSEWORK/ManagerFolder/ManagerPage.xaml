@@ -24,6 +24,32 @@
             <RowDefinition Height="60"/>
 
         </Grid.RowDefinitions>
+        <Grid x:Name="graphicsGrid" Visibility="Hidden" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,0,15,11" Grid.RowSpan="7">
+            <!-- Кнопки управления -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10">
+                <Button Content="График транзакций" Click="TransactionChartButton_Click" Margin="5" Width="200" Height="50" />
+                <Button Content="График зарплат" Click="SalaryChartButton_Click" Margin="5" Width="200" Height="50" />
+                <Button Content="График по статусам" Click="StatusChartButton_Click" Margin="5" Width="200" Height="50" />
+            </StackPanel>
+
+            <!-- График транзакций -->
+            <lvc:PieChart x:Name="TransactionPieChart" LegendLocation="Right" Margin="10,70,10,10" Hoverable="False" Visibility="Hidden">
+            </lvc:PieChart>
+
+            <!-- График зарплат -->
+            <lvc:CartesianChart x:Name="SalaryBarChart" Margin="20,69,20,20" Visibility="Hidden">
+                <lvc:CartesianChart.AxisX>
+                    <lvc:Axis Title="Сотрудники" Labels="{Binding EmployeeNames}" />
+                </lvc:CartesianChart.AxisX>
+                <lvc:CartesianChart.AxisY>
+                    <lvc:Axis Title="Зарплата" LabelFormatter="{Binding SalaryFormatter}" />
+                </lvc:CartesianChart.AxisY>
+            </lvc:CartesianChart>
+
+            <!-- График по статусам -->
+            <lvc:PieChart x:Name="StatusPieChart" LegendLocation="Bottom" Margin="20,70,20,20" DataTooltip="{x:Null}" Hoverable="False" Visibility="Hidden">
+            </lvc:PieChart>
+        </Grid>
 
         <Grid x:Name ="topEditingPanel"  Grid.ColumnSpan="4" Visibility="Hidden">
             <Grid.ColumnDefinitions>
@@ -89,10 +115,12 @@
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Binding="{Binding EmployeeId}" Visibility="Hidden" Width="*"/>
                 <DataGridTextColumn Header="Фамилия" Binding="{Binding LastName}" Width="*"/>
+                <DataGridTextColumn Header="Фамилия" Binding="{Binding MiddleName}" Visibility="Hidden" Width="*"/>
                 <DataGridTextColumn Header="Имя" Binding="{Binding FirstName}" Width="*"/>
                 <DataGridTextColumn Header="Позиция" Binding="{Binding Position}" Width="*"/>
                 <DataGridTextColumn Header="Зарплата" Binding="{Binding Salary}" Width="*"/>
                 <DataGridTextColumn Header="Дата найма" Binding="{Binding HireDate}" Width="*"/>
+                <DataGridTextColumn Header="Дата найма" Binding="{Binding BirthDate}" Width="*" Visibility="Hidden"/>
             </DataGrid.Columns>
         </DataGrid>
         <DataGrid x:Name="ManagerApplicationDataGrid" Grid.Row="1" Grid.ColumnSpan="3" Margin="1,0,9,10"
@@ -189,6 +217,12 @@
                 <DataGridTextColumn Header="Ед. измерения" Binding="{Binding UnitOfMeasurement}" Width="*"/>
                 <DataGridTextColumn Header="Цена за единицу" Binding="{Binding UnitPrice}" Width="*"/>
             </DataGrid.Columns>
+            <!-- Контекстное меню -->
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Удалить продукт" Click="DeleteProductMenuItem_Click" />
+                </ContextMenu>
+            </DataGrid.ContextMenu>
         </DataGrid>
 
 
@@ -226,7 +260,7 @@
         <Button Click="Balance_Button_Click"  FontWeight="Bold" FontSize="24" Background="Transparent" HorizontalAlignment="Center"  BorderBrush="Transparent" Grid.Row="3" Content="Учет баланса"></Button>
         <!--<Label  Margin="20,6,0,15" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Учет баланса;" HorizontalAlignment="Left" Grid.Row="3" Width="158"/>-->
         <Button  Background="Transparent" BorderBrush="Transparent" Click="Employee_Button_Click" HorizontalAlignment="Center" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Персонал" Grid.Row="4" Width="124"></Button>
-        <Button Click="Finance_Button_Click" Content="Финансы" BorderBrush="Transparent" Background="Transparent" FontSize="24" FontWeight="Bold" Grid.Row="5"/>
+        <Button Click="Finance_Button_Click" Content="Информация" BorderBrush="Transparent" Background="Transparent" FontSize="24" FontWeight="Bold" Grid.Row="5"/>
         <Grid x:Name="Financial_EditorGrid" Visibility="Hidden" Grid.ColumnSpan="4" HorizontalAlignment="Left" Margin="255,0,0,4" Width="749">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition></ColumnDefinition>

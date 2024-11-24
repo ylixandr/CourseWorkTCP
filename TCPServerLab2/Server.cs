@@ -188,7 +188,7 @@ public class Server
                         Console.WriteLine($"Данные транзакции: Тип - {transactionType}, Сумма - {amount}, Описание - {description}");
 
                         // Добавление транзакции в базу данных
-                        using (var context = new TestjsonContext())
+                        using (var context = new CrmsystenContext())
                         {
                             var balance = context.Balances.FirstOrDefault();
 
@@ -237,7 +237,7 @@ public class Server
 
                     try
                     {
-                        using (var context = new TestjsonContext())
+                        using (var context = new CrmsystenContext())
                         {
                             var transactions = context.Transactions
                                 .OrderByDescending(t => t.TransactionDate)
@@ -260,7 +260,7 @@ public class Server
                     Console.WriteLine("Запрос на генерацию отчета получен.");
 
                     // Получаем данные из базы
-                    using (var db = new TestjsonContext())
+                    using (var db = new CrmsystenContext())
                     {
                         var transactions = db.Transactions.ToList();
                         var balance = db.Balances.FirstOrDefault()?.Amount ?? 0;
@@ -485,7 +485,7 @@ public class Server
                 {
                     try
                     {
-                        using (var dbContext = new TestjsonContext())
+                        using (var dbContext = new CrmsystenContext())
                         {
                             var applications = dbContext.Applications.Include(a => a.Status).ToList();
                             var jsonResponse = JsonConvert.SerializeObject(applications);
@@ -556,7 +556,7 @@ public class Server
                         string jsonRequest = receivedData.Substring("adjustStock:".Length);
                         var stockRequest = JsonConvert.DeserializeObject<StockAdjustmentRequest>(jsonRequest);
 
-                        using (var dbContext = new TestjsonContext())
+                        using (var dbContext = new CrmsystenContext())
                         {
                             var product = dbContext.Products.FirstOrDefault(p => p.ProductId == stockRequest.ProductId);
                             if (product != null)
@@ -604,7 +604,7 @@ public class Server
 
                     try
                     {
-                        using (var context = new TestjsonContext())
+                        using (var context = new CrmsystenContext())
                         {
                             var products = context.Products.ToList();
                             string json = JsonConvert.SerializeObject(products);
@@ -626,7 +626,7 @@ public class Server
 
                     try
                     {
-                        using (var context = new TestjsonContext())
+                        using (var context = new CrmsystenContext())
                         {
                             var transactions = context.ProductTransactions
                                 .OrderByDescending(t => t.TransactionDate)
@@ -653,7 +653,7 @@ public class Server
                         string jsonData = receivedData.Substring("calculate_salary:".Length);
                         var salaryRequest = JsonConvert.DeserializeObject<SalaryRecord>(jsonData);
 
-                        using (var dbContext = new TestjsonContext())
+                        using (var dbContext = new CrmsystenContext())
                         {
                             var employees = dbContext.Employees.Where(e => e.Salary.HasValue).ToList();
                             var balance = dbContext.Balances.FirstOrDefault();
@@ -707,8 +707,40 @@ public class Server
                         await stream.WriteAsync(responseData, 0, responseData.Length);
                     }
                 }
-                
-               
+                else if (receivedData == "getTransactionSummary")
+                {
+                    Console.WriteLine("Запрос на получение суммарных транзакций по типам");
+                    string jsonData = await GetTransactionSummaryAsync();
+                    byte[] responseData = Encoding.UTF8.GetBytes(jsonData);
+                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                }
+                else if (receivedData == "getApplicationStatusSummary")
+                {
+                    Console.WriteLine("Запрос на получение данных о статусах заявок");
+                    string jsonData = await GetApplicationStatusSummaryAsync();
+                    byte[] responseData = Encoding.UTF8.GetBytes(jsonData);
+                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                }
+                else if (receivedData == "getEmployeeSalaries")
+                {
+                    Console.WriteLine("Запрос на получение данных о зарплатах сотрудников");
+                    string jsonData = await GetEmployeeSalaryDataAsync();
+                    byte[] responseData = Encoding.UTF8.GetBytes(jsonData);
+                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                }
+                else if (credentials[0] == "deleteProduct" && int.TryParse(credentials[1], out int productId))
+                {
+                    Console.WriteLine($"Запрос на удаление продукта ID: {productId}");
+                    string response = await DeleteProductByIdAsync(productId) ? "Product deleted" : "Failed to delete product";
+                    byte[] responseData = Encoding.UTF8.GetBytes(response);
+                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                }
+
+
+
+
+
+
 
             }
         }
@@ -719,12 +751,98 @@ public class Server
             client.Close();
         }
     }
-   
+    private async Task<bool> DeleteProductByIdAsync(int productId)
+    {
+        try
+        {
+            using (var dbContext = new CrmsystenContext())
+            {
+                var product = await dbContext.Products.FindAsync(productId); // Предполагается, что таблица называется `Products`.
+                if (product != null)
+                {
+                    dbContext.Products.Remove(product);
+                    await dbContext.SaveChangesAsync();
+                    return true;
+                }
+            }
+            return false; // Продукт не найден.
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при удалении продукта: {ex.Message}");
+            return false; // Ошибка при удалении.
+        }
+    }
+
+    private async Task<string> GetEmployeeSalaryDataAsync()
+    {
+        using (var dbContext = new CrmsystemContext())
+        {
+            // Получаем данные о сотрудниках и зарплатах
+            var employeeSalaries = await dbContext.Employees
+                .Where(e => e.Salary.HasValue)
+                .Select(e => new
+                {
+                    e.FirstName,
+                    e.LastName,
+                    e.Position,
+                    e.Salary
+                })
+                .ToListAsync();
+
+            // Преобразуем в JSON
+            return employeeSalaries.Any()
+                ? JsonConvert.SerializeObject(employeeSalaries)
+                : "NoData";
+        }
+    }
+
+    private async Task<string> GetApplicationStatusSummaryAsync()
+    {
+        using (var dbContext = new CrmsystemContext())
+        {
+            // Группируем по статусам и считаем количество заявок
+            var statusSummary = await dbContext.Applications
+                .GroupBy(a => a.Status.StatusName) // Используем название статуса
+                .Select(g => new
+                {
+                    StatusName = g.Key,
+                    Count = g.Count()
+                })
+                .ToListAsync();
+
+            // Возвращаем результат в JSON-формате
+            return statusSummary.Any()
+                ? JsonConvert.SerializeObject(statusSummary)
+                : "NoData";
+        }
+    }
+
+    private async Task<string> GetTransactionSummaryAsync()
+    {
+        using (var dbContext = new CrmsystemContext())
+        {
+            // Группируем транзакции по типу и считаем общую сумму
+            var transactionSummary = await dbContext.ProductTransactions
+                .GroupBy(t => t.TransactionType)
+                .Select(g => new
+                {
+                    TransactionType = g.Key,
+                    TotalAmount = g.Sum(t => Math.Abs(t.Quantity))
+                })
+                .ToListAsync();
+
+            // Сериализуем данные в JSON
+            return transactionSummary.Any()
+                ? JsonConvert.SerializeObject(transactionSummary)
+                : "NoData";
+        }
+    }
     private async Task<bool> AddProductAsync(string productName, string unitOfMeasurement, int quantity,  decimal unitPrice)
     {
         try
         {
-            using (var context = new TestjsonContext())
+            using (var context = new CrmsystenContext())
             {
                 
                 // Создаем новую заявку
@@ -755,7 +873,7 @@ public class Server
 
     private async Task<string> GetProductData()
     {
-        using (var dbContext = new TestjsonContext())
+        using (var dbContext = new CrmsystenContext())
         {
             // Создаем проекцию с выбором только необходимых полей для продукции
             var products = await dbContext.Products
@@ -777,7 +895,7 @@ public class Server
         
     private async Task<string> GetAllApplicationsForExport()
     {
-        using (var dbContext = new TestjsonContext())
+        using (var dbContext = new CrmsystenContext())
         {
             var applications = await dbContext.Applications
                 .Include(a => a.Account)  // Подключаем Account для логина
@@ -808,7 +926,7 @@ public class Server
 
     private async Task ApproveApplication(int applicationId)
     {
-        using (var dbContext = new TestjsonContext())
+        using (var dbContext = new CrmsystenContext())
         {
             var application = await dbContext.Applications.FindAsync(applicationId);
             if (application != null)
@@ -821,7 +939,7 @@ public class Server
 
     private async Task RejectApplication(int applicationId)
     {
-        using (var dbContext = new TestjsonContext())
+        using (var dbContext = new CrmsystenContext())
         {
             var application = await dbContext.Applications.FindAsync(applicationId);
             if (application != null)
@@ -861,7 +979,7 @@ public class Server
     //}
     private async Task<string> GetUnprocessedApplications()
     {
-        using (var dbContext = new TestjsonContext())
+        using (var dbContext = new CrmsystenContext())
         {
             var applications = await dbContext.Applications
                 .Include(a => a.Account)
@@ -889,7 +1007,7 @@ public class Server
     }
     private async Task<string> GetApprovedApplications()
     {
-        using (var dbContext = new TestjsonContext())
+        using (var dbContext = new CrmsystenContext())
         {
             var applications = await dbContext.Applications
                 .Include(a => a.Account)
@@ -920,7 +1038,7 @@ public class Server
 
     private async Task<string> GetAllApplications()
     {
-        using (var dbContext = new TestjsonContext())
+        using (var dbContext = new CrmsystenContext())
         {
             var applications = await dbContext.Applications
                 .Include(a => a.Account)
@@ -948,7 +1066,7 @@ public class Server
 
     private async Task<string> GetApplicationsByUserId(int userId)
     {
-        using (var dbContext = new TestjsonContext()) // Используйте ваш контекст
+        using (var dbContext = new CrmsystenContext()) // Используйте ваш контекст
         {
             var threeDaysAgo = DateTime.Now.AddDays(-3);
 
@@ -989,7 +1107,7 @@ public class Server
 
     private async Task<string> GetApplicationHistoryByUserId(int userId)
     {
-        using (var dbContext = new TestjsonContext()) // Используем контекст базы данных
+        using (var dbContext = new CrmsystenContext()) // Используем контекст базы данных
         {
             // Выбираем заявки текущего пользователя
             var applications = await dbContext.Applications
@@ -1022,7 +1140,7 @@ public class Server
     {
         try
         {
-            using (var dbContext = new TestjsonContext())
+            using (var dbContext = new CrmsystenContext())
             {
                 // Попробуем найти заявку
                 var application = await dbContext.Applications.FindAsync(applicationId);
@@ -1051,7 +1169,7 @@ public class Server
     {
         try
         {
-            using (var dbContext = new TestjsonContext())
+            using (var dbContext = new CrmsystenContext())
             {
                 var user = await dbContext.Employees.FindAsync(employeeId);
                 if (user != null)
@@ -1074,7 +1192,7 @@ public class Server
     {
         try
         {
-            using (var context = new TestjsonContext())
+            using (var context = new CrmsystenContext())
             {
                 // Получаем пользователя по логину
                 var account = await context.Accounts.FirstOrDefaultAsync(a => a.Login == login);
@@ -1120,7 +1238,7 @@ public class Server
 
     private async Task<Account> ValidateUserAsync(string username, string password)
     {
-        using (var dbContext = new TestjsonContext())
+        using (var dbContext = new CrmsystenContext())
         {
             return await dbContext.Accounts
                 .SingleOrDefaultAsync(u => u.Login == username && u.Password == password && u.RoleId == 3);
@@ -1128,7 +1246,7 @@ public class Server
     }
     private async Task<bool> ValidateManagerUserAsync(string username, string password, string code)
     {
-        using (var dbContext = new TestjsonContext())
+        using (var dbContext = new CrmsystenContext())
         {
             var adminPanel = await dbContext.AdminPanels.SingleOrDefaultAsync();
 
@@ -1153,7 +1271,7 @@ public class Server
     {
         try
         {
-            using (var context = new TestjsonContext())
+            using (var context = new CrmsystenContext())
             {
                 var newEmployee = new Employee
                 {
@@ -1180,7 +1298,7 @@ public class Server
 
     private async Task<bool> ValidateAdminUserAsync(string username, string password, string code)
     {
-        using (var dbContext = new TestjsonContext())
+        using (var dbContext = new CrmsystenContext())
         {
             var adminPanel = await dbContext.AdminPanels.SingleOrDefaultAsync();
 
@@ -1205,7 +1323,7 @@ public class Server
     {
         try
         {
-            using (var dbContext = new TestjsonContext())
+            using (var dbContext = new CrmsystenContext())
             {
                 var transaction = await dbContext.Transactions.FindAsync(transactionId);
                 if (transaction != null)
@@ -1227,7 +1345,7 @@ public class Server
     {
         try
         {
-            using (var dbContext = new TestjsonContext())
+            using (var dbContext = new CrmsystenContext())
             {
                 var user = await dbContext.Accounts.FindAsync(userId);
                 if (user != null)
@@ -1247,7 +1365,7 @@ public class Server
     }
     private async Task<bool> AddUserAsync(string username, string password)
     {
-        using (var dbContext = new TestjsonContext())
+        using (var dbContext = new CrmsystenContext())
         {
             // Проверка: существует ли пользователь с таким именем
             var existingUser = await dbContext.Accounts.SingleOrDefaultAsync(u => u.Login == username);
@@ -1274,7 +1392,7 @@ public class Server
     }
     private async Task<bool> AddUserAsync(string username, string password, int roleID) //for admin panel
     {
-        using (var dbContext = new TestjsonContext())
+        using (var dbContext = new CrmsystenContext())
         {
             // Проверка: существует ли пользователь с таким именем
             var existingUser = await dbContext.Accounts.SingleOrDefaultAsync(u => u.Login == username);
@@ -1301,7 +1419,7 @@ public class Server
     }
     private async Task<string> GetAllUsers()
     {
-        using (var dbContext = new TestjsonContext())
+        using (var dbContext = new CrmsystenContext())
         {
             // Создаем проекцию с выбором только необходимых полей
             var users = await dbContext.Accounts
@@ -1322,7 +1440,7 @@ public class Server
     }
     private async Task<string> GetAllTransactions()
     {
-        using (var dbContext = new TestjsonContext())
+        using (var dbContext = new CrmsystenContext())
         {
             // Создаем проекцию с выбором только необходимых полей
             var transactions = await dbContext.Transactions
@@ -1348,7 +1466,7 @@ public class Server
 
     private async Task<string> GetEmployeeDataAsync()
     {
-        using (var dbContext = new TestjsonContext())
+        using (var dbContext = new CrmsystenContext())
         {
             var employees = await dbContext.Employees.ToListAsync();
             return JsonConvert.SerializeObject(employees);
@@ -1356,7 +1474,7 @@ public class Server
     }
     private async Task<string> GetAllEmployees()
     {
-        using (var dbContext = new TestjsonContext())
+        using (var dbContext = new CrmsystenContext())
         {
             // Создаем проекцию с выбором только необходимых полей
             var users = await dbContext.Employees
