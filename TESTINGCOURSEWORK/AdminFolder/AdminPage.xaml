@@ -20,51 +20,60 @@
             <RowDefinition Height="128*"/>
             <RowDefinition Height="133*"/>
         </Grid.RowDefinitions>
+
         <Image Margin="0,0,5,0" Source="/blue.jpg" Stretch="Fill" Grid.RowSpan="5">
             <Image.Effect>
                 <BlurEffect Radius="10"/>
             </Image.Effect>
         </Image>
 
+       
         <Image Margin="10,0,29,68" Source="/Images/MAINLOGO.png" Stretch="Fill" Grid.RowSpan="2"/>
-        <Grid Height="NaN" Margin="10,11,176,10" Width="NaN" Grid.RowSpan="4" Grid.Row="1" Grid.ColumnSpan="2">
 
-            <Label   FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Пользователи" Width="184" Margin="0,0,33,360"/>
 
-            <Label MouseDown="Server_Label_MouseDown" Margin="0,103,12,234" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Сервер"/>
-            <Button BorderBrush="Transparent" Background="Transparent" Click="Users_Button_Click" Margin="6,207,0,129" FontSize="20" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Пользователи" HorizontalAlignment="Left" Width="152"/>
 
-            <Label MouseLeftButtonUp="exit_Label_MouseLeftButtonUp" Margin="6,340,6,10" FontSize="36" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Выход"/>
-        </Grid>
         <Grid x:Name ="topEditingPanel"  Grid.ColumnSpan="4" Visibility="Hidden">
             <Image Margin="194,0,0,10" Source="/blue.jpg" Stretch="Fill" >
                 <Image.Effect>
                     <BlurEffect Radius="10"/>
                 </Image.Effect>
             </Image>
-            <Button  Background="Transparent" FontSize="24"  FontWeight="Bold" Content="Редактирование" Margin="194,34,400,44" Click="Edit_Button_Click"></Button>
-            <Button Background="Transparent" FontSize="24"  FontWeight="Bold" Content="Удаление" Margin="405,34,189,44" Click="Delete_Button_Click"></Button>
-            <Button Background="Transparent" FontSize="24"  FontWeight="Bold" Content="Добавление" Margin="621,34,0,44" Click="Add_Button_Click"></Button>
+
+            <Button Background="Transparent" FontSize="24" BorderBrush="Transparent" VerticalAlignment="Center"  FontWeight="Bold" Content="Удаление" Margin="206,36,388,42" Click="Delete_Button_Click"/>
+            <Button Background="Transparent" FontSize="24"  FontWeight="Bold" BorderBrush="Transparent" VerticalAlignment="Center"  Content="Добавление" Margin="590,40,31,38" Click="Add_Button_Click"/>
 
 
 
         </Grid>
+        
         <DataGrid x:Name="UserDataGrid" Grid.Column="1" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,0,10,10"
-                  Grid.RowSpan="4" Height="414" VerticalAlignment="Bottom" 
-                  AutoGenerateColumns="False" HeadersVisibility="Column" 
-                  ColumnHeaderHeight="40" RowHeight="30"
-                  CanUserAddRows="False" CanUserDeleteRows="False"
-                  IsReadOnly="True"
-                  ItemsSource="{Binding Accounts}" Visibility="Hidden">
-
-            <!-- Настройка колонок и заголовков -->
+          Grid.RowSpan="4" Height="414" VerticalAlignment="Bottom" 
+          AutoGenerateColumns="False" HeadersVisibility="Column" 
+          ColumnHeaderHeight="40" RowHeight="30"
+          CanUserAddRows="False" CanUserDeleteRows="False"
+          IsReadOnly="True"
+          ItemsSource="{Binding Accounts}" Visibility="Hidden">
+            <DataGrid.Resources>
+                <!-- Контекстное меню -->
+                <ContextMenu x:Key="RowContextMenu">
+                    <MenuItem Header="Изменить роль" Click="ChangeRoleMenuItem_Click"/>
+                </ContextMenu>
+            </DataGrid.Resources>
+            <DataGrid.RowStyle>
+                <Style TargetType="{x:Type DataGridRow}">
+                    <Setter Property="ContextMenu" Value="{StaticResource RowContextMenu}"/>
+                </Style>
+            </DataGrid.RowStyle>
             <DataGrid.Columns>
-                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50"/>
-                <DataGridTextColumn Header="Логин" Binding="{Binding Login}" Width="150"/>
-                <DataGridTextColumn Header="Пароль" Binding="{Binding Password}" Width="150"/>
-                <DataGridTextColumn Header="ID Роли" Binding="{Binding RoleId}" Width="100"/>
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="0.4*"/>
+                <DataGridTextColumn Header="Логин" Binding="{Binding Login}" Width="*"/>
+                <DataGridTextColumn Header="Пароль" Binding="{Binding Password}" Width="*"/>
+                <DataGridTextColumn Header="ID Роли" Binding="{Binding RoleId}" Width="*"/>
             </DataGrid.Columns>
         </DataGrid>
+
+        <Button Content="Админ панель" Grid.Row="1" BorderBrush="Transparent" Background="Transparent" FontSize="20" FontWeight="Bold" Click="panel_ButtonClick"/>
+        <Button BorderBrush="Transparent" Height="50" Background="Transparent" Click="Users_Button_Click" Grid.Row="2" FontSize="20" RenderTransformOrigin="0.5,0.5" FontWeight="Bold" Content="Пользователи" HorizontalAlignment="Center" Width="152"/>
 
 
     </Grid>

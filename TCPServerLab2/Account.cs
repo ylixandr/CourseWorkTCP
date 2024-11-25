@@ -16,4 +16,6 @@ public partial class Account
     public virtual ICollection<Application> Applications { get; set; } = new List<Application>();
 
     public virtual Role Role { get; set; } = null!;
+
+    public virtual ICollection<SupportTicket> SupportTickets { get; set; } = new List<SupportTicket>();
 }

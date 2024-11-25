@@ -35,6 +35,10 @@ public partial class CrmsystemContext : DbContext
 
     public virtual DbSet<StockAdjustmentRequest> StockAdjustmentRequests { get; set; }
 
+    public virtual DbSet<SupportStatus> SupportStatuses { get; set; }
+
+    public virtual DbSet<SupportTicket> SupportTickets { get; set; }
+
     public virtual DbSet<Transaction> Transactions { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -181,6 +185,31 @@ public partial class CrmsystemContext : DbContext
             entity.HasOne(d => d.Product).WithMany(p => p.StockAdjustmentRequests)
                 .HasForeignKey(d => d.ProductId)
                 .HasConstraintName("FK_StockAdjustmentRequests_Products");
+        });
+
+        modelBuilder.Entity<SupportStatus>(entity =>
+        {
+            entity.HasKey(e => e.StatusId).HasName("PK__SupportS__C8EE20638B0EE6E5");
+
+            entity.Property(e => e.StatusName).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<SupportTicket>(entity =>
+        {
+            entity.HasKey(e => e.TicketId).HasName("PK__SupportT__712CC6072A30559B");
+
+            entity.Property(e => e.SubmissionDate).HasColumnType("datetime");
+            entity.Property(e => e.UserEmail).HasMaxLength(255);
+
+            entity.HasOne(d => d.Status).WithMany(p => p.SupportTickets)
+                .HasForeignKey(d => d.StatusId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__SupportTi__Statu__6DCC4D03");
+
+            entity.HasOne(d => d.User).WithMany(p => p.SupportTickets)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__SupportTi__UserI__6EC0713C");
         });
 
         modelBuilder.Entity<Transaction>(entity =>

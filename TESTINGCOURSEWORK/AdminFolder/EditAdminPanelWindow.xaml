@@ -1,0 +1,43 @@
+﻿<Window x:Class="TESTINGCOURSEWORK.AdminFolder.EditAdminPanelWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TESTINGCOURSEWORK.AdminFolder"
+        mc:Ignorable="d"
+          Title="Изменение AdminPanel" Height="224" Width="428">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Выберите роль:" FontWeight="Bold" Grid.Row="0" Margin="0,0,0,10" />
+
+        <!-- Выбор роли -->
+        <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="0,0,0,10">
+            <RadioButton x:Name="AdminRadioButton" Content="Администратор" IsChecked="True"
+                         Checked="RoleRadioButton_Checked" Margin="0,0,10,0" />
+            <RadioButton x:Name="ManagerRadioButton" Content="Менеджер"
+                         Checked="RoleRadioButton_Checked" />
+        </StackPanel>
+
+        <!-- Поле для AdminCode -->
+        <StackPanel Orientation="Vertical" Grid.Row="2" Margin="0,0,0,10">
+            <TextBlock Text="Код администратора:" />
+            <TextBox x:Name="AdminCodeTextBox" />
+        </StackPanel>
+
+        <!-- Поле для ManagerCode -->
+        <StackPanel Orientation="Vertical" Grid.Row="3" Margin="0,0,0,10">
+            <TextBlock Text="Код менеджера:" />
+            <TextBox x:Name="ManagerCodeTextBox" IsEnabled="False" />
+        </StackPanel>
+
+        <!-- Кнопка сохранить -->
+        <Button x:Name="SaveButton" Content="Сохранить" Grid.Row="3" HorizontalAlignment="Right"
+                Width="100" Click="SaveButton_Click" Margin="0,41,7,-41" />
+    </Grid>
+</Window>

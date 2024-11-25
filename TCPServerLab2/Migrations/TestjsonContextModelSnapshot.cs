@@ -9,7 +9,7 @@ using TCPServerLab2;
 
 namespace TCPServerLab2.Migrations
 {
-    [DbContext(typeof(CrmsystenContext))]
+    [DbContext(typeof(CrmsystemContext))]
     partial class TestjsonContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)

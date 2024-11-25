@@ -174,13 +174,54 @@ namespace TESTINGCOURSEWORK.SupplierFolder
 
         private void HideAllGrid()
         {
-            
 
+            topSupportPanel.Visibility = Visibility.Hidden;
+            SupportTicketsDataGrid.Visibility = Visibility.Hidden;
             topEditingPanel.Visibility = Visibility.Hidden;
             ApplicationDataGrid.Visibility = Visibility.Hidden;
             HistoryDataGrid.Visibility = Visibility.Hidden;
 
 
         }
+
+        private async void support_Button_Click(object sender, RoutedEventArgs e)
+        {
+            HideAllGrid();
+            topSupportPanel.Visibility = Visibility.Visible;
+            
+            try
+            {
+                // Запрос заявок по текущему AccountId
+                string request = $"getSupport:{CurrentUser.UserId}";
+                string response = await NetworkService.Instance.SendMessageAsync(request);
+
+                if (response == "NoData")
+                {
+                    MessageBox.Show("Нет данных для отображения.");
+                    return;
+                }
+
+                SupportTicketsDataGrid.Visibility = Visibility.Visible;
+
+                // Обновление структуры заявок с учетом новых полей
+                var supports = JsonConvert.DeserializeObject<List<SupportViewModel>>(response);
+
+                // Назначение данных DataGrid
+                SupportTicketsDataGrid.ItemsSource = supports;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка: {ex.Message}");
+            }
+
+        }
+
+        private void CreateTicket_Click(object sender, RoutedEventArgs e)
+        {
+            var createTicketWindow = new CreateTicketWindow(); // отдельное окно для создания
+            createTicketWindow.ShowDialog();
+           
+        }
+
     }
 }

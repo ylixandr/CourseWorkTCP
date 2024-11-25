@@ -104,5 +104,10 @@ namespace TESTINGCOURSEWORK.SupplierFolder
             supplierMainPage.Show();
             this.Close();
         }
+
+        private void UnitOfMeasurementTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+
+        }
     }
 }

@@ -5,13 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CourseWorkTest"
         mc:Ignorable="d"
-        Title="StartPage" Height="522" Width="1158">
+        Title="StartPage" Height="522" Width="1000">
     <Grid  >
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="*" />
+            
         </Grid.ColumnDefinitions>
         <Button x:Name="client_Button" Click="client_Button_Click"  Grid.Column="0">
             <Grid  >
@@ -81,7 +81,7 @@
                 <Label FontWeight="Black" FontSize="35" Margin="10,319,10,0" Height="68" VerticalAlignment="Top">Администратор</Label>
             </Grid>
         </Button>
-        <Button Click="Supplier_Button_Click" Grid.Column="3">
+        <!--<Button Click="Supplier_Button_Click" Grid.Column="3">
             <Grid >
                 <Image Stretch="Fill"  Source="/Images/StartPage/white.jpeg" >
                     <Image.Effect>
@@ -92,7 +92,7 @@
                 <Label FontWeight="Black" FontSize="35" Margin="20,314,0,0" Height="68" VerticalAlignment="Top">Поставщик</Label>
             </Grid>
 
-        </Button>
+        </Button>-->
 
     </Grid>
 </Window>

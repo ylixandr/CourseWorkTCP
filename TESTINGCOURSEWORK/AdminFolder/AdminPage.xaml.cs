@@ -14,6 +14,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using TESTINGCOURSEWORK;
+using TESTINGCOURSEWORK.AdminFolder;
 using TESTINGCOURSEWORK.Models;
 
 namespace CourseWorkTest
@@ -36,25 +37,7 @@ namespace CourseWorkTest
 
         }
 
-        private void exit_Label_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            AdminLoginPage startPage = new AdminLoginPage();
-            startPage.Show();
-            this.Hide();
-        }
-
-
-
-
-
-
-
-        private void Edit_Button_Click(object sender, RoutedEventArgs e)
-        {
-            AdminEditUser adminEditUser = new AdminEditUser();
-            adminEditUser.Show();
-            this.Hide();
-        }
+      
 
         private async void Delete_Button_Click(object sender, RoutedEventArgs e)
         {
@@ -90,11 +73,49 @@ namespace CourseWorkTest
             adminAddNewUser.Show();
             this.Hide();
         }
-
-        private void Server_Label_MouseDown(object sender, MouseButtonEventArgs e)
+        private async void ChangeRoleMenuItem_Click(object sender, RoutedEventArgs e)
         {
+            // Получение выбранного пользователя
+            if (UserDataGrid.SelectedItem is TESTINGCOURSEWORK.Models.Account selectedAccount)
+            {
+                var roleChangeWindow = new RoleChangeWindow();
+                if (roleChangeWindow.ShowDialog() == true && roleChangeWindow.SelectedRole.HasValue)
+                {
+                    int newRoleId = roleChangeWindow.SelectedRole.Value;
 
+                    // Отправка запроса на сервер
+                    try
+                    {
+                        string request = $"updateRole:{selectedAccount.Id}:{newRoleId}";
+                        string response = await NetworkService.Instance.SendMessageAsync(request);
+
+                        if (response == "Success")
+                        {
+                            MessageBox.Show("Роль успешно обновлена!");
+
+                            // Обновление данных DataGrid
+                            selectedAccount.RoleId = newRoleId;
+                            UserDataGrid.Items.Refresh(); // Перерисовка таблицы
+                        }
+                        else
+                        {
+                            MessageBox.Show("Ошибка при обновлении роли.");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Ошибка: {ex.Message}");
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("Выберите пользователя.");
+            }
         }
+
+
+
 
         private async void Users_Button_Click(object sender, RoutedEventArgs e)
         {
@@ -122,6 +143,19 @@ namespace CourseWorkTest
             {
                 MessageBox.Show($"Ошибка: {ex.Message}");
             }
+        }
+
+        private void panel_ButtonClick(object sender, RoutedEventArgs e)
+        {
+            topEditingPanel.Visibility = Visibility.Hidden;
+            UserDataGrid.Visibility = Visibility.Hidden;
+            EditAdminPanelWindow editAdminPanelWindow = new EditAdminPanelWindow();
+            editAdminPanelWindow.ShowDialog();
+        }
+
+        private void Balance_Button_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

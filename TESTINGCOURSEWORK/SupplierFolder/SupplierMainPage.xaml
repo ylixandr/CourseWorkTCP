@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:TESTINGCOURSEWORK.SupplierFolder"
         mc:Ignorable="d"
           Title="ClientMainPage" Height="443" Width="867">
-    <Grid RenderTransformOrigin="0.587,0.482" Margin="0,0,-13,0">
+    <Grid RenderTransformOrigin="0.587,0.482" Margin="0,0,5,0">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="209*"/>
             <ColumnDefinition Width="173*"/>
@@ -23,6 +23,33 @@
             <RowDefinition Height="60"/>
 
         </Grid.RowDefinitions>
+        <Grid x:Name ="topSupportPanel"  Grid.ColumnSpan="4" Visibility="Hidden">
+            <Image Margin="194,0,0,10" Source="/blue.jpg" Stretch="Fill" >
+                <Image.Effect>
+                    <BlurEffect Radius="10"/>
+                </Image.Effect>
+            </Image>
+            <Button BorderBrush="Transparent" Background="Transparent" FontSize="18"  FontWeight="Bold" Content="Создать новую заявку" Margin="194,34,400,28" Click="CreateTicket_Click"></Button>
+            
+
+
+
+        </Grid>
+        <Grid x:Name="SupportPanel" Visibility="Visible" Grid.Column="1" Grid.Row="1" Grid.ColumnSpan="3" Grid.RowSpan="6">
+           
+
+            <DataGrid x:Name="SupportTicketsDataGrid" Margin="0,50,0,0"
+              AutoGenerateColumns="False" HeadersVisibility="Column"
+              IsReadOnly="True" Visibility="Hidden" ItemsSource="{Binding SupportTickets}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="ID" Binding="{Binding TicketId}" Width="50" />
+                    <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="*" />
+                    <DataGridTextColumn Header="Дата подачи" Binding="{Binding SubmissionDate}" Width="150" />
+                    <DataGridTextColumn Header="Статус" Binding="{Binding StatusName}" Width="150" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
         <Grid x:Name ="topEditingPanel"  Grid.ColumnSpan="4" Visibility="Hidden">
             <Image Margin="194,0,0,10" Source="/blue.jpg" Stretch="Fill" >
                 <Image.Effect>
@@ -114,7 +141,7 @@
         </Image>
         <Image Margin="25,10,40,10" Source="/Images/MAINLOGO.png" Stretch="Fill"/>
         <Button   Background="Transparent" BorderBrush="Transparent" VerticalAlignment="Center" HorizontalAlignment="Left" Click="form_Button_Click" Margin="31,0,0,0" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Заявки" Grid.Row="1" Width="150" />
-
+        <Button   Background="Transparent" BorderBrush="Transparent" VerticalAlignment="Center" HorizontalAlignment="Left" Click="support_Button_Click" Margin="31,0,0,0" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Поддержка" Grid.Row="2" Width="150" />
 
 
 

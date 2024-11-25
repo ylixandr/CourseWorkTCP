@@ -10,7 +10,7 @@ using TCPServerLab2;
 
 namespace TCPServerLab2.Migrations
 {
-    [DbContext(typeof(CrmsystenContext))]
+    [DbContext(typeof(CrmsystemContext))]
     [Migration("20241029155237_firstMigr")]
     partial class firstMigr
     {
