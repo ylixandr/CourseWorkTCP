@@ -48,8 +48,8 @@ namespace TESTINGCOURSEWORK.SupplierFolder
                 string response = await NetworkService.Instance.SendMessageAsync(loginData);
                 if (response == "Success")
                 {
-                    SupplierMainPage SupplierMainPage = new SupplierMainPage();
-                    SupplierMainPage.Show();
+                    SupplierLoginPage loginPage = new SupplierLoginPage();
+                    loginPage.Show();
                     this.Hide();
                 }
                 else

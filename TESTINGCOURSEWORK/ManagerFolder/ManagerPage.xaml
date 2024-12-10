@@ -159,7 +159,7 @@
 
             </DataGrid.Columns>
         </DataGrid>
-        <Grid x:Name="topManagerPanel" Grid.ColumnSpan="4" Visibility="Hidden">
+        <Grid x:Name="topManagerPanel" Grid.ColumnSpan="4" Visibility="Visible">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="225*"/>
                 <ColumnDefinition Width="187*"/>

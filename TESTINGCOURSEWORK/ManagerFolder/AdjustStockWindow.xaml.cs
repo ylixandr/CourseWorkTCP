@@ -71,7 +71,8 @@ namespace TESTINGCOURSEWORK.ManagerFolder
                 MessageBox.Show("Операция успешно выполнена.", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
                 ManagerPage managerPage = new ManagerPage();
                 managerPage.Show();
-                Close();
+                this.Close();
+               
             }
             else
             {

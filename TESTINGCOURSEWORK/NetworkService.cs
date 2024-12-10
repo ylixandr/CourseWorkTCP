@@ -23,7 +23,7 @@ public class NetworkService
         byte[] data = Encoding.UTF8.GetBytes(fullMessage);
         await _stream.WriteAsync(data, 0, data.Length);
 
-        byte[] buffer = new byte[4096];
+        byte[] buffer = new byte[8192];
         int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length);
 
         return Encoding.UTF8.GetString(buffer, 0, bytesRead);
@@ -34,7 +34,7 @@ public class NetworkService
         byte[] data = Encoding.UTF8.GetBytes(message);
         await _stream.WriteAsync(data, 0, data.Length);
 
-        byte[] buffer = new byte[1024];
+        byte[] buffer = new byte[8192];
         int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length);
 
         return Encoding.UTF8.GetString(buffer, 0, bytesRead);

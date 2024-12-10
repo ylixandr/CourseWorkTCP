@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Mail;
+using System.Net;
 using System.Security.Cryptography.Pkcs;
 using System.Text;
 using System.Threading.Tasks;
@@ -52,7 +54,33 @@ namespace TESTINGCOURSEWORK.SupplierFolder
                 var response = await NetworkService.Instance.SendMessageAsync(message);
                 if (response == "Success")
                 {
-                    MessageBox.Show("Заявка успешно создана!", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                    try
+                    {
+                        // Создаем объект MailMessage
+                        MailMessage mail = new MailMessage();
+                        mail.From = new MailAddress(""); // Укажите свой email
+                        mail.To.Add(""); // Укажите email получателя
+                        mail.Subject = "Техподдержка";
+                        mail.Body = $"Адрес отправителя: {email}/n  {description}";
+                        mail.IsBodyHtml = false; // Устанавливаем, что тело письма не содержит HTML
+
+
+
+                        // Настройка SmtpClient
+                        SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587); // Используется сервер Google
+                        smtp.Credentials = new NetworkCredential(""); // Укажите свои учетные данные
+                        smtp.EnableSsl = true; // Включаем шифрование
+
+                        // Отправка письма
+                        smtp.Send(mail);
+
+                        MessageBox.Show("Заявка успешно создана!", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Ошибка при отправке письма: " + ex.Message);
+                    }
+                   
                     
                     this.Close();
                 }

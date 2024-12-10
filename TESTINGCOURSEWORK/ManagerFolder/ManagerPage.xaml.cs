@@ -347,7 +347,7 @@ namespace TESTINGCOURSEWORK
                 // Формирование текста отчета
                 var reportText = new StringBuilder();
                 reportText.AppendLine("=== Финансовый отчет ===");
-                reportText.AppendLine($"Баланс компании (начальный): {report.Balance:C}");
+                reportText.AppendLine($"Баланс компании (начальный): {report.Balance:0C}");
                 reportText.AppendLine($"Баланс после всех операций: {report.Balance + report.IncomeSum - report.ExpenseSum:C}");
                 reportText.AppendLine($"Общее количество транзакций: {report.TotalTransactions}");
                 reportText.AppendLine($"Общая сумма поступлений: {report.IncomeSum:C}");

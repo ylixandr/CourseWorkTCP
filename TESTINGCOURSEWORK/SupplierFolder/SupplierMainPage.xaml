@@ -103,7 +103,7 @@
           AutoGenerateColumns="False" HeadersVisibility="Column"
           ColumnHeaderHeight="40" RowHeight="30"
           CanUserAddRows="False" CanUserDeleteRows="False"
-          IsReadOnly="True" ItemsSource="{Binding ApplicationHistory}" Visibility="Hidden">
+          IsReadOnly="True" ItemsSource="{Binding Applications}" Visibility="Hidden">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="Auto"/>
                 <DataGridTextColumn Header="Название продукта" Binding="{Binding ProductName}" Width="Auto"/>

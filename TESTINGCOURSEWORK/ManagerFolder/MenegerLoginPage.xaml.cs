@@ -48,7 +48,9 @@ namespace TESTINGCOURSEWORK
 
         private void Clear_MouseDown(object sender, MouseButtonEventArgs e)
         {
-
+            loginTextBox.Text = "";
+            passwordTextBox.Password = "";
+            codeTextBox.Text = "";
         }
     }
 }

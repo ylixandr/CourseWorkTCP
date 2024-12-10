@@ -43,7 +43,7 @@ public class Server
         // Получаем IP-адрес клиента
         string clientIp = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
         using NetworkStream stream = client.GetStream();
-        byte[] buffer = new byte[256];
+        byte[] buffer = new byte[8192];
 
         try
         {
@@ -340,9 +340,9 @@ public class Server
                         string contactInfo = credentials[2];
                         string productName = credentials[3];
                         string description = credentials[4];
-                        decimal totalPrice = decimal.Parse(credentials[5]);
-                        int quantity = int.Parse(credentials[6]); // Новое поле: Количество
-                        string unitOfMeasurement = credentials[7]; // Новое поле: Единица измерения
+                        decimal totalPrice = decimal.Parse(credentials[7]);
+                        int quantity = int.Parse(credentials[5]); // Новое поле: Количество
+                        string unitOfMeasurement = credentials[6]; // Новое поле: Единица измерения
 
                         Console.WriteLine($"Получен запрос на добавление заявки от {login} на продукт: {productName}");
 
@@ -566,11 +566,19 @@ public class Server
                             {
                                 if (stockRequest.TransactionType == "Приход")
                                 {
-                                    product.Quantity -= stockRequest.Quantity;
+                                    product.Quantity += stockRequest.Quantity;
                                 }
                                 else if (stockRequest.TransactionType == "Расход")
                                 {
-                                    product.Quantity += stockRequest.Quantity;
+                                    if(product.Quantity < stockRequest.Quantity)
+                                    {
+                                        throw new Exception("Недостаток");
+                                    }
+                                    else
+                                    {
+                                        product.Quantity += stockRequest.Quantity;
+                                    }
+                                   
                                 }
 
                                 // Update LastUpdated field
@@ -1466,7 +1474,7 @@ public class Server
             {
 
                 var user = await dbContext.Accounts
-                                           .SingleOrDefaultAsync(u => u.Login == username && u.Password == password && u.RoleId == 2);
+                                           .SingleOrDefaultAsync(u => u.Login == username && u.Password == password && (u.RoleId == 2 || u.RoleId == 1));
 
 
                 return user != null;

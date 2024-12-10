@@ -1,0 +1,172 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="TCPServerLab2.Employee">
+    <Position X="0.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAGAAAAAAAAAgAAAQAAQAACAAAAAAAAAAAAACAAg=</HashCode>
+      <FileName>Employee.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TCPServerLab2.EmployeeSalary">
+    <Position X="2.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAGAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAg=</HashCode>
+      <FileName>EmployeeSalary.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TCPServerLab2.MonthlySummary">
+    <Position X="4" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAACAAAAAAAAAAAAAAACQAAEAABAAAAAAAA=</HashCode>
+      <FileName>MonthlySummary.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TCPServerLab2.Product">
+    <Position X="5.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>MAAAAAAABAAgAAAgAAAAAAEAAAAAAAAAAIAAgAAIAAA=</HashCode>
+      <FileName>Product.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TCPServerLab2.ProductTransaction">
+    <Position X="7.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAACAAAAAAAgAAAAACAAAAAAAAAAAAEAAAAAkAAAAAA=</HashCode>
+      <FileName>ProductTransaction.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TCPServerLab2.ReportModel">
+    <Position X="2.25" Y="2.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAACAAAAQAAAOgAAACAAAAAAgACAAAAAAAAAAA=</HashCode>
+      <FileName>ReportModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TCPServerLab2.Role">
+    <Position X="4" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAIAAAAAAAAAAAAAAAAAAAAAAACAAAAAEAAAAAA=</HashCode>
+      <FileName>Role.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TCPServerLab2.Status">
+    <Position X="0.5" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAABAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Status.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TCPServerLab2.StatusSummary">
+    <Position X="2.25" Y="5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>StatusSummary.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TCPServerLab2.StockAdjustmentRequest">
+    <Position X="4" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAACAAAAAAAgAAQAAAAAAAAAAAAAAAEAAAAAgAAAQAA=</HashCode>
+      <FileName>StockAdjustmentRequest.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TCPServerLab2.SupportStatus">
+    <Position X="9.25" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAABAIAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>SupportStatus.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TCPServerLab2.SupportTicket">
+    <Position X="7.5" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAABAAAMAAAgAAAAAAAAAAgAAAAAABACAAAACAAAAAA=</HashCode>
+      <FileName>SupportTicket.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TCPServerLab2.SupportViewModel">
+    <Position X="0.5" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAgAAAAAAAAAAQAAAAAABACAAAAAAAAAAA=</HashCode>
+      <FileName>SupportViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TCPServerLab2.SuspiciousTransaction">
+    <Position X="11" Y="3.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAACAAAAAAAEAAAAAAAAAAAA=</HashCode>
+      <FileName>SuspiciousTransaction.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TCPServerLab2.Transaction">
+    <Position X="9.25" Y="5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAgAAAAAAAAAACAAAAAAAEAAAAAEAAAAAA=</HashCode>
+      <FileName>Transaction.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TCPServerLab2.TransactionSummary">
+    <Position X="9.25" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAQAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAA=</HashCode>
+      <FileName>TransactionSummary.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TESTINGCOURSEWORK.Models.SalaryRecord">
+    <Position X="5.75" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAACAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAg=</HashCode>
+      <FileName>SalaryRecord.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Server">
+    <Position X="14.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAgkQAAAAQACgAgAwCADgEEkQAEAQIAEBYAIQAEAAgA=</HashCode>
+      <FileName>Server.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TCPServerLab2.Account">
+    <Position X="12.75" Y="5.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACABIAABAAAAAAEAAAAAAAAAAAAAACAAAQAAAAAAA=</HashCode>
+      <FileName>Account.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TCPServerLab2.AccountViewModel">
+    <Position X="5.75" Y="5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAIAAAAAAAAAAAAAAAAAAAAAAAACAAAQAAAAAAA=</HashCode>
+      <FileName>AccountViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TCPServerLab2.AdminPanel">
+    <Position X="11" Y="5.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAIAAAAA=</HashCode>
+      <FileName>AdminPanel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TCPServerLab2.Application">
+    <Position X="11" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAMBAAwAAAAAgAAAAIAAAAAQAAAAAAAgAAIAEA=</HashCode>
+      <FileName>Application.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TCPServerLab2.Balance">
+    <Position X="9.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Balance.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TCPServerLab2.CrmsystemContext">
+    <Position X="12.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AACAABEAARAQAAAkAAACBAAAGgAAAACAAIAAAAAAAAQ=</HashCode>
+      <FileName>CrmsystemContext.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
