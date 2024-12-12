@@ -39,10 +39,10 @@ namespace TESTINGCOURSEWORK
         public ObservableCollection<ChartPoint> BalanceData { get; set; } = new ObservableCollection<ChartPoint>();
         private ObservableCollection<Models.Transaction> transactions;
         public ObservableCollection<Models.Transaction> Transactions { get { return transactions; } set { transactions = value; } }
-        public ObservableCollection<TCPServerLab2.Product> Products { get; set; } = new ObservableCollection<TCPServerLab2.Product>();
+        public ObservableCollection<TCPServer.Product> Products { get; set; } = new ObservableCollection<TCPServer.Product>();
 
-        private ObservableCollection<TCPServerLab2.Employee> employees;
-        public ObservableCollection<TCPServerLab2.Employee> Employees
+        private ObservableCollection<TCPServer.Employee> employees;
+        public ObservableCollection<TCPServer.Employee> Employees
 
         {
             get { return employees; }
@@ -74,9 +74,9 @@ namespace TESTINGCOURSEWORK
                 }
                 else
                 {
-                    List<TCPServerLab2.Employee>? users = new List<TCPServerLab2.Employee>();
-                    users = JsonConvert.DeserializeObject<List<TCPServerLab2.Employee>>(response);
-                    Employees = new ObservableCollection<TCPServerLab2.Employee>(users);
+                    List<TCPServer.Employee>? users = new List<TCPServer.Employee>();
+                    users = JsonConvert.DeserializeObject<List<TCPServer.Employee>>(response);
+                    Employees = new ObservableCollection<TCPServer.Employee>(users);
                     EmployeeDataGrid.ItemsSource = Employees;
 
                 }
@@ -91,11 +91,11 @@ namespace TESTINGCOURSEWORK
         {
             AddEmployeePage addEmployeePage = new AddEmployeePage();
             addEmployeePage.Show();
-            this.Hide();
+            this.Close();
         }
         private async void DeleteProductMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            if (ProductDataGrid.SelectedItem is TCPServerLab2.Product selectedProduct)
+            if (ProductDataGrid.SelectedItem is TCPServer.Product selectedProduct)
             {
                 // Подтверждение удаления
                 var result = MessageBox.Show($"Вы уверены, что хотите удалить продукт: {selectedProduct.ProductName}?",
@@ -115,9 +115,9 @@ namespace TESTINGCOURSEWORK
                         {
                             MessageBox.Show("Продукт успешно удалён.");
 
-                            (ProductDataGrid.ItemsSource as ObservableCollection<TCPServerLab2.Product>)?.Remove(selectedProduct);
+                            (ProductDataGrid.ItemsSource as ObservableCollection<TCPServer.Product>)?.Remove(selectedProduct);
                             ProductDataGrid.Items.Refresh();
-                            
+
                         }
                         else
                         {
@@ -140,7 +140,7 @@ namespace TESTINGCOURSEWORK
 
         private async void Delete_Button_Click(object sender, RoutedEventArgs e)
         {
-            if (EmployeeDataGrid.SelectedItem is TCPServerLab2.Employee selectedEmployee)
+            if (EmployeeDataGrid.SelectedItem is TCPServer.Employee selectedEmployee)
             {
                 // Формирование сообщения для сервера
                 string loginData = $"deleteEmployee:{selectedEmployee.EmployeeId}";
@@ -153,7 +153,7 @@ namespace TESTINGCOURSEWORK
                 {
                     MessageBox.Show("Работник успешно уволен.");
                     // Обновление отображения
-                    (EmployeeDataGrid.ItemsSource as ObservableCollection<TCPServerLab2.Employee>)?.Remove(selectedEmployee);
+                    (EmployeeDataGrid.ItemsSource as ObservableCollection<TCPServer.Employee>)?.Remove(selectedEmployee);
                 }
                 else
                 {
@@ -625,10 +625,10 @@ namespace TESTINGCOURSEWORK
                 else
                 {
                     // Десериализация данных в список продуктов
-                    var products = JsonConvert.DeserializeObject<ObservableCollection<TCPServerLab2.Product>>(response);
+                    var products = JsonConvert.DeserializeObject<ObservableCollection<TCPServer.Product>>(response);
 
                     // Привязка данных к DataGrid
-                    ObservableCollection<TCPServerLab2.Product> products1 = products;
+                    ObservableCollection<TCPServer.Product> products1 = products;
                     AdjustStockWindow adjustStockWindow = new AdjustStockWindow(products1);
                     adjustStockWindow.Show();
                     this.Hide();
@@ -669,7 +669,7 @@ namespace TESTINGCOURSEWORK
                 else
                 {
                     // Десериализация данных в список продуктов
-                    var products = JsonConvert.DeserializeObject<List<TCPServerLab2.Product>>(response);
+                    var products = JsonConvert.DeserializeObject<List<TCPServer.Product>>(response);
 
                     // Привязка данных к DataGrid
                     ProductDataGrid.ItemsSource = products;
@@ -696,7 +696,7 @@ namespace TESTINGCOURSEWORK
                 }
 
                 // Десериализация данных о продуктах из JSON
-                var products = JsonConvert.DeserializeObject<List<TCPServerLab2.Product>>(productsJson);
+                var products = JsonConvert.DeserializeObject<List<TCPServer.Product>>(productsJson);
 
                 // Запрос на экспорт транзакций
                 string transactionsCommand = "export_transactionsProd";
@@ -709,7 +709,7 @@ namespace TESTINGCOURSEWORK
                 }
 
                 // Десериализация данных о транзакциях из JSON
-                var transactions = JsonConvert.DeserializeObject<List<TCPServerLab2.ProductTransaction>>(transactionsJson);
+                var transactions = JsonConvert.DeserializeObject<List<TCPServer.ProductTransaction>>(transactionsJson);
 
                 // Создание и сохранение Excel-файла
                 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
@@ -793,7 +793,7 @@ namespace TESTINGCOURSEWORK
             salaryPage.ShowDialog();
         }
 
-        private async  void TransactionChartButton_Click(object sender, RoutedEventArgs e)
+        private async void TransactionChartButton_Click(object sender, RoutedEventArgs e)
         {
             SalaryBarChart.Visibility = Visibility.Hidden;
             StatusPieChart.Visibility = Visibility.Hidden;
@@ -809,7 +809,7 @@ namespace TESTINGCOURSEWORK
                 }
                 TransactionPieChart.Visibility = Visibility.Visible;
                 // Десериализация данных
-                var transactionData = JsonConvert.DeserializeObject<List<TCPServerLab2.TransactionSummary>>(response);
+                var transactionData = JsonConvert.DeserializeObject<List<TCPServer.TransactionSummary>>(response);
 
                 // Очищаем старые серии
                 TransactionPieChart.Series.Clear();
@@ -850,7 +850,7 @@ namespace TESTINGCOURSEWORK
 
                 StatusPieChart.Visibility = Visibility.Visible;
                 // Десериализация данных
-                var statusData = JsonConvert.DeserializeObject<List<TCPServerLab2.StatusSummary>>(response);
+                var statusData = JsonConvert.DeserializeObject<List<TCPServer.StatusSummary>>(response);
 
                 // Очищаем старые серии
                 StatusPieChart.Series.Clear();
@@ -873,10 +873,10 @@ namespace TESTINGCOURSEWORK
             }
         }
 
-        private async  void SalaryChartButton_Click(object sender, RoutedEventArgs e)
+        private async void SalaryChartButton_Click(object sender, RoutedEventArgs e)
         {
             TransactionPieChart.Visibility = Visibility.Hidden;
-            
+
             StatusPieChart.Visibility = Visibility.Hidden;
             try
             {
@@ -890,7 +890,7 @@ namespace TESTINGCOURSEWORK
                 }
                 SalaryBarChart.Visibility = Visibility.Visible;
                 // Десериализация данных
-                var salaryData = JsonConvert.DeserializeObject<List<TCPServerLab2.EmployeeSalary>>(response);
+                var salaryData = JsonConvert.DeserializeObject<List<TCPServer.EmployeeSalary>>(response);
 
                 // Заполняем данные для графика
                 var employeeNames = salaryData.Select(e => $"{e.FirstName} {e.LastName}").ToArray();
@@ -915,6 +915,11 @@ namespace TESTINGCOURSEWORK
                 MessageBox.Show($"Ошибка: {ex.Message}");
             }
         }
+
+        private void Exit_Button_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
+        }
     }
-  
+
 }

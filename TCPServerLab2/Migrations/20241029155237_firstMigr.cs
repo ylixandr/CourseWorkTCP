@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace TCPServerLab2.Migrations
+namespace TCPServer.Migrations
 {
     /// <inheritdoc />
     public partial class firstMigr : Migration

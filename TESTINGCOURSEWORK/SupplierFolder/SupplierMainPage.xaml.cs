@@ -13,7 +13,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using TCPServerLab2;
+using TCPServer;
 using TESTINGCOURSEWORK.Models;
 
 namespace TESTINGCOURSEWORK.SupplierFolder
@@ -223,5 +223,9 @@ namespace TESTINGCOURSEWORK.SupplierFolder
            
         }
 
+        private void Exit_Button_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Application.Current.Shutdown();
+        }
     }
 }

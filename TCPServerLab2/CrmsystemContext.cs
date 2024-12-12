@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
-namespace TCPServerLab2;
+namespace TCPServer;
 
 public partial class CrmsystemContext : DbContext
 {
@@ -109,11 +109,9 @@ public partial class CrmsystemContext : DbContext
 
         modelBuilder.Entity<Employee>(entity =>
         {
-            entity.HasKey(e => e.EmployeeId).HasName("PK__Employee__7AD04FF166E5AEC0");
+            entity.HasKey(e => e.EmployeeId).HasName("PK__tmp_ms_x__7AD04FF1202FE75A");
 
-            entity.Property(e => e.EmployeeId)
-                .ValueGeneratedNever()
-                .HasColumnName("EmployeeID");
+            entity.Property(e => e.EmployeeId).HasColumnName("EmployeeID");
             entity.Property(e => e.FirstName)
                 .HasMaxLength(50)
                 .IsUnicode(false);

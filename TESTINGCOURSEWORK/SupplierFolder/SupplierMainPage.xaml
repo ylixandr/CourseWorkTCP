@@ -19,8 +19,8 @@
             <RowDefinition Height="60"/>
             <RowDefinition Height="60"/>
             <RowDefinition Height="60"/>
-            <RowDefinition Height="60"/>
-            <RowDefinition Height="60"/>
+            <RowDefinition Height="22"/>
+            <RowDefinition Height="98"/>
 
         </Grid.RowDefinitions>
         <Grid x:Name ="topSupportPanel"  Grid.ColumnSpan="4" Visibility="Hidden">
@@ -30,13 +30,13 @@
                 </Image.Effect>
             </Image>
             <Button BorderBrush="Transparent" Background="Transparent" FontSize="18"  FontWeight="Bold" Content="Создать новую заявку" Margin="194,34,400,28" Click="CreateTicket_Click"></Button>
-            
+
 
 
 
         </Grid>
-        <Grid x:Name="SupportPanel" Visibility="Visible" Grid.Column="1" Grid.Row="1" Grid.ColumnSpan="3" Grid.RowSpan="6">
-           
+        <Grid x:Name="SupportPanel" Visibility="Visible" Grid.Row="1" Grid.ColumnSpan="4" Grid.RowSpan="6" Margin="225,0,0,0">
+
 
             <DataGrid x:Name="SupportTicketsDataGrid" Margin="0,50,0,0"
               AutoGenerateColumns="False" HeadersVisibility="Column"
@@ -134,16 +134,16 @@
 
 
 
-        <Image Margin="5,0,10,0" Source="/blue.jpg" Stretch="Fill" Grid.RowSpan="7">
+        <Image Margin="5,0,10,29" Source="/blue.jpg" Stretch="Fill" Grid.RowSpan="7">
             <Image.Effect>
                 <BlurEffect Radius="10"/>
             </Image.Effect>
         </Image>
         <Image Margin="25,10,40,10" Source="/Images/MAINLOGO.png" Stretch="Fill"/>
-        <Button   Background="Transparent" BorderBrush="Transparent" VerticalAlignment="Center" HorizontalAlignment="Left" Click="form_Button_Click" Margin="31,0,0,0" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Заявки" Grid.Row="1" Width="150" />
-        <Button   Background="Transparent" BorderBrush="Transparent" VerticalAlignment="Center" HorizontalAlignment="Left" Click="support_Button_Click" Margin="31,0,0,0" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Поддержка" Grid.Row="2" Width="150" />
+        <Button   Background="Transparent" BorderBrush="Transparent" VerticalAlignment="Center" HorizontalAlignment="Left" Click="form_Button_Click" Margin="31,0,0,0" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Заявки" Grid.Row="1" Width="150" Height="36" />
+        <Button   Background="Transparent" BorderBrush="Transparent" VerticalAlignment="Center" HorizontalAlignment="Left" Click="support_Button_Click" Margin="31,0,0,0" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Поддержка" Grid.Row="2" Width="150" Height="36" />
 
-
+        <Button Click="Exit_Button_Click" Content="Выход" BorderBrush="Transparent" Background="Transparent" FontSize="24" FontWeight="Bold" Grid.Row="6" Margin="0,0,33,53"/>
 
         <!--<Label  Margin="0,11,0,10" FontSize="24" RenderTransformOrigin="0.162,0.648" HorizontalAlignment="Center" FontWeight="Bold" Content="Учет продукции&#xD;&#xA;" Grid.Row="2" Width="201"/>-->
 

@@ -261,6 +261,7 @@
         <!--<Label  Margin="20,6,0,15" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Учет баланса;" HorizontalAlignment="Left" Grid.Row="3" Width="158"/>-->
         <Button  Background="Transparent" BorderBrush="Transparent" Click="Employee_Button_Click" HorizontalAlignment="Center" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Персонал" Grid.Row="4" Width="124"></Button>
         <Button Click="Finance_Button_Click" Content="Информация" BorderBrush="Transparent" Background="Transparent" FontSize="24" FontWeight="Bold" Grid.Row="5"/>
+        <Button Click="Exit_Button_Click" Content="Выход" BorderBrush="Transparent" Background="Transparent" FontSize="24" FontWeight="Bold" Grid.Row="6" Grid.ColumnSpan="2" Margin="0,0,220,13"/>
         <Grid x:Name="Financial_EditorGrid" Visibility="Hidden" Grid.ColumnSpan="4" HorizontalAlignment="Left" Margin="255,0,0,4" Width="749">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition></ColumnDefinition>

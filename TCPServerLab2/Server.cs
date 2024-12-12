@@ -9,7 +9,8 @@ using System.Net.Sockets;
 using System.Security.Cryptography.Pkcs;
 using System.Text;
 using System.Threading.Tasks;
-using TCPServerLab2;
+using TCPServer;
+using TCPServer;
 using TESTINGCOURSEWORK.Models;
 
 public class Server
@@ -631,7 +632,7 @@ public class Server
                     }
                 }
 
-                else if (receivedData == "export_transactions_Prod")
+                else if (receivedData == "export_transactionsProd")
                 {
                     Console.WriteLine("Отправка данных о транзакциях для экспорта в Excel");
 

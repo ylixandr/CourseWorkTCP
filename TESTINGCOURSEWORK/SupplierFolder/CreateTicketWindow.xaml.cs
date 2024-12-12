@@ -58,17 +58,17 @@ namespace TESTINGCOURSEWORK.SupplierFolder
                     {
                         // Создаем объект MailMessage
                         MailMessage mail = new MailMessage();
-                        mail.From = new MailAddress(""); // Укажите свой email
-                        mail.To.Add(""); // Укажите email получателя
+                        mail.From = new MailAddress("savoshinsky55@gmail.com"); // Укажите свой email
+                        mail.To.Add("bennyylix@gmail.com"); // Укажите email получателя
                         mail.Subject = "Техподдержка";
-                        mail.Body = $"Адрес отправителя: {email}/n  {description}";
+                        mail.Body = $"Адрес отправителя: {email}/n {description}";
                         mail.IsBodyHtml = false; // Устанавливаем, что тело письма не содержит HTML
 
 
 
                         // Настройка SmtpClient
                         SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587); // Используется сервер Google
-                        smtp.Credentials = new NetworkCredential(""); // Укажите свои учетные данные
+                        smtp.Credentials = new NetworkCredential("savoshinsky55@gmail.com", "pxmn myiw tmge ebov"); // Укажите свои учетные данные
                         smtp.EnableSsl = true; // Включаем шифрование
 
                         // Отправка письма

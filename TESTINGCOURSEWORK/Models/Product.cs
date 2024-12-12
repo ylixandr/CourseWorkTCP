@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace TCPServerLab2;
+namespace TCPServer;
 
 public partial class Product
 {

@@ -61,7 +61,7 @@ namespace TESTINGCOURSEWORK.ManagerFolder
         {
             ManagerPage managerPage = new ManagerPage();
             managerPage.Show();
-            this.Hide();
+            this.Close();
         }
     }
 }

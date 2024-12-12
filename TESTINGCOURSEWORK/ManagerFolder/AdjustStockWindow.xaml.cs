@@ -13,7 +13,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using TCPServerLab2;
+using TCPServer;
 
 namespace TESTINGCOURSEWORK.ManagerFolder
 {

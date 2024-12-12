@@ -4,10 +4,10 @@ using System.Net.Sockets;
 using System.Text;
 using Azure;
 using Newtonsoft.Json;
-using TCPServerLab2;
+using TCPServer;
 
 
-namespace TCPServerLab2
+namespace TCPServer
 {
     class Program
     {

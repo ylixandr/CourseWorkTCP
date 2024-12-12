@@ -7,7 +7,7 @@
       <FileName>Models\Account.cs</FileName>
     </TypeIdentifier>
   </Class>
-  <Class Name="TCPServerLab2.Application">
+  <Class Name="TCPServer.Application">
     <Position X="1.25" Y="3.25" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAACAAAMBAAwAAAAAgAAAAIAAAAAQAAAAAAAgAAIAEA=</HashCode>
@@ -28,14 +28,14 @@
       <FileName>Models\Employee.cs</FileName>
     </TypeIdentifier>
   </Class>
-  <Class Name="TCPServerLab2.Product">
+  <Class Name="TCPServer.Product">
     <Position X="3" Y="0.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>MAAAAAAABAAgAAAgAAAAAAEAAAAAAAAAAAAAgAAIAAA=</HashCode>
       <FileName>Models\Product.cs</FileName>
     </TypeIdentifier>
   </Class>
-  <Class Name="TCPServerLab2.ProductTransaction">
+  <Class Name="TCPServer.ProductTransaction">
     <Position X="1.25" Y="0.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>EAACAAAAAAAgAAAAACAAAAAAAAAAAAEAAAAAkAAAAAA=</HashCode>
@@ -56,7 +56,7 @@
       <FileName>Models\SalaryRecord.cs</FileName>
     </TypeIdentifier>
   </Class>
-  <Class Name="TCPServerLab2.Status">
+  <Class Name="TCPServer.Status">
     <Position X="8.25" Y="0.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAACAAAAABAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAA=</HashCode>

@@ -73,6 +73,7 @@
         </DataGrid>
 
         <Button Content="Админ панель" Grid.Row="1" BorderBrush="Transparent" Background="Transparent" FontSize="20" FontWeight="Bold" Click="panel_ButtonClick"/>
+        <Button Click="Exit_Button_Click" Content="Выход" BorderBrush="Transparent" Background="Transparent" FontSize="24" FontWeight="Bold" Grid.Row="6" Grid.ColumnSpan="2" Margin="0,0,220,13"/>
         <Button BorderBrush="Transparent" Height="50" Background="Transparent" Click="Users_Button_Click" Grid.Row="2" FontSize="20" RenderTransformOrigin="0.5,0.5" FontWeight="Bold" Content="Пользователи" HorizontalAlignment="Center" Width="152"/>
 
 

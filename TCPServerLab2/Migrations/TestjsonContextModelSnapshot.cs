@@ -3,11 +3,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using TCPServerLab2;
+using TCPServer;
+using TCPServer;
 
 #nullable disable
 
-namespace TCPServerLab2.Migrations
+namespace TCPServer.Migrations
 {
     [DbContext(typeof(CrmsystemContext))]
     partial class TestjsonContextModelSnapshot : ModelSnapshot

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using TESTINGCOURSEWORK.Models;
 
-namespace TCPServerLab2;
+namespace TCPServer;
 
 public partial class Application
 {

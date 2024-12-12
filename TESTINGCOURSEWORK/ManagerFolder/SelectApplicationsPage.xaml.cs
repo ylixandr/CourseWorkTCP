@@ -5,14 +5,14 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows;
-using TCPServerLab2;
+using TCPServer;
 using TESTINGCOURSEWORK.Models;
 
 namespace TESTINGCOURSEWORK.ManagerFolder
 {
     public partial class SelectApplicationsPage : Window
     {
-        public List<TCPServerLab2.Application> SelectedApplications { get; private set; }
+        public List<TCPServer.Application> SelectedApplications { get; private set; }
 
         public SelectApplicationsPage()
         {
