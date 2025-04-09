@@ -5,25 +5,141 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TESTINGCOURSEWORK.ManagerFolder"
         mc:Ignorable="d"
-        Title="SalaryPage" Height="213" Width="420">
+        Title="Расчетный лист" Height="600" Width="800">
     <Grid Margin="10">
-        <!-- Инструкция -->
-        <TextBlock Text="Выберите дату начисления зарплаты сотрудникам" 
-                   FontSize="14" FontWeight="Bold" 
-                   HorizontalAlignment="Center" Margin="0,0,0,20" 
-                   VerticalAlignment="Top" />
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-        <!-- Выбор даты -->
-        <DatePicker Name="SalaryDatePicker" 
-                    HorizontalAlignment="Center" 
-                    VerticalAlignment="Center" />
+        <!-- Шапка -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+            <TextBlock Text="РАСЧЕТНЫЙ ЛИСТ" FontWeight="Bold" HorizontalAlignment="Center" FontSize="16"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5">
+                <TextBlock Text="за"/>
+                <TextBox Name="PeriodTextBox" Width="100" Margin="5,0" Text="Январь 2025"/>
+                <TextBlock Text="20"/>
+                <TextBox Name="YearTextBox" Width="50" Margin="5,0" Text="2025"/>
+                <TextBlock Text="г."/>
+            </StackPanel>
+            <StackPanel Margin="0,5">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Ф.И.О." Width="100"/>
+                    <TextBox Name="FullNameTextBox" Width="300"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,5">
+                    <TextBlock Text="Должность" Width="100"/>
+                    <TextBox Name="PositionTextBox" Width="300"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Табельный номер" Width="100"/>
+                    <TextBox Name="EmployeeIdTextBox" Width="100"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,5">
+                    <TextBlock Text="Оклад/тариф" Width="100"/>
+                    <TextBox Name="BaseSalaryTextBox" Width="100"/>
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
 
-        <!-- Кнопка "Начислить" -->
-        <Button Content="Начислить" 
-                HorizontalAlignment="Center" 
-                VerticalAlignment="Bottom" 
-                Margin="0,0,0,20" 
-                Width="120" Height="35" 
-                Click="OnCalculateSalaryClick" />
+        <!-- Таблицы начислений и удержаний -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Начисления -->
+            <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                <TextBlock Text="НАЧИСЛЕНИЯ" FontWeight="Bold" HorizontalAlignment="Center"/>
+                <ListView Name="AccrualsListView" Height="200" Margin="0,5">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Вид начисления" Width="150">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox Width="140" ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=AccrualTypes}" 
+                                      SelectedItem="{Binding Type, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Сумма" Width="100">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBox Text="{Binding Amount, UpdateSourceTrigger=PropertyChanged}" Width="90"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Дней/часов" Width="100">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBox Text="{Binding DaysOrHours, UpdateSourceTrigger=PropertyChanged}" Width="90"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Content="Добавить начисление" Click="AddAccrual_Click" Width="150" Margin="0,5"/>
+                    <Button Content="Управить типы" Click="ManageAccrualTypes_Click" Width="150" Margin="5"/>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Удержания -->
+            <StackPanel Grid.Column="1" Margin="5,0,0,0">
+                <TextBlock Text="УДЕРЖАНИЯ" FontWeight="Bold" HorizontalAlignment="Center"/>
+                <ListView Name="DeductionsListView" Height="200" Margin="0,5">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Вид удержания" Width="150">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox Width="140" ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DeductionTypes}" 
+                                      SelectedItem="{Binding Type, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Сумма" Width="100">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBox Text="{Binding Amount, UpdateSourceTrigger=PropertyChanged}" Width="90"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Content="Добавить удержание" Click="AddDeduction_Click" Width="150" Margin="0,5"/>
+                    <Button Content="Управить типы" Click="ManageDeductionTypes_Click" Width="150" Margin="5"/>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+
+        <!-- Итоговые значения -->
+        <StackPanel Grid.Row="2" Margin="0,10">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="ИТОГО НАЧИСЛЕНО:" Width="150"/>
+                <TextBox Name="TotalAccruedTextBox" Width="100" IsReadOnly="True"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,5">
+                <TextBlock Text="ИТОГО УДЕРЖАНО:" Width="150"/>
+                <TextBox Name="TotalDeductedTextBox" Width="100" IsReadOnly="True"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="К ВЫДАЧЕ:" Width="150"/>
+                <TextBox Name="ToBePaidTextBox" Width="100" IsReadOnly="True"/>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Кнопки -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Заполнить" Click="FillData_Click" Width="150" Margin="0,0,10,0"/>
+            <Button Content="Управить ставки" Click="ManageDeductionRates_Click" Width="150" Margin="0,0,10,0"/>
+            <Button Content="Экспортировать в Excel" Click="ExportToExcel_Click" Width="150"/>
+        </StackPanel>
     </Grid>
 </Window>

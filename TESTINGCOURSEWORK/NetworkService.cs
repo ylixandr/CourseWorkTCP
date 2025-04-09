@@ -51,30 +51,6 @@ public class NetworkService
         _stream.Close();
         _client.Close();
     }
-    //public async Task<string> ReceiveAllUsersAsync()
-    //{
-    //    StringBuilder dataBuilder = new StringBuilder();
-    //    byte[] buffer = new byte[256];
-
-    //    while (true)
-    //    {
-    //        int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length);
-    //        string chunk = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-
-    //        if (chunk.Contains("<END>"))
-    //        {
-    //            // Удаляем маркер конца данных и завершаем прием
-    //            dataBuilder.Append(chunk.Replace("<END>", ""));
-    //            break;
-    //        }
-    //        else
-    //        {
-    //            dataBuilder.Append(chunk);
-    //        }
-    //    }
-
-    //    return dataBuilder.ToString();
-    //}
-
+  
 
 }

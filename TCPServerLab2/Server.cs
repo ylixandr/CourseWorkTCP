@@ -8,6 +8,7 @@ using System.Net.Mail;
 using System.Net.Sockets;
 using System.Security.Cryptography.Pkcs;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using TCPServer;
 using TCPServer;
@@ -17,8 +18,7 @@ public class Server
 {
     private readonly int _port = 12345;
     private TcpListener _server;
-
-
+    private static readonly object _lock = new object();
     public Server()
     {
         _server = new TcpListener(IPAddress.Any, _port);
@@ -145,7 +145,8 @@ public class Server
                     await stream.WriteAsync(responseData, 0, responseData.Length); // Отправляем клиенту
 
                 }
-                else if(receivedData == "getEmployees"){
+                else if (receivedData == "getEmployees")
+                {
                     Console.WriteLine("Запрос на получение работников");
                     string jsonData = await GetAllEmployees(); // Получаем данные о пользователях
                     byte[] responseData = Encoding.UTF8.GetBytes(jsonData); // Преобразуем в байты
@@ -162,6 +163,13 @@ public class Server
                 {
                     Console.WriteLine($"Запрос на удаление пользователя ID: {employeeId}");
                     string response = await DeleteEmployeeByIdAsync(employeeId) ? "User deleted" : "Failed to delete user";
+                    byte[] responseData = Encoding.UTF8.GetBytes(response);
+                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                }
+                else if (credentials[0] == "salaryEmployee" && int.TryParse(credentials[1], out int salemployeeId))
+                {
+                    Console.WriteLine($"Запрос на начисление зарплаты пользователя ID: {salemployeeId}");
+                    string response = await SalaryEmployeeByIdAsync(salemployeeId) ? "User detected" : "Failed to detect user";
                     byte[] responseData = Encoding.UTF8.GetBytes(response);
                     await stream.WriteAsync(responseData, 0, responseData.Length);
                 }
@@ -196,19 +204,19 @@ public class Server
                         {
                             var balance = context.Balances.FirstOrDefault();
 
-                            if(transactionType == "Пополнение")
+                            if (transactionType == "Пополнение")
                             {
                                 balance.Amount += amount;
                             }
-                            else if(balance.Amount > amount)
+                            else if (balance.Amount > amount)
                             {
                                 balance.Amount -= amount;
                             }
                             else
                             {
-                               
+
                                 throw new Exception("Недостаточно средств на балансе для выплаты зарплаты.");
-                                
+
                             }
                             var transaction = new Transaction
                             {
@@ -450,7 +458,7 @@ public class Server
                         await stream.WriteAsync(errorResponse, 0, errorResponse.Length);
                     }
                 }
-               
+
                 else if (receivedData.StartsWith("approveApplication"))
                 {
                     int approveApplicationId = int.Parse(receivedData.Split(':')[1]);
@@ -474,7 +482,7 @@ public class Server
                     byte[] responseData = Encoding.UTF8.GetBytes(jsonData);
                     await stream.WriteAsync(responseData, 0, responseData.Length);
                 }
-                
+
                 else if (receivedData == "getProductData")
                 {
                     Console.WriteLine("Запрос на получение данных о продукции");
@@ -483,8 +491,8 @@ public class Server
                     await stream.WriteAsync(responseData, 0, responseData.Length); // Отправляем клиенту
                 }
 
-              
-                
+
+
                 //else if (credentials[0] == "getApplications")
                 //{
                 //    try
@@ -511,7 +519,7 @@ public class Server
 
                     try
                     {
-                        string jsonData = await GetApprovedApplications(); 
+                        string jsonData = await GetApprovedApplications();
                         byte[] responseData = Encoding.UTF8.GetBytes(jsonData); // Преобразуем в байты
                         await stream.WriteAsync(responseData, 0, responseData.Length); // Отправляем клиенту
                     }
@@ -571,7 +579,7 @@ public class Server
                                 }
                                 else if (stockRequest.TransactionType == "Расход")
                                 {
-                                    if(product.Quantity < stockRequest.Quantity)
+                                    if (product.Quantity < stockRequest.Quantity)
                                     {
                                         throw new Exception("Недостаток");
                                     }
@@ -579,7 +587,7 @@ public class Server
                                     {
                                         product.Quantity += stockRequest.Quantity;
                                     }
-                                   
+
                                 }
 
                                 // Update LastUpdated field
@@ -747,7 +755,7 @@ public class Server
                     byte[] responseData = Encoding.UTF8.GetBytes(response);
                     await stream.WriteAsync(responseData, 0, responseData.Length);
                 }
-               
+
                 else if (credentials[0] == "getSupport")
                 {
                     // Извлекаем UserId из запроса
@@ -781,14 +789,14 @@ public class Server
                         // Распаковываем данные из сообщения
                         string email = credentials[1];
                         string description = credentials[2];
-                        
+
 
                         if (int.TryParse(credentials[3], out int supUserId))
                         {
                             Console.WriteLine($"Получен запрос на добавление заявки id {supUserId}");
 
                             // Вызываем метод для добавления заявки
-                            string response = await AddSupportAsync(email, description,supUserId )
+                            string response = await AddSupportAsync(email, description, supUserId)
                                 ? "Success"
                                 : "Error";
 
@@ -796,7 +804,7 @@ public class Server
                             byte[] responseData = Encoding.UTF8.GetBytes(response);
                             await stream.WriteAsync(responseData, 0, responseData.Length);
                         }
-                           
+
                     }
                     catch (Exception ex)
                     {
@@ -836,29 +844,29 @@ public class Server
                     string adminCode = credentials[2];
                     try
                     {
-                       
-                        
-                            using (var dbContext = new CrmsystemContext())
+
+
+                        using (var dbContext = new CrmsystemContext())
+                        {
+                            var existingPanel = dbContext.AdminPanels.FirstOrDefault(p => p.Id == 1);
+                            if (existingPanel != null)
                             {
-                                var existingPanel = dbContext.AdminPanels.FirstOrDefault(p => p.Id == 1);
-                                if (existingPanel != null)
-                                {
-                                    // Обновление данных
-                                    existingPanel.AdminCode = adminCode;
-                                    existingPanel.ManagerCode = managerCode;
+                                // Обновление данных
+                                existingPanel.AdminCode = adminCode;
+                                existingPanel.ManagerCode = managerCode;
 
-                                    await dbContext.SaveChangesAsync();
+                                await dbContext.SaveChangesAsync();
 
-                                    byte[] successResponse = Encoding.UTF8.GetBytes("Success");
-                                    await stream.WriteAsync(successResponse, 0, successResponse.Length);
-                                }
-                                else
-                                {
-                                    byte[] errorResponse = Encoding.UTF8.GetBytes("AdminPanelNotFound");
-                                    await stream.WriteAsync(errorResponse, 0, errorResponse.Length);
-                                }
+                                byte[] successResponse = Encoding.UTF8.GetBytes("Success");
+                                await stream.WriteAsync(successResponse, 0, successResponse.Length);
                             }
-                        
+                            else
+                            {
+                                byte[] errorResponse = Encoding.UTF8.GetBytes("AdminPanelNotFound");
+                                await stream.WriteAsync(errorResponse, 0, errorResponse.Length);
+                            }
+                        }
+
                     }
                     catch (Exception ex)
                     {
@@ -867,13 +875,21 @@ public class Server
                         await stream.WriteAsync(errorResponse, 0, errorResponse.Length);
                     }
                 }
-
-
-
-
-
-
-
+                else if (receivedData.StartsWith("savePayrollJson:"))
+                {
+                    string[] parts = receivedData.Split(new[] { ':' }, 2); // Разделяем на команду и данные
+                    await HandleSavePayrollJson(parts, stream);
+                }
+                else if (receivedData.StartsWith("getPayrollData:"))
+                {
+                    string[] parts = receivedData.Split(':');
+                    await HandleGetPayrollData(parts, stream);
+                }
+                else if (receivedData.StartsWith("salaryEmployee:"))
+                {
+                    string[] parts = receivedData.Split(':');
+                    await HandleSalaryEmployee(parts, stream);
+                }
 
             }
         }
@@ -882,6 +898,75 @@ public class Server
             // Код выполняется только при закрытии соединения
             Console.WriteLine($"Клиент {clientIp} отключен");
             client.Close();
+        }
+    }
+    private async Task HandleSalaryEmployee(string[] parts, NetworkStream stream)
+    {
+        try
+        {
+            int employeeId = int.Parse(parts[1]);
+            using (var context = new CrmsystemContext())
+            {
+                var employee = await context.Employees.FirstOrDefaultAsync(e => e.EmployeeId == employeeId);
+                if (employee != null)
+                {
+                    byte[] responseData = Encoding.UTF8.GetBytes("User detected");
+                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                }
+                else
+                {
+                    byte[] responseData = Encoding.UTF8.GetBytes("User not found");
+                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при проверке сотрудника: {ex.Message}");
+            byte[] responseData = Encoding.UTF8.GetBytes("Error");
+            await stream.WriteAsync(responseData, 0, responseData.Length);
+        }
+    }
+    private async Task HandleGetPayrollData(string[] parts, NetworkStream stream)
+    {
+        try
+        {
+            int employeeId = int.Parse(parts[1]);
+            string period = parts[2];
+            string year = parts[3];
+
+            string filePath = Path.Combine("PayrollSlips", "PayrollSlips.json");
+            if (!File.Exists(filePath))
+            {
+                byte[] responseDatab = Encoding.UTF8.GetBytes("NoData");
+                await stream.WriteAsync(responseDatab, 0, responseDatab.Length);
+                return;
+            }
+
+            string existingJson = File.ReadAllText(filePath);
+            var payrollList = System.Text.Json.JsonSerializer.Deserialize<List<PayrollData>>(existingJson) ?? new List<PayrollData>();
+
+            var payrollData = payrollList.FirstOrDefault(p =>
+                p.EmployeeId == employeeId &&
+                p.Period == period &&
+                p.Year == year);
+
+            if (payrollData == null)
+            {
+                byte[] responseDatab = Encoding.UTF8.GetBytes("NoData");
+                await stream.WriteAsync(responseDatab, 0, responseDatab.Length);
+                return;
+            }
+
+            string jsonData = System.Text.Json.JsonSerializer.Serialize(payrollData);
+            byte[] responseData = Encoding.UTF8.GetBytes(jsonData);
+            await stream.WriteAsync(responseData, 0, responseData.Length);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при получении данных JSON: {ex.Message}");
+            byte[] responseData = Encoding.UTF8.GetBytes("Error");
+            await stream.WriteAsync(responseData, 0, responseData.Length);
         }
     }
     private async Task<bool> UpdateUserRoleAsync(int userId, int newRoleId)
@@ -994,13 +1079,13 @@ public class Server
                 : "NoData";
         }
     }
-    private async Task<bool> AddProductAsync(string productName, string unitOfMeasurement, int quantity,  decimal unitPrice)
+    private async Task<bool> AddProductAsync(string productName, string unitOfMeasurement, int quantity, decimal unitPrice)
     {
         try
         {
             using (var context = new CrmsystemContext())
             {
-                
+
                 // Создаем новую заявку
                 var product = new Product
                 {
@@ -1010,7 +1095,7 @@ public class Server
                     Description = "",
                     UnitPrice = unitPrice,
                     LastUpdated = DateTime.Now,
-                    
+
                 };
 
                 // Добавляем заявку в базу
@@ -1048,7 +1133,7 @@ public class Server
             return products.Count == 0 ? "NoData" : JsonConvert.SerializeObject(products);
         }
     }
-        
+
     private async Task<string> GetAllApplicationsForExport()
     {
         using (var dbContext = new CrmsystemContext())
@@ -1077,7 +1162,7 @@ public class Server
         }
     }
 
-   
+
 
 
     private async Task ApproveApplication(int applicationId)
@@ -1235,7 +1320,7 @@ public class Server
                     a.SubmissionDate,
                     a.Description,
                     StatusName = a.Status.StatusName,
-                   
+
                 })
                 .ToListAsync();
 
@@ -1322,7 +1407,7 @@ public class Server
         }
     }
 
-        private async Task<bool> DeleteApplicationByIdAsync(int applicationId)
+    private async Task<bool> DeleteApplicationByIdAsync(int applicationId)
     {
         try
         {
@@ -1350,7 +1435,27 @@ public class Server
             return false;
         }
     }
+    private async Task<bool> SalaryEmployeeByIdAsync(int employeeId)
+    {
+        try
+        {
+            using (var dbContext = new CrmsystemContext())
+            {
+                var user = await dbContext.Employees.FindAsync(employeeId);
+                if (user != null)
+                {
 
+                    return true;
+                }
+            }
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при удалении пользователя: {ex.Message}");
+            return false;
+        }
+    }
     private async Task<bool> DeleteEmployeeByIdAsync(int employeeId)
     {
         try
@@ -1373,7 +1478,7 @@ public class Server
             return false;
         }
     }
-    private async Task<bool> AddSupportAsync(string email, string description, int userID )
+    private async Task<bool> AddSupportAsync(string email, string description, int userID)
     {
         try
         {
@@ -1381,7 +1486,7 @@ public class Server
             {
                 // Получаем пользователя по логину
                 var account = await context.Accounts.FirstOrDefaultAsync(a => a.Id == userID);
-               
+
                 // Создаем новую заявку
                 var support = new SupportTicket
                 {
@@ -1390,7 +1495,7 @@ public class Server
                     UserId = userID,
                     UserEmail = email,
                     Description = description,
-                   
+
                     StatusId = 1, // Статус по умолчанию
                     SubmissionDate = DateTime.Now
                 };
@@ -1539,7 +1644,7 @@ public class Server
 
         }
     }
-   
+
     private async Task<bool> DeleteTransactionByIdAsync(int transactionId)
     {
         try
@@ -1678,11 +1783,63 @@ public class Server
             // Сериализуем список пользователей в JSON
             return transactions.Count == 0 ? "NoData" : JsonConvert.SerializeObject(transactions);
         }
+    }
 
+    private async Task HandleSavePayrollJson(string[] parts, NetworkStream stream)
+    {
+        try
+        {
+            string jsonData = parts[1];
+            var newPayrollData = System.Text.Json.JsonSerializer.Deserialize<PayrollData>(jsonData);
+
+            string filePath = Path.Combine("PayrollSlips", "PayrollSlips.json");
+            Directory.CreateDirectory("PayrollSlips");
+
+            lock (_lock) // Блокируем доступ к файлу для других потоков
+            {
+                List<PayrollData> payrollList;
+                if (File.Exists(filePath))
+                {
+                    string existingJson = File.ReadAllText(filePath);
+                    payrollList = System.Text.Json.JsonSerializer.Deserialize<List<PayrollData>>(existingJson) ?? new List<PayrollData>();
+                }
+                else
+                {
+                    payrollList = new List<PayrollData>();
+                }
+
+                var existingPayroll = payrollList.FirstOrDefault(p =>
+                    p.EmployeeId == newPayrollData.EmployeeId &&
+                    p.Period == newPayrollData.Period &&
+                    p.Year == newPayrollData.Year);
+
+                if (existingPayroll != null)
+                {
+                    int index = payrollList.IndexOf(existingPayroll);
+                    payrollList[index] = newPayrollData;
+                }
+                else
+                {
+                    payrollList.Add(newPayrollData);
+                }
+
+                string updatedJson = System.Text.Json.JsonSerializer.Serialize(payrollList, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(filePath, updatedJson);
+            }
+
+            byte[] responseData = Encoding.UTF8.GetBytes("Success");
+            await stream.WriteAsync(responseData, 0, responseData.Length);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при сохранении JSON: {ex.Message}");
+            byte[] responseData = Encoding.UTF8.GetBytes("Error");
+            await stream.WriteAsync(responseData, 0, responseData.Length);
+        }
 
     }
-    
-   
+
+
 
 
     private async Task<string> GetEmployeeDataAsync()
@@ -1715,4 +1872,25 @@ public class Server
         }
 
     }
+}
+public class PayrollData
+{
+    public int EmployeeId { get; set; }
+    public string FullName { get; set; }
+    public string Position { get; set; }
+    public decimal BaseSalary { get; set; }
+    public string Period { get; set; }
+    public string Year { get; set; }
+    public List<PayrollItem> Accruals { get; set; }
+    public List<PayrollItem> Deductions { get; set; }
+    public decimal TotalAccrued { get; set; }
+    public decimal TotalDeducted { get; set; }
+    public decimal ToBePaid { get; set; }
+}
+
+public class PayrollItem
+{
+    public string Type { get; set; }
+    public decimal Amount { get; set; }
+    public string DaysOrHours { get; set; }
 }

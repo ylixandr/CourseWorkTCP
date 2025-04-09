@@ -1,0 +1,32 @@
+﻿<Window x:Class="Client.ManagerFolder.ManageDeductionRatesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Client.ManagerFolder"
+        mc:Ignorable="d"
+       Title="Управление ставками удержаний" Height="314" Width="400">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <ListView Name="RatesListView" Grid.Row="0" Margin="0,0,10,46">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Тип удержания" Width="200" DisplayMemberBinding="{Binding Type}"/>
+                    <GridViewColumn Header="Ставка (%)" Width="150">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBox Text="{Binding Rate, UpdateSourceTrigger=PropertyChanged}" Width="140"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>
+
+        <Button Content="Сохранить" Click="SaveRates_Click" Width="182" HorizontalAlignment="Center" Height="26" Margin="0,240,0,0" VerticalAlignment="Top"/>
+    </Grid>
+</Window>

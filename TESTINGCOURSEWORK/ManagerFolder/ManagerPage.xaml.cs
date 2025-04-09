@@ -787,10 +787,32 @@ namespace TESTINGCOURSEWORK
 
         }
 
-        private void Salary_Button_Click(object sender, RoutedEventArgs e)
+        private async void Salary_Button_Click(object sender, RoutedEventArgs e)
         {
-            SalaryPage salaryPage = new SalaryPage();
-            salaryPage.ShowDialog();
+            if (EmployeeDataGrid.SelectedItem is TCPServer.Employee selectedEmployee)
+            {
+                // Формирование сообщения для сервера
+                string loginData = $"salaryEmployee:{selectedEmployee.EmployeeId}";
+
+                // Отправка сообщения на сервер
+                string response = await NetworkService.Instance.SendMessageAsync(loginData);
+
+                // Проверка ответа сервера
+                if (response == "User detected")
+                {
+                    SalaryPage salaryPage = new SalaryPage(selectedEmployee);
+                    salaryPage.ShowDialog();
+                }
+                else
+                {
+                    MessageBox.Show("Ошибка сервера. Пожалуйста подождите");
+                }
+            }
+            else
+            {
+                MessageBox.Show("Пожалуйста, выберите работника");
+            }
+           
         }
 
         private async void TransactionChartButton_Click(object sender, RoutedEventArgs e)
