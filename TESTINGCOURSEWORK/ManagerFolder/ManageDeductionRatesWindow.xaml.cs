@@ -37,7 +37,7 @@ namespace Client.ManagerFolder
         private void SaveRates_Click(object sender, RoutedEventArgs e)
         {
             var updatedRates = _rates.ToDictionary(r => r.Type, r => r.Rate / 100m);
-            File.WriteAllText("DeductionRates.json", JsonConvert.SerializeObject(updatedRates, Formatting.Indented));
+            File.WriteAllText("data\\DeductionRates.json", JsonConvert.SerializeObject(updatedRates, Formatting.Indented));
             foreach (var rate in updatedRates)
             {
                 _deductionRates[rate.Key] = rate.Value;

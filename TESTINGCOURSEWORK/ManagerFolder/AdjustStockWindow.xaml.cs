@@ -50,13 +50,29 @@ namespace TESTINGCOURSEWORK.ManagerFolder
             var transactionType = ((ComboBoxItem)OperationTypeComboBox.SelectedItem).Tag.ToString()!;
             var description = DescriptionTextBox.Text;
 
+            // Создаем запись в Descriptions
+            int? descriptionId = null;
+            if (!string.IsNullOrWhiteSpace(description))
+            {
+                using (var context = new CrmsystemContext())
+                {
+                    var descriptionEntity = new Description
+                    {
+                        Content = description
+                    };
+                    context.Descriptions.Add(descriptionEntity);
+                    await context.SaveChangesAsync();
+                    descriptionId = descriptionEntity.Id;
+                }
+            }
+
             // Формирование данных для запроса
             var request = new StockAdjustmentRequest
             {
                 ProductId = selectedProduct.ProductId,
                 Quantity = transactionType == "Приход" ? quantity : -quantity,
                 TransactionType = transactionType,
-                Description = description
+                DescriptionId = descriptionId // Используем DescriptionId вместо Description
             };
 
             // Отправка на сервер
@@ -72,14 +88,12 @@ namespace TESTINGCOURSEWORK.ManagerFolder
                 ManagerPage managerPage = new ManagerPage();
                 managerPage.Show();
                 this.Close();
-               
             }
             else
             {
                 MessageBox.Show("Ошибка при выполнении операции.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             ManagerPage managerPage = new ManagerPage();

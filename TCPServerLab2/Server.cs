@@ -12,6 +12,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using TCPServer;
 using TCPServer;
+using TCPServer.balanceModule;
 using TESTINGCOURSEWORK.Models;
 
 public class Server
@@ -192,53 +193,82 @@ public class Server
 
                     try
                     {
-                        // Извлечение данных из команды
-                        string transactionType = credentials[1]; // Тип операции: Пополнение или Списание
-                        decimal amount = decimal.Parse(credentials[2]); // Сумма транзакции
-                        string description = credentials[3]; // Описание
+                        string transactionType = credentials[1];
+                        decimal amount = decimal.Parse(credentials[2]);
+                        string description = credentials[3];
 
                         Console.WriteLine($"Данные транзакции: Тип - {transactionType}, Сумма - {amount}, Описание - {description}");
 
-                        // Добавление транзакции в базу данных
                         using (var context = new CrmsystemContext())
                         {
-                            var balance = context.Balances.FirstOrDefault();
+                            var latestBalance = context.BalanceHistories
+                                .OrderByDescending(b => b.PeriodEnd)
+                                .FirstOrDefault();
+
+                            decimal currentBalance = latestBalance?.Balance ?? 0;
+
+                            string categoryName = transactionType == "Пополнение" ? "Продажи" : "Зарплата";
+                            var category = await context.TransactionCategories
+                                .FirstOrDefaultAsync(c => c.Name == categoryName);
+                            if (category == null)
+                            {
+                                category = new TransactionCategory { Name = categoryName };
+                                context.TransactionCategories.Add(category);
+                                await context.SaveChangesAsync();
+                            }
 
                             if (transactionType == "Пополнение")
                             {
-                                balance.Amount += amount;
+                                currentBalance += amount;
                             }
-                            else if (balance.Amount > amount)
+                            else if (currentBalance >= amount)
                             {
-                                balance.Amount -= amount;
+                                currentBalance -= amount;
                             }
                             else
                             {
-
                                 throw new Exception("Недостаточно средств на балансе для выплаты зарплаты.");
-
                             }
+
+                            var descriptionEntity = new Description
+                            {
+                                Content = description
+                            };
+                            context.Descriptions.Add(descriptionEntity);
+                            await context.SaveChangesAsync();
+
                             var transaction = new Transaction
                             {
                                 TransactionDate = DateTime.Now,
                                 Amount = amount,
-                                TransactionType = transactionType,
-                                Description = description
+                                CategoryId = category.Id,
+                                DescriptionId = descriptionEntity.Id,
+                                RelatedEntityType = transactionType == "Пополнение" ? "Manual" : "Employee", // Уточняем тип сущности
+                                RelatedEntityId = null // Укажи ID, если транзакция связана с конкретной сущностью
                             };
 
                             context.Transactions.Add(transaction);
-                            context.SaveChanges();
+
+                            var now = DateTime.Now;
+                            var newBalanceEntry = new BalanceHistory
+                            {
+                                PeriodStart = new DateTime(now.Year, now.Month, 1), // Начало месяца
+                                PeriodEnd = new DateTime(now.Year, now.Month, DateTime.DaysInMonth(now.Year, now.Month)), // Конец месяца
+                                TotalIncome = transactionType == "Пополнение" ? amount : 0,
+                                TotalExpenses = transactionType != "Пополнение" ? amount : 0,
+                                Balance = currentBalance
+                            };
+                            context.BalanceHistories.Add(newBalanceEntry);
+
+                            await context.SaveChangesAsync();
                         }
 
-                        // Отправка успешного ответа клиенту
                         byte[] responseData = Encoding.UTF8.GetBytes("Success");
                         await stream.WriteAsync(responseData, 0, responseData.Length);
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine($"Ошибка при добавлении транзакции: {ex.Message}");
-
-                        // Отправка ошибки клиенту
                         byte[] responseData = Encoding.UTF8.GetBytes("Error");
                         await stream.WriteAsync(responseData, 0, responseData.Length);
                     }
@@ -274,28 +304,50 @@ public class Server
                     // Получаем данные из базы
                     using (var db = new CrmsystemContext())
                     {
-                        var transactions = db.Transactions.ToList();
-                        var balance = db.Balances.FirstOrDefault()?.Amount ?? 0;
+                        var transactions = await db.Transactions
+                            .Include(t => t.Category)
+                            .ToListAsync();
+
+                        // Получаем текущий баланс из последней записи BalanceHistory
+                        var latestBalance = await db.BalanceHistories
+                            .OrderByDescending(b => b.PeriodEnd)
+                            .FirstOrDefaultAsync();
+                        decimal currentBalance = latestBalance?.Balance ?? 0;
+
+                        // Находим категории для доходов и расходов
+                        var incomeCategory = await db.TransactionCategories.FirstOrDefaultAsync(c => c.Name == "Продажи");
+                        var expenseCategory = await db.TransactionCategories.FirstOrDefaultAsync(c => c.Name == "Зарплата");
+
+                        int? incomeCategoryId = incomeCategory?.Id;
+                        int? expenseCategoryId = expenseCategory?.Id;
 
                         var report = new
                         {
-                            Balance = balance,
+                            Balance = currentBalance,
                             TotalTransactions = transactions.Count,
-                            IncomeSum = transactions.Where(t => t.TransactionType == "Пополнение").Sum(t => t.Amount),
-                            ExpenseSum = transactions.Where(t => t.TransactionType == "Списание").Sum(t => t.Amount),
+                            IncomeSum = incomeCategoryId.HasValue
+                                ? transactions.Where(t => t.CategoryId == incomeCategoryId.Value).Sum(t => t.Amount)
+                                : 0,
+                            ExpenseSum = expenseCategoryId.HasValue
+                                ? transactions.Where(t => t.CategoryId == expenseCategoryId.Value).Sum(t => t.Amount)
+                                : 0,
                             MaxTransaction = transactions.OrderByDescending(t => t.Amount).FirstOrDefault(),
                             MinTransaction = transactions.OrderBy(t => t.Amount).FirstOrDefault(),
-                            AverageTransaction = transactions.Average(t => t.Amount),
+                            AverageTransaction = transactions.Any() ? transactions.Average(t => t.Amount) : 0,
                             MonthlySummary = transactions.GroupBy(t => t.TransactionDate.Month)
                                 .Select(g => new
                                 {
                                     Month = g.Key,
                                     Total = g.Count(),
-                                    Income = g.Where(t => t.TransactionType == "Пополнение").Sum(t => t.Amount),
-                                    Expense = g.Where(t => t.TransactionType == "Списание").Sum(t => t.Amount),
-                                    MonthEndBalance = balance // Вычисление через динамику
+                                    Income = incomeCategoryId.HasValue
+                                        ? g.Where(t => t.CategoryId == incomeCategoryId.Value).Sum(t => t.Amount)
+                                        : 0,
+                                    Expense = expenseCategoryId.HasValue
+                                        ? g.Where(t => t.CategoryId == expenseCategoryId.Value).Sum(t => t.Amount)
+                                        : 0,
+                                    MonthEndBalance = currentBalance
                                 }).ToList(),
-                            Errors = transactions.GroupBy(t => new { t.Amount, t.TransactionType })
+                            Errors = transactions.GroupBy(t => new { t.Amount, t.CategoryId }) // Используем CategoryId
                                 .Where(g => g.Count() > 1)
                                 .Select(g => g.Key).ToList()
                         };
@@ -579,7 +631,7 @@ public class Server
                                 }
                                 else if (stockRequest.TransactionType == "Расход")
                                 {
-                                    if (product.Quantity < stockRequest.Quantity)
+                                    if (product.Quantity < Math.Abs(stockRequest.Quantity))
                                     {
                                         throw new Exception("Недостаток");
                                     }
@@ -587,24 +639,30 @@ public class Server
                                     {
                                         product.Quantity += stockRequest.Quantity;
                                     }
-
                                 }
 
-                                // Update LastUpdated field
                                 product.LastUpdated = DateTime.Now;
 
-                                // Save transaction
+                                var descriptionEntity = new Description
+                                {
+                                    Content = stockRequest.DescriptionId != null ? (await dbContext.Descriptions.FindAsync(stockRequest.DescriptionId))?.Content : null
+                                };
+                                if (!string.IsNullOrEmpty(descriptionEntity.Content))
+                                {
+                                    dbContext.Descriptions.Add(descriptionEntity);
+                                    await dbContext.SaveChangesAsync();
+                                }
+
                                 var transaction = new ProductTransaction
                                 {
                                     ProductId = stockRequest.ProductId,
                                     Quantity = stockRequest.Quantity,
-                                    TransactionType = stockRequest.TransactionType,
-                                    Description = stockRequest.Description,
+                                    DescriptionId = descriptionEntity.Id != 0 ? descriptionEntity.Id : (int?)null,
                                     TransactionDate = DateTime.Now
                                 };
 
                                 dbContext.ProductTransactions.Add(transaction);
-                                dbContext.SaveChanges();
+                                await dbContext.SaveChangesAsync();
                             }
                         }
 
@@ -675,16 +733,28 @@ public class Server
 
                         using (var dbContext = new CrmsystemContext())
                         {
-                            var employees = dbContext.Employees.Where(e => e.Salary.HasValue).ToList();
-                            var balance = dbContext.Balances.FirstOrDefault();
+                            var employees = await dbContext.Employees
+                                .Where(e => e.Salary.HasValue)
+                                .ToListAsync();
 
-                            if (balance == null)
-                            {
-                                throw new Exception("Баланс компании не найден.");
-                            }
+                            // Получаем текущий баланс из последней записи BalanceHistory
+                            var latestBalance = await dbContext.BalanceHistories
+                                .OrderByDescending(b => b.PeriodEnd)
+                                .FirstOrDefaultAsync();
+                            decimal currentBalance = latestBalance?.Balance ?? 0;
 
                             decimal totalSalary = 0;
                             List<SalaryRecord> salaryRecords = new();
+
+                            // Находим категорию "Зарплата"
+                            var salaryCategory = await dbContext.TransactionCategories
+                                .FirstOrDefaultAsync(c => c.Name == "Зарплата");
+                            if (salaryCategory == null)
+                            {
+                                salaryCategory = new TransactionCategory { Name = "Зарплата" };
+                                dbContext.TransactionCategories.Add(salaryCategory);
+                                await dbContext.SaveChangesAsync();
+                            }
 
                             foreach (var employee in employees)
                             {
@@ -699,22 +769,52 @@ public class Server
                                 });
 
                                 totalSalary += employeeSalary;
+
+                                // Создаем транзакцию для каждой зарплаты
+                                var descriptionEntity = new Description
+                                {
+                                    Content = $"Зарплата сотруднику {employee.LastName} за {salaryRequest.Date:MMMM yyyy}"
+                                };
+                                dbContext.Descriptions.Add(descriptionEntity);
+                                await dbContext.SaveChangesAsync();
+
+                                var transaction = new Transaction
+                                {
+                                    TransactionDate = DateTime.Now,
+                                    Amount = employeeSalary,
+                                    CategoryId = salaryCategory.Id,
+                                    DescriptionId = descriptionEntity.Id,
+                                    RelatedEntityType = "Employee",
+                                    RelatedEntityId = employee.EmployeeId
+                                };
+                                dbContext.Transactions.Add(transaction);
                             }
 
                             // Вычет подоходного налога (13%)
                             decimal taxAmount = totalSalary * 0.13M;
                             decimal netSalary = totalSalary - taxAmount;
 
-                            if (balance.Amount < netSalary)
+                            if (currentBalance < netSalary)
                             {
                                 throw new Exception("Недостаточно средств на балансе для выплаты зарплаты.");
                             }
 
-                            // Обновление баланса
-                            balance.Amount -= netSalary;
-                            dbContext.SaveChanges();
+                            // Обновляем баланс
+                            currentBalance -= netSalary;
 
-                            // Отправка JSON с данными
+                            // Создаем новую запись в BalanceHistory
+                            var newBalanceEntry = new BalanceHistory
+                            {
+                                PeriodStart = new DateTime(salaryRequest.Date.Year, salaryRequest.Date.Month, 1),
+                                PeriodEnd = new DateTime(salaryRequest.Date.Year, salaryRequest.Date.Month, DateTime.DaysInMonth(salaryRequest.Date.Year, salaryRequest.Date.Month)),
+                                TotalIncome = 0,
+                                TotalExpenses = netSalary,
+                                Balance = currentBalance
+                            };
+                            dbContext.BalanceHistories.Add(newBalanceEntry);
+
+                            await dbContext.SaveChangesAsync();
+
                             string jsonResponse = JsonConvert.SerializeObject(salaryRecords);
                             byte[] responseData = Encoding.UTF8.GetBytes(jsonResponse);
                             await stream.WriteAsync(responseData, 0, responseData.Length);
@@ -838,43 +938,7 @@ public class Server
                         await stream.WriteAsync(errorResponse, 0, errorResponse.Length);
                     }
                 }
-                else if (credentials[0] == "updateAdminPanel")
-                {
-                    string managerCode = credentials[1];
-                    string adminCode = credentials[2];
-                    try
-                    {
-
-
-                        using (var dbContext = new CrmsystemContext())
-                        {
-                            var existingPanel = dbContext.AdminPanels.FirstOrDefault(p => p.Id == 1);
-                            if (existingPanel != null)
-                            {
-                                // Обновление данных
-                                existingPanel.AdminCode = adminCode;
-                                existingPanel.ManagerCode = managerCode;
-
-                                await dbContext.SaveChangesAsync();
-
-                                byte[] successResponse = Encoding.UTF8.GetBytes("Success");
-                                await stream.WriteAsync(successResponse, 0, successResponse.Length);
-                            }
-                            else
-                            {
-                                byte[] errorResponse = Encoding.UTF8.GetBytes("AdminPanelNotFound");
-                                await stream.WriteAsync(errorResponse, 0, errorResponse.Length);
-                            }
-                        }
-
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Ошибка при обновлении AdminPanel: {ex.Message}");
-                        byte[] errorResponse = Encoding.UTF8.GetBytes("Error");
-                        await stream.WriteAsync(errorResponse, 0, errorResponse.Length);
-                    }
-                }
+               
                 else if (receivedData.StartsWith("savePayrollJson:"))
                 {
                     string[] parts = receivedData.Split(new[] { ':' }, 2); // Разделяем на команду и данные
@@ -890,6 +954,94 @@ public class Server
                     string[] parts = receivedData.Split(':');
                     await HandleSalaryEmployee(parts, stream);
                 }
+                else if (receivedData.StartsWith("getBalanceData"))
+                {
+                    Console.WriteLine("Запрос данных о балансе.");
+
+                    try
+                    {
+                        string balanceData = await GetBalanceDataAsync();
+                        byte[] responseData = Encoding.UTF8.GetBytes(balanceData);
+                        await stream.WriteAsync(responseData, 0, responseData.Length);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Ошибка при обработке запроса баланса: {ex.Message}");
+                        byte[] errorResponse = Encoding.UTF8.GetBytes("Error: " + ex.Message);
+                        await stream.WriteAsync(errorResponse, 0, errorResponse.Length);
+                    }
+                }
+                else if (receivedData.StartsWith("getBalanceSnapshot"))
+                {
+                    Console.WriteLine("Запрос текущего баланса.");
+                    string balanceData = await GetBalanceSnapshotAsync();
+                    byte[] responseData = Encoding.UTF8.GetBytes(balanceData);
+                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                }
+                else if (receivedData.StartsWith("addAsset"))
+                {
+                    Console.WriteLine("Добавление актива.");
+                    string jsonData = receivedData.Substring("addAsset".Length);
+                    string response = await AddAssetAsync(jsonData);
+                    byte[] responseData = Encoding.UTF8.GetBytes(response);
+                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                }
+                else if (receivedData.StartsWith("updateAsset"))
+                {
+                    Console.WriteLine("Обновление актива.");
+                    string jsonData = receivedData.Substring("updateAsset".Length);
+                    string response = await UpdateAssetAsync(jsonData);
+                    byte[] responseData = Encoding.UTF8.GetBytes(response);
+                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                }
+                else if (receivedData.StartsWith("deleteAsset"))
+                {
+                    Console.WriteLine("Удаление актива.");
+                    string jsonData = receivedData.Substring("deleteAsset".Length);
+                    string response = await DeleteAssetAsync(jsonData);
+                    byte[] responseData = Encoding.UTF8.GetBytes(response);
+                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                }
+                else if (receivedData.StartsWith("addLiability"))
+                {
+                    Console.WriteLine("Добавление обязательства.");
+                    string jsonData = receivedData.Substring("addLiability".Length);
+                    string response = await AddLiabilityAsync(jsonData);
+                    byte[] responseData = Encoding.UTF8.GetBytes(response);
+                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                }
+                else if (receivedData.StartsWith("updateLiability"))
+                {
+                    Console.WriteLine("Обновление обязательства.");
+                    string jsonData = receivedData.Substring("updateLiability".Length);
+                    string response = await UpdateLiabilityAsync(jsonData);
+                    byte[] responseData = Encoding.UTF8.GetBytes(response);
+                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                }
+                else if (receivedData.StartsWith("deleteLiability"))
+                {
+                    Console.WriteLine("Удаление обязательства.");
+                    string jsonData = receivedData.Substring("deleteLiability".Length);
+                    string response = await DeleteLiabilityAsync(jsonData);
+                    byte[] responseData = Encoding.UTF8.GetBytes(response);
+                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                }
+                else if (receivedData.StartsWith("getBalanceSnapshot"))
+                {
+                    Console.WriteLine("Получение моментального снимка баланса.");
+                    string jsonData = receivedData.Substring("getBalanceSnapshot".Length);
+                    string response = await GetBalanceSnapshotAsync(jsonData);
+                    byte[] responseData = Encoding.UTF8.GetBytes(response);
+                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                }
+                else if (receivedData.StartsWith("compareBalanceSnapshots"))
+                {
+                    Console.WriteLine("Сравнение снимков баланса.");
+                    string jsonData = receivedData.Substring("compareBalanceSnapshots".Length);
+                    string response = await CompareBalanceSnapshotsAsync(jsonData);
+                    byte[] responseData = Encoding.UTF8.GetBytes(response);
+                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                }
 
             }
         }
@@ -898,6 +1050,142 @@ public class Server
             // Код выполняется только при закрытии соединения
             Console.WriteLine($"Клиент {clientIp} отключен");
             client.Close();
+        }
+    }
+    private async Task<string> GetBalanceSnapshotAsync(string jsonData)
+    {
+        try
+        {
+            // Парсим параметры (даты начала и конца периода)
+            var request = JsonConvert.DeserializeObject<dynamic>(jsonData);
+            DateTime? startDate = request.StartDate != null ? DateTime.Parse((string)request.StartDate) : (DateTime?)null;
+            DateTime? endDate = request.EndDate != null ? DateTime.Parse((string)request.EndDate) : (DateTime?)null;
+
+            using (var dbContext = new CrmsystemContext())
+            {
+                // Фильтруем активы по дате приобретения
+                var assetsQuery = dbContext.Assets.AsQueryable();
+                if (startDate.HasValue)
+                    assetsQuery = assetsQuery.Where(a => a.AcquisitionDate >= startDate.Value);
+                if (endDate.HasValue)
+                    assetsQuery = assetsQuery.Where(a => a.AcquisitionDate <= endDate.Value);
+
+                var assets = await assetsQuery.ToListAsync();
+
+                // Фильтруем обязательства по дате погашения
+                var liabilitiesQuery = dbContext.Liabilities.AsQueryable();
+                if (startDate.HasValue)
+                    liabilitiesQuery = liabilitiesQuery.Where(l => l.DueDate >= startDate.Value);
+                if (endDate.HasValue)
+                    liabilitiesQuery = liabilitiesQuery.Where(l => l.DueDate <= endDate.Value);
+
+                var liabilities = await liabilitiesQuery.ToListAsync();
+
+                // Группируем активы по категориям
+                var assetCategories = assets
+                    .GroupBy(a => a.Category)
+                    .Select(g => new
+                    {
+                        Category = g.Key,
+                        TotalAmount = g.Sum(a => a.Amount)
+                    })
+                    .ToList();
+
+                decimal totalAssets = assetCategories.Sum(c => c.TotalAmount);
+
+                // Группируем обязательства по категориям
+                var liabilityCategories = liabilities
+                    .GroupBy(l => l.Category)
+                    .Select(g => new
+                    {
+                        Category = g.Key,
+                        TotalAmount = g.Sum(l => l.Amount)
+                    })
+                    .ToList();
+
+                decimal totalLiabilities = liabilityCategories.Sum(c => c.TotalAmount);
+
+                // Собственный капитал = Активы - Пассивы
+                decimal equity = totalAssets - totalLiabilities;
+
+                // Проверка баланса
+                decimal balanceCheck = totalAssets - totalLiabilities - equity;
+
+                return JsonConvert.SerializeObject(new
+                {
+                    Assets = new { Total = totalAssets, Categories = assetCategories },
+                    Liabilities = new { Total = totalLiabilities, Categories = liabilityCategories },
+                    Equity = equity,
+                    BalanceCheck = balanceCheck
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            return $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task<string> CompareBalanceSnapshotsAsync(string jsonData)
+    {
+        try
+        {
+            var request = JsonConvert.DeserializeObject<dynamic>(jsonData);
+            DateTime? period1Start = request.Period1Start != null ? DateTime.Parse((string)request.Period1Start) : (DateTime?)null;
+            DateTime? period1End = request.Period1End != null ? DateTime.Parse((string)request.Period1End) : (DateTime?)null;
+            DateTime? period2Start = request.Period2Start != null ? DateTime.Parse((string)request.Period2Start) : (DateTime?)null;
+            DateTime? period2End = request.Period2End != null ? DateTime.Parse((string)request.Period2End) : (DateTime?)null;
+
+            using (var dbContext = new CrmsystemContext())
+            {
+                // Первый период
+                var assetsQuery1 = dbContext.Assets.AsQueryable();
+                if (period1Start.HasValue)
+                    assetsQuery1 = assetsQuery1.Where(a => a.AcquisitionDate >= period1Start.Value);
+                if (period1End.HasValue)
+                    assetsQuery1 = assetsQuery1.Where(a => a.AcquisitionDate <= period1End.Value);
+                var assets1 = await assetsQuery1.ToListAsync();
+
+                var liabilitiesQuery1 = dbContext.Liabilities.AsQueryable();
+                if (period1Start.HasValue)
+                    liabilitiesQuery1 = liabilitiesQuery1.Where(l => l.DueDate >= period1Start.Value);
+                if (period1End.HasValue)
+                    liabilitiesQuery1 = liabilitiesQuery1.Where(l => l.DueDate <= period1End.Value);
+                var liabilities1 = await liabilitiesQuery1.ToListAsync();
+
+                decimal totalAssets1 = assets1.Sum(a => a.Amount);
+                decimal totalLiabilities1 = liabilities1.Sum(l => l.Amount);
+                decimal equity1 = totalAssets1 - totalLiabilities1;
+
+                // Второй период
+                var assetsQuery2 = dbContext.Assets.AsQueryable();
+                if (period2Start.HasValue)
+                    assetsQuery2 = assetsQuery2.Where(a => a.AcquisitionDate >= period2Start.Value);
+                if (period2End.HasValue)
+                    assetsQuery2 = assetsQuery2.Where(a => a.AcquisitionDate <= period2End.Value);
+                var assets2 = await assetsQuery2.ToListAsync();
+
+                var liabilitiesQuery2 = dbContext.Liabilities.AsQueryable();
+                if (period2Start.HasValue)
+                    liabilitiesQuery2 = liabilitiesQuery2.Where(l => l.DueDate >= period2Start.Value);
+                if (period2End.HasValue)
+                    liabilitiesQuery2 = liabilitiesQuery2.Where(l => l.DueDate <= period2End.Value);
+                var liabilities2 = await liabilitiesQuery2.ToListAsync();
+
+                decimal totalAssets2 = assets2.Sum(a => a.Amount);
+                decimal totalLiabilities2 = liabilities2.Sum(l => l.Amount);
+                decimal equity2 = totalAssets2 - totalLiabilities2;
+
+                return JsonConvert.SerializeObject(new
+                {
+                    Period1 = new { Assets = totalAssets1, Liabilities = totalLiabilities1, Equity = equity1 },
+                    Period2 = new { Assets = totalAssets2, Liabilities = totalLiabilities2, Equity = equity2 }
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            return $"Error: {ex.Message}";
         }
     }
     private async Task HandleSalaryEmployee(string[] parts, NetworkStream stream)
@@ -1014,7 +1302,205 @@ public class Server
             return false; // Ошибка при удалении.
         }
     }
+    private async Task<string> AddAssetAsync(string jsonData)
+    {
+        try
+        {
+            var assetData = JsonConvert.DeserializeObject<dynamic>(jsonData);
+            using (var dbContext = new CrmsystemContext())
+            {
+                // Создаем описание, если есть
+                int? descriptionId = null;
+                if (!string.IsNullOrEmpty((string)assetData.Description))
+                {
+                    var description = new Description { Content = assetData.Description };
+                    dbContext.Descriptions.Add(description);
+                    await dbContext.SaveChangesAsync();
+                    descriptionId = description.Id;
+                }
 
+                // Создаем актив
+                var asset = new Asset
+                {
+                    Category = assetData.Category,
+                    Name = assetData.Name,
+                    Amount = (decimal)assetData.Amount,
+                    Currency = assetData.Currency ?? "RUB",
+                    AcquisitionDate = DateTime.Parse((string)assetData.AcquisitionDate),
+                    DepreciationRate = assetData.DepreciationRate != null ? (decimal?)assetData.DepreciationRate : null,
+                    DescriptionId = descriptionId
+                };
+
+                dbContext.Assets.Add(asset);
+                await dbContext.SaveChangesAsync();
+
+                return JsonConvert.SerializeObject(new { Success = true, AssetId = asset.Id });
+            }
+        }
+        catch (Exception ex)
+        {
+            return JsonConvert.SerializeObject(new { Success = false, Error = ex.Message });
+        }
+    }
+
+    private async Task<string> UpdateAssetAsync(string jsonData)
+    {
+        try
+        {
+            var assetData = JsonConvert.DeserializeObject<dynamic>(jsonData);
+            using (var dbContext = new CrmsystemContext())
+            {
+                var asset = await dbContext.Assets.FindAsync((int)assetData.Id);
+                if (asset == null)
+                    return JsonConvert.SerializeObject(new { Success = false, Error = "Asset not found" });
+
+                // Обновляем описание, если есть
+                if (!string.IsNullOrEmpty((string)assetData.Description))
+                {
+                    if (asset.DescriptionId != null)
+                    {
+                        var description = await dbContext.Descriptions.FindAsync(asset.DescriptionId);
+                        description.Content = assetData.Description;
+                    }
+                    else
+                    {
+                        var description = new Description { Content = assetData.Description };
+                        dbContext.Descriptions.Add(description);
+                        await dbContext.SaveChangesAsync();
+                        asset.DescriptionId = description.Id;
+                    }
+                }
+
+                // Обновляем актив
+                asset.Category = assetData.Category;
+                asset.Name = assetData.Name;
+                asset.Amount = (decimal)assetData.Amount;
+                asset.Currency = assetData.Currency ?? "RUB";
+                asset.AcquisitionDate = DateTime.Parse((string)assetData.AcquisitionDate);
+                asset.DepreciationRate = assetData.DepreciationRate != null ? (decimal?)assetData.DepreciationRate : null;
+
+                await dbContext.SaveChangesAsync();
+                return JsonConvert.SerializeObject(new { Success = true });
+            }
+        }
+        catch (Exception ex)
+        {
+            return JsonConvert.SerializeObject(new { Success = false, Error = ex.Message });
+        }
+    }
+    private async Task<string> AddLiabilityAsync(string jsonData)
+    {
+        try
+        {
+            var liabilityData = JsonConvert.DeserializeObject<dynamic>(jsonData);
+            using (var dbContext = new CrmsystemContext())
+            {
+                int? descriptionId = null;
+                if (!string.IsNullOrEmpty((string)liabilityData.Description))
+                {
+                    var description = new Description { Content = liabilityData.Description };
+                    dbContext.Descriptions.Add(description);
+                    await dbContext.SaveChangesAsync();
+                    descriptionId = description.Id;
+                }
+
+                var liability = new Liability
+                {
+                    Category = liabilityData.Category,
+                    Name = liabilityData.Name,
+                    Amount = (decimal)liabilityData.Amount,
+                    DueDate = DateTime.Parse((string)liabilityData.DueDate),
+                    DescriptionId = descriptionId
+                };
+
+                dbContext.Liabilities.Add(liability);
+                await dbContext.SaveChangesAsync();
+
+                return JsonConvert.SerializeObject(new { Success = true, LiabilityId = liability.Id });
+            }
+        }
+        catch (Exception ex)
+        {
+            return JsonConvert.SerializeObject(new { Success = false, Error = ex.Message });
+        }
+    }
+    private async Task<string> DeleteAssetAsync(string jsonData)
+    {
+        try
+        {
+            var assetData = JsonConvert.DeserializeObject<dynamic>(jsonData);
+            using (var dbContext = new CrmsystemContext())
+            {
+                var asset = await dbContext.Assets.FindAsync((int)assetData.Id);
+                if (asset == null)
+                    return JsonConvert.SerializeObject(new { Success = false, Error = "Asset not found" });
+
+                dbContext.Assets.Remove(asset);
+                await dbContext.SaveChangesAsync();
+                return JsonConvert.SerializeObject(new { Success = true });
+            }
+        }
+        catch (Exception ex)
+        {
+            return JsonConvert.SerializeObject(new { Success = false, Error = ex.Message });
+        }
+    }
+    private async Task<string> GetBalanceSnapshotAsync()
+    {
+        try
+        {
+            using (var dbContext = new CrmsystemContext())
+            {
+                // Получаем активы
+                var assets = await dbContext.Assets
+                    .GroupBy(a => a.Category)
+                    .Select(g => new
+                    {
+                        Category = g.Key,
+                        TotalAmount = g.Sum(a => a.Amount)
+                    })
+                    .ToListAsync();
+
+                // Получаем пассивы
+                var liabilities = await dbContext.Liabilities
+                    .GroupBy(l => l.Category)
+                    .Select(g => new
+                    {
+                        Category = g.Key,
+                        TotalAmount = g.Sum(l => l.Amount)
+                    })
+                    .ToListAsync();
+
+                // Получаем собственный капитал
+                var equity = await dbContext.Equity
+                    .SumAsync(e => e.Amount);
+
+                // Формируем результат
+                var balanceSnapshot = new
+                {
+                    Assets = new
+                    {
+                        Total = assets.Sum(a => a.TotalAmount),
+                        Categories = assets
+                    },
+                    Liabilities = new
+                    {
+                        Total = liabilities.Sum(l => l.TotalAmount),
+                        Categories = liabilities
+                    },
+                    Equity = equity,
+                    BalanceCheck = assets.Sum(a => a.TotalAmount) - (liabilities.Sum(l => l.TotalAmount) + equity) // Активы = Пассивы + Капитал
+                };
+
+                return JsonConvert.SerializeObject(balanceSnapshot);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при получении баланса: {ex.Message}");
+            return $"Error: {ex.Message}";
+        }
+    }
     private async Task<string> GetEmployeeSalaryDataAsync()
     {
         using (var dbContext = new CrmsystemContext())
@@ -1063,17 +1549,16 @@ public class Server
     {
         using (var dbContext = new CrmsystemContext())
         {
-            // Группируем транзакции по типу и считаем общую сумму
             var transactionSummary = await dbContext.ProductTransactions
-                .GroupBy(t => t.TransactionType)
+                .Include(t => t.Product)
+                .GroupBy(t => t.Product.ProductName)
                 .Select(g => new
                 {
-                    TransactionType = g.Key,
+                    ProductName = g.Key,
                     TotalAmount = g.Sum(t => Math.Abs(t.Quantity))
                 })
                 .ToListAsync();
 
-            // Сериализуем данные в JSON
             return transactionSummary.Any()
                 ? JsonConvert.SerializeObject(transactionSummary)
                 : "NoData";
@@ -1139,18 +1624,20 @@ public class Server
         using (var dbContext = new CrmsystemContext())
         {
             var applications = await dbContext.Applications
-                .Include(a => a.Account)  // Подключаем Account для логина
-                .Include(a => a.Status)   // Подключаем Status для статуса заявки
+                .Include(a => a.Account)
+                .Include(a => a.Status)
+                .Include(a => a.Product) // Подключаем Product
+                .Include(a => a.Description) // Подключаем Description
                 .Select(a => new
                 {
                     a.Id,
                     Login = a.Account.Login,
                     a.ContactInfo,
-                    a.ProductName,
-                    a.Description,
+                    ProductName = a.Product != null ? a.Product.ProductName : null, // Используем Product.ProductName
+                    Description = a.Description != null ? a.Description.Content : null, // Используем Description.Content
                     a.TotalPrice,
-                    a.Quantity,               // Новое поле
-                    a.UnitOfMeasurement,      // Новое поле
+                    a.Quantity,
+                    a.UnitOfMeasurement,
                     Status = a.Status.StatusName,
                     DateSubmitted = a.DateSubmitted.HasValue
                         ? a.DateSubmitted.Value.ToString("dd.MM.yyyy HH:mm:ss")
@@ -1190,52 +1677,35 @@ public class Server
             }
         }
     }
-    //private async Task<string> GetUnprocessedApplications()
-    //{
-    //    using (var dbContext = new TestjsonContext())
-    //    {
-    //        // Фильтруем заявки, которые находятся в статусе "Ожидает"
-    //        var applications = await dbContext.Applications
-    //            .Include(a => a.Account)  // Для получения логина пользователя
-    //            .Include(a => a.Status)   // Для получения названия статуса
-    //            .Where(a => a.StatusId == 1) // ID статуса "Ожидает"
-    //            .Select(a => new
-    //            {
-    //                a.Id,
-    //                Login = a.Account.Login,  // Логин пользователя
-    //                a.ContactInfo,
-    //                a.ProductName,
-    //                a.Description,
-    //                a.TotalPrice,
-    //                Status = a.Status.StatusName,   // Название статуса
-    //                DateSubmitted = a.DateSubmitted.HasValue
-    //                    ? a.DateSubmitted.Value.ToString("dd.MM.yyyy")
-    //                    : null // Форматируем дату
-    //            })
-    //            .ToListAsync();
-
-    //        // Если данных нет, возвращаем "NoData"
-    //        return applications.Count == 0 ? "NoData" : JsonConvert.SerializeObject(applications);
-    //    }
-    //}
+  
     private async Task<string> GetUnprocessedApplications()
     {
         using (var dbContext = new CrmsystemContext())
         {
+            // Находим статус "Ожидает" с типом "ApplicationStatus"
+            var pendingStatus = await dbContext.Statuses
+                .FirstOrDefaultAsync(s => s.StatusName == "Pending" && s.Type == "ApplicationStatus");
+            if (pendingStatus == null)
+            {
+                return "NoData"; // Если статус не найден, возвращаем пустой результат
+            }
+
             var applications = await dbContext.Applications
                 .Include(a => a.Account)
                 .Include(a => a.Status)
-                .Where(a => a.StatusId == 1) // ID статуса "Ожидает"
+                .Include(a => a.Product)
+                .Include(a => a.Description)
+                .Where(a => a.StatusId == pendingStatus.Id)
                 .Select(a => new
                 {
                     a.Id,
                     Login = a.Account.Login,
                     a.ContactInfo,
-                    a.ProductName,
-                    a.Description,
+                    ProductName = a.Product != null ? a.Product.ProductName : null,
+                    Description = a.Description != null ? a.Description.Content : null,
                     a.TotalPrice,
-                    a.Quantity,               // Новое поле
-                    a.UnitOfMeasurement,      // Новое поле
+                    a.Quantity,
+                    a.UnitOfMeasurement,
                     Status = a.Status.StatusName,
                     DateSubmitted = a.DateSubmitted.HasValue
                         ? a.DateSubmitted.Value.ToString("dd.MM.yyyy")
@@ -1250,20 +1720,183 @@ public class Server
     {
         using (var dbContext = new CrmsystemContext())
         {
+            // Найдем ID статуса "Одобрено" (предположим, что это "Approved" с типом "ApplicationStatus")
+            var approvedStatus = await dbContext.Statuses
+                .FirstOrDefaultAsync(s => s.StatusName == "Approved" && s.Type == "ApplicationStatus");
+            if (approvedStatus == null)
+            {
+                return "NoData"; // Если статус не найден, возвращаем пустой результат
+            }
+
             var applications = await dbContext.Applications
                 .Include(a => a.Account)
                 .Include(a => a.Status)
-                .Where(a => a.StatusId == 2) // ID статуса "Ожидает"
+                .Include(a => a.Product) // Подключаем Product
+                .Include(a => a.Description) // Подключаем Description
+                .Where(a => a.StatusId == approvedStatus.Id) // Используем найденный ID статуса
                 .Select(a => new
                 {
                     a.Id,
                     Login = a.Account.Login,
                     a.ContactInfo,
-                    a.ProductName,
-                    a.Description,
+                    ProductName = a.Product != null ? a.Product.ProductName : null, // Используем Product.ProductName
+                    Description = a.Description != null ? a.Description.Content : null, // Используем Description.Content
                     a.TotalPrice,
-                    a.Quantity,               // Новое поле
-                    a.UnitOfMeasurement,      // Новое поле
+                    a.Quantity,
+                    a.UnitOfMeasurement,
+                    Status = a.Status.StatusName,
+                    DateSubmitted = a.DateSubmitted.HasValue
+                        ? a.DateSubmitted.Value.ToString("dd.MM.yyyy")
+                        : null
+                })
+                .ToListAsync();
+
+            return applications.Count == 0 ? "NoData" : JsonConvert.SerializeObject(applications);
+        }
+    }
+
+    private async Task<string> UpdateLiabilityAsync(string jsonData)
+    {
+        try
+        {
+            var liabilityData = JsonConvert.DeserializeObject<dynamic>(jsonData);
+            using (var dbContext = new CrmsystemContext())
+            {
+                var liability = await dbContext.Liabilities.FindAsync((int)liabilityData.Id);
+                if (liability == null)
+                    return JsonConvert.SerializeObject(new { Success = false, Error = "Liability not found" });
+
+                // Обновляем описание, если есть
+                if (!string.IsNullOrEmpty((string)liabilityData.Description))
+                {
+                    if (liability.DescriptionId != null)
+                    {
+                        var description = await dbContext.Descriptions.FindAsync(liability.DescriptionId);
+                        description.Content = liabilityData.Description;
+                    }
+                    else
+                    {
+                        var description = new Description { Content = liabilityData.Description };
+                        dbContext.Descriptions.Add(description);
+                        await dbContext.SaveChangesAsync();
+                        liability.DescriptionId = description.Id;
+                    }
+                }
+
+                // Обновляем обязательство
+                liability.Category = liabilityData.Category;
+                liability.Name = liabilityData.Name;
+                liability.Amount = (decimal)liabilityData.Amount;
+                liability.DueDate = DateTime.Parse((string)liabilityData.DueDate);
+
+                await dbContext.SaveChangesAsync();
+                return JsonConvert.SerializeObject(new { Success = true });
+            }
+        }
+        catch (Exception ex)
+        {
+            return JsonConvert.SerializeObject(new { Success = false, Error = ex.Message });
+        }
+    }
+
+    private async Task<string> DeleteLiabilityAsync(string jsonData)
+    {
+        try
+        {
+            var liabilityData = JsonConvert.DeserializeObject<dynamic>(jsonData);
+            using (var dbContext = new CrmsystemContext())
+            {
+                var liability = await dbContext.Liabilities.FindAsync((int)liabilityData.Id);
+                if (liability == null)
+                    return JsonConvert.SerializeObject(new { Success = false, Error = "Liability not found" });
+
+                dbContext.Liabilities.Remove(liability);
+                await dbContext.SaveChangesAsync();
+                return JsonConvert.SerializeObject(new { Success = true });
+            }
+        }
+        catch (Exception ex)
+        {
+            return JsonConvert.SerializeObject(new { Success = false, Error = ex.Message });
+        }
+    }
+
+    private async Task<string> GetAllApplications()
+    {
+        using (var dbContext = new CrmsystemContext())
+        {
+            var applications = await dbContext.Applications
+                .Include(a => a.Account)
+                .Include(a => a.Status) // Подключаем Status
+                .Include(a => a.Product) // Подключаем Product
+                .Include(a => a.Description) // Подключаем Description
+                .Where(a => a.DateSubmitted >= DateTime.Now.AddDays(-3))
+                .Select(a => new
+                {
+                    a.Id,
+                    Login = a.Account.Login,
+                    a.ContactInfo,
+                    ProductName = a.Product != null ? a.Product.ProductName : null,
+                    Description = a.Description != null ? a.Description.Content : null,
+                    a.TotalPrice,
+                    Status = a.Status != null ? a.Status.StatusName : null, // Используем Status.StatusName
+                    a.Quantity,
+                    a.UnitOfMeasurement,
+                    DateSubmitted = a.DateSubmitted.HasValue
+                        ? a.DateSubmitted.Value.ToString("dd.MM.yyyy")
+                        : null
+                })
+                .ToListAsync();
+
+            return applications.Count == 0 ? "NoData" : JsonConvert.SerializeObject(applications);
+        }
+    }
+    private async Task<string> GetSupportsByUserId(int userId)
+    {
+        using (var dbContext = new CrmsystemContext())
+        {
+            var supports = await dbContext.SupportTickets
+                .Include(a => a.User)
+                .Include(a => a.Status)
+                .Include(a => a.Description) // Подключаем Description
+                .Where(a => a.User.Id == userId)
+                .Select(a => new
+                {
+                    a.TicketId,
+                    a.SubmissionDate,
+                    Description = a.Description != null ? a.Description.Content : null, // Используем Description.Content
+                    StatusName = a.Status.StatusName,
+                })
+                .ToListAsync();
+
+            return supports.Count == 0 ? "NoData" : JsonConvert.SerializeObject(supports);
+        }
+    }
+
+    private async Task<string> GetApplicationsByUserId(int userId)
+    {
+        using (var dbContext = new CrmsystemContext())
+        {
+            var threeDaysAgo = DateTime.Now.AddDays(-3);
+
+            var applications = await dbContext.Applications
+                .Include(a => a.Account)
+                .Include(a => a.Status)
+                .Include(a => a.Product)
+                .Include(a => a.Description)
+                .Where(a => a.AccountId == userId &&
+                            a.DateSubmitted.HasValue &&
+                            a.DateSubmitted.Value >= threeDaysAgo)
+                .Select(a => new
+                {
+                    a.Id,
+                    Login = a.Account.Login,
+                    a.ContactInfo,
+                    ProductName = a.Product != null ? a.Product.ProductName : null,
+                    Description = a.Description != null ? a.Description.Content : null,
+                    a.TotalPrice,
+                    a.Quantity,
+                    a.UnitOfMeasurement,
                     Status = a.Status.StatusName,
                     DateSubmitted = a.DateSubmitted.HasValue
                         ? a.DateSubmitted.Value.ToString("dd.MM.yyyy")
@@ -1276,25 +1909,27 @@ public class Server
     }
 
 
-
-    private async Task<string> GetAllApplications()
+    private async Task<string> GetApplicationHistoryByUserId(int userId)
     {
         using (var dbContext = new CrmsystemContext())
         {
             var applications = await dbContext.Applications
                 .Include(a => a.Account)
-                .Where(a => a.DateSubmitted >= DateTime.Now.AddDays(-3))
+                .Include(a => a.Status)
+                .Include(a => a.Product)
+                .Include(a => a.Description)
+                .Where(a => a.AccountId == userId)
                 .Select(a => new
                 {
                     a.Id,
                     Login = a.Account.Login,
                     a.ContactInfo,
-                    a.ProductName,
-                    a.Description,
+                    ProductName = a.Product != null ? a.Product.ProductName : null,
+                    Description = a.Description != null ? a.Description.Content : null,
                     a.TotalPrice,
-                    a.Status,
-                    a.Quantity, // Новое поле
-                    a.UnitOfMeasurement, // Новое поле
+                    a.Quantity,
+                    a.UnitOfMeasurement,
+                    Status = a.Status.StatusName,
                     DateSubmitted = a.DateSubmitted.HasValue
                         ? a.DateSubmitted.Value.ToString("dd.MM.yyyy")
                         : null
@@ -1304,109 +1939,6 @@ public class Server
             return applications.Count == 0 ? "NoData" : JsonConvert.SerializeObject(applications);
         }
     }
-    private async Task<string> GetSupportsByUserId(int userId)
-    {
-        using (var dbContext = new CrmsystemContext()) // Используйте ваш контекст
-        {
-
-
-            var supports = await dbContext.SupportTickets
-                .Include(a => a.User)  // Подключаем Account для получения логина
-                .Include(a => a.Status)   // Подключаем Status для получения названия статуса
-                .Where(a => a.User.Id == userId)
-                .Select(a => new
-                {
-                    a.TicketId,
-                    a.SubmissionDate,
-                    a.Description,
-                    StatusName = a.Status.StatusName,
-
-                })
-                .ToListAsync();
-
-            // Возвращаем результат
-            if (supports.Count == 0)
-            {
-                return "NoData";
-            }
-
-            return JsonConvert.SerializeObject(supports);
-        }
-    }
-
-
-    private async Task<string> GetApplicationsByUserId(int userId)
-    {
-        using (var dbContext = new CrmsystemContext()) // Используйте ваш контекст
-        {
-            var threeDaysAgo = DateTime.Now.AddDays(-3);
-
-            // Фильтруем заявки только для указанного пользователя
-            var applications = await dbContext.Applications
-                .Include(a => a.Account)  // Подключаем Account для получения логина
-                .Include(a => a.Status)   // Подключаем Status для получения названия статуса
-                .Where(a => a.AccountId == userId &&
-                            a.DateSubmitted.HasValue &&
-                            a.DateSubmitted.Value >= threeDaysAgo) // Убедимся, что DateSubmitted не null
-                .Select(a => new
-                {
-                    a.Id,
-                    Login = a.Account.Login,  // Логин пользователя
-                    a.ContactInfo,
-                    a.ProductName,
-                    a.Description,
-                    a.TotalPrice,
-                    a.Quantity,              // Новое поле: Количество
-                    a.UnitOfMeasurement,     // Новое поле: Единица измерения
-                    Status = a.Status.StatusName,   // Название статуса заявки
-                    DateSubmitted = a.DateSubmitted.HasValue
-                        ? a.DateSubmitted.Value.ToString("dd.MM.yyyy")
-                        : null // Форматируем дату как строку
-                })
-                .ToListAsync();
-
-            // Возвращаем результат
-            if (applications.Count == 0)
-            {
-                return "NoData";
-            }
-
-            return JsonConvert.SerializeObject(applications);
-        }
-    }
-
-
-    private async Task<string> GetApplicationHistoryByUserId(int userId)
-    {
-        using (var dbContext = new CrmsystemContext()) // Используем контекст базы данных
-        {
-            // Выбираем заявки текущего пользователя
-            var applications = await dbContext.Applications
-                .Include(a => a.Account)  // Подключаем Account для получения логина
-                .Include(a => a.Status)   // Подключаем Status для получения названия статуса
-                .Where(a => a.AccountId == userId) // Фильтруем по UserId
-                .Select(a => new
-                {
-                    a.Id,
-                    Login = a.Account.Login,        // Логин пользователя
-                    a.ContactInfo,                 // Контактная информация
-                    a.ProductName,                 // Название продукта
-                    a.Description,                 // Описание продукта
-                    a.TotalPrice,                  // Общая цена
-                    a.Quantity,                    // Количество
-                    a.UnitOfMeasurement,           // Единица измерения
-                    Status = a.Status.StatusName,  // Название статуса заявки
-                    DateSubmitted = a.DateSubmitted.HasValue
-                        ? a.DateSubmitted.Value.ToString("dd.MM.yyyy")
-                        : null                      // Форматируем дату как строку
-                })
-                .ToListAsync();
-
-            // Если заявок нет, возвращаем "NoData", иначе сериализуем их
-            return applications.Count == 0 ? "NoData" : JsonConvert.SerializeObject(applications);
-        }
-    }
-
     private async Task<bool> DeleteApplicationByIdAsync(int applicationId)
     {
         try
@@ -1484,23 +2016,34 @@ public class Server
         {
             using (var context = new CrmsystemContext())
             {
-                // Получаем пользователя по логину
                 var account = await context.Accounts.FirstOrDefaultAsync(a => a.Id == userID);
+                if (account == null)
+                    throw new Exception("Пользователь не найден.");
 
-                // Создаем новую заявку
+                // Находим статус "Открыт" (или другой статус по умолчанию) для SupportStatus
+                var defaultStatus = await context.Statuses
+                    .FirstOrDefaultAsync(s => s.StatusName == "Open" && s.Type == "SupportStatus");
+                if (defaultStatus == null)
+                    throw new Exception("Статус по умолчанию для тикетов техподдержки не найден.");
+
+                // Создаем запись в Descriptions
+                var descriptionEntity = new Description
+                {
+                    Content = description
+                };
+                context.Descriptions.Add(descriptionEntity);
+                await context.SaveChangesAsync();
+
                 var support = new SupportTicket
                 {
-
                     User = account,
                     UserId = userID,
                     UserEmail = email,
-                    Description = description,
-
-                    StatusId = 1, // Статус по умолчанию
+                    DescriptionId = descriptionEntity.Id,
+                    StatusId = defaultStatus.Id, // Используем найденный статус
                     SubmissionDate = DateTime.Now
                 };
 
-                // Добавляем заявку в базу
                 context.SupportTickets.Add(support);
                 await context.SaveChangesAsync();
             }
@@ -1520,32 +2063,48 @@ public class Server
         {
             using (var context = new CrmsystemContext())
             {
-                // Получаем пользователя по логину
                 var account = await context.Accounts.FirstOrDefaultAsync(a => a.Login == login);
                 if (account == null)
                     throw new Exception("Пользователь не найден.");
 
-                // Проверяем корректность количества и единицы измерения
                 if (quantity <= 0)
                     throw new Exception("Количество должно быть больше нуля.");
                 if (string.IsNullOrWhiteSpace(unitOfMeasurement))
                     throw new Exception("Единица измерения не может быть пустой.");
 
-                // Создаем новую заявку
+                // Находим продукт по имени
+                var product = await context.Products
+                    .FirstOrDefaultAsync(p => p.ProductName == productName);
+                if (product == null)
+                    throw new Exception($"Продукт с названием {productName} не найден.");
+
+                // Создаем запись в Descriptions
+                var descriptionEntity = new Description
+                {
+                    Content = description
+                };
+                context.Descriptions.Add(descriptionEntity);
+                await context.SaveChangesAsync();
+
+                // Находим статус "Ожидает" (или другой по умолчанию) с типом "ApplicationStatus"
+                var defaultStatus = await context.Statuses
+                    .FirstOrDefaultAsync(s => s.StatusName == "Pending" && s.Type == "ApplicationStatus");
+                if (defaultStatus == null)
+                    throw new Exception("Статус по умолчанию для заявок не найден.");
+
                 var application = new Application
                 {
                     AccountId = account.Id,
                     ContactInfo = contactInfo,
-                    ProductName = productName,
-                    Description = description,
+                    ProductId = product.ProductId, // Используем ProductId
+                    DescriptionId = descriptionEntity.Id, // Используем DescriptionId
                     TotalPrice = totalPrice,
-                    Quantity = quantity, // Сохраняем количество
-                    UnitOfMeasurement = unitOfMeasurement, // Сохраняем единицу измерения
-                    StatusId = 1, // Статус по умолчанию
+                    Quantity = quantity,
+                    UnitOfMeasurement = unitOfMeasurement,
+                    StatusId = defaultStatus.Id, // Используем найденный статус
                     DateSubmitted = DateTime.Now
                 };
 
-                // Добавляем заявку в базу
                 context.Applications.Add(application);
                 await context.SaveChangesAsync();
             }
@@ -1558,7 +2117,39 @@ public class Server
             return false;
         }
     }
+    private async Task<string> GetBalanceDataAsync()
+    {
+        try
+        {
+            using (var dbContext = new CrmsystemContext())
+            {
+                // Получаем транзакции с категориями
+                var transactions = await dbContext.Transactions
+                    .Include(t => t.Category)
+                    .ToListAsync();
 
+                // Рассчитываем доходы и расходы на основе категорий
+                var summary = new
+                {
+                    TotalIncome = transactions
+                        .Where(t => t.Category.Name == "Продажи" && t.Amount > 0)
+                        .Sum(t => t.Amount),
+                    TotalExpenses = transactions
+                        .Where(t => t.Category.Name == "Зарплата" || t.Category.Name == "Закупки")
+                        .Sum(t => Math.Abs(t.Amount)),
+                    CurrentBalance = transactions.Sum(t => t.Amount)
+                };
+
+                // Сериализуем результат в JSON
+                return JsonConvert.SerializeObject(summary);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при получении данных баланса: {ex.Message}");
+            return "Error: " + ex.Message;
+        }
+    }
 
 
 
@@ -1574,22 +2165,14 @@ public class Server
     {
         using (var dbContext = new CrmsystemContext())
         {
-            var adminPanel = await dbContext.AdminPanels.SingleOrDefaultAsync();
-
-            if (adminPanel != null && adminPanel.ManagerCode.Trim() == code.Trim())
-            {
+          
 
                 var user = await dbContext.Accounts
                                            .SingleOrDefaultAsync(u => u.Login == username && u.Password == password && (u.RoleId == 2 || u.RoleId == 1));
 
 
                 return user != null;
-            }
-            else
-            {
-                return false;
-            }
-
+           
         }
     }
 
@@ -1626,21 +2209,14 @@ public class Server
     {
         using (var dbContext = new CrmsystemContext())
         {
-            var adminPanel = await dbContext.AdminPanels.SingleOrDefaultAsync();
-
-            if (adminPanel != null && adminPanel.AdminCode.Trim() == code.Trim())
-            {
+           
 
                 var user = await dbContext.Accounts
                                            .SingleOrDefaultAsync(u => u.Login == username && u.Password == password && u.RoleId == 1);
 
 
                 return user != null;
-            }
-            else
-            {
-                return false;
-            }
+         
 
         }
     }
@@ -1768,19 +2344,19 @@ public class Server
     {
         using (var dbContext = new CrmsystemContext())
         {
-            // Создаем проекцию с выбором только необходимых полей
             var transactions = await dbContext.Transactions
-             .Select(u => new
-             {
-                 u.Id,
-                 u.TransactionDate,
-                 u.Description,
-                 u.Amount,
-                 u.TransactionType
-             })
-             .ToListAsync();
+                .Include(t => t.Description)
+                .Include(t => t.Category)
+                .Select(t => new
+                {
+                    t.Id,
+                    t.TransactionDate,
+                    Description = t.Description != null ? t.Description.Content : null,
+                    t.Amount,
+                    TransactionType = t.Category != null ? t.Category.Name : null
+                })
+                .ToListAsync();
 
-            // Сериализуем список пользователей в JSON
             return transactions.Count == 0 ? "NoData" : JsonConvert.SerializeObject(transactions);
         }
     }

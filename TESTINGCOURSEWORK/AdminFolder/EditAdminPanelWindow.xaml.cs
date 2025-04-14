@@ -62,14 +62,7 @@ namespace TESTINGCOURSEWORK.AdminFolder
                 return;
             }
 
-            // Формирование данных для отправки
-            var adminPanelData = new AdminPanel
-            {
-                Id = 1, // Предположим, что редактируется объект с ID 1
-                AdminCode = adminCode,
-                ManagerCode = managerCode
-            };
-
+            
             try
             {
                 // Отправка данных на сервер

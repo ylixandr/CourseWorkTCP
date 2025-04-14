@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TCPServer;
 
@@ -11,9 +12,11 @@ using TCPServer;
 namespace TCPServer.Migrations
 {
     [DbContext(typeof(CrmsystemContext))]
-    partial class TestjsonContextModelSnapshot : ModelSnapshot
+    [Migration("20250414165139_UpdatingDatabaseModels")]
+    partial class UpdatingDatabaseModels
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -437,190 +440,6 @@ namespace TCPServer.Migrations
                     b.ToTable("TransactionCategories");
                 });
 
-            modelBuilder.Entity("TCPServer.balanceModule.Asset", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("AcquisitionDate")
-                        .HasColumnType("datetime");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)")
-                        .HasDefaultValue("RUB");
-
-                    b.Property<decimal?>("DepreciationRate")
-                        .HasColumnType("decimal(5, 2)");
-
-                    b.Property<int?>("DescriptionId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DescriptionId");
-
-                    b.ToTable("Assets");
-                });
-
-            modelBuilder.Entity("TCPServer.balanceModule.AuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("OperationId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("Timestamp")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime")
-                        .HasDefaultValueSql("GETDATE()");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OperationId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("AuditLogs");
-                });
-
-            modelBuilder.Entity("TCPServer.balanceModule.Equity", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime");
-
-                    b.Property<int?>("DescriptionId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DescriptionId");
-
-                    b.ToTable("Equity");
-                });
-
-            modelBuilder.Entity("TCPServer.balanceModule.Liability", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int?>("DescriptionId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("DueDate")
-                        .HasColumnType("datetime");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DescriptionId");
-
-                    b.ToTable("Liabilities");
-                });
-
-            modelBuilder.Entity("TCPServer.balanceModule.Operation", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<DateTime>("Date")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime")
-                        .HasDefaultValueSql("GETDATE()");
-
-                    b.Property<int?>("DescriptionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("EntityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("EntityType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DescriptionId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Operations");
-                });
-
             modelBuilder.Entity("TCPServer.Account", b =>
                 {
                     b.HasOne("TCPServer.Role", "Role")
@@ -747,76 +566,6 @@ namespace TCPServer.Migrations
                     b.Navigation("Description");
                 });
 
-            modelBuilder.Entity("TCPServer.balanceModule.Asset", b =>
-                {
-                    b.HasOne("TCPServer.Description", "Description")
-                        .WithMany("Assets")
-                        .HasForeignKey("DescriptionId")
-                        .HasConstraintName("FK_Assets_Descriptions");
-
-                    b.Navigation("Description");
-                });
-
-            modelBuilder.Entity("TCPServer.balanceModule.AuditLog", b =>
-                {
-                    b.HasOne("TCPServer.balanceModule.Operation", "Operation")
-                        .WithMany()
-                        .HasForeignKey("OperationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_AuditLogs_Operations");
-
-                    b.HasOne("TCPServer.Account", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_AuditLogs_Accounts");
-
-                    b.Navigation("Operation");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("TCPServer.balanceModule.Equity", b =>
-                {
-                    b.HasOne("TCPServer.Description", "Description")
-                        .WithMany("Equity")
-                        .HasForeignKey("DescriptionId")
-                        .HasConstraintName("FK_Equity_Descriptions");
-
-                    b.Navigation("Description");
-                });
-
-            modelBuilder.Entity("TCPServer.balanceModule.Liability", b =>
-                {
-                    b.HasOne("TCPServer.Description", "Description")
-                        .WithMany("Liabilities")
-                        .HasForeignKey("DescriptionId")
-                        .HasConstraintName("FK_Liabilities_Descriptions");
-
-                    b.Navigation("Description");
-                });
-
-            modelBuilder.Entity("TCPServer.balanceModule.Operation", b =>
-                {
-                    b.HasOne("TCPServer.Description", "Description")
-                        .WithMany("Operations")
-                        .HasForeignKey("DescriptionId")
-                        .HasConstraintName("FK_Operations_Descriptions");
-
-                    b.HasOne("TCPServer.Account", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_Operations_Accounts");
-
-                    b.Navigation("Description");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("TCPServer.Account", b =>
                 {
                     b.Navigation("Applications");
@@ -827,14 +576,6 @@ namespace TCPServer.Migrations
             modelBuilder.Entity("TCPServer.Description", b =>
                 {
                     b.Navigation("Applications");
-
-                    b.Navigation("Assets");
-
-                    b.Navigation("Equity");
-
-                    b.Navigation("Liabilities");
-
-                    b.Navigation("Operations");
 
                     b.Navigation("ProductTransactions");
 

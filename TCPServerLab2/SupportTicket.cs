@@ -15,9 +15,9 @@ public partial class SupportTicket
 
     public int StatusId { get; set; }
 
-    public string Description { get; set; } = null!;
-
-    public virtual SupportStatus Status { get; set; } = null!;
 
     public virtual Account User { get; set; } = null!;
+    public virtual Status Status { get; set; }
+    public int? DescriptionId { get; set; } // Новое поле
+    public virtual Description Description { get; set; } // Новая связь
 }

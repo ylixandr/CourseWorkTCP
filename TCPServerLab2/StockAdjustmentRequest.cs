@@ -13,7 +13,8 @@ public partial class StockAdjustmentRequest
 
     public string TransactionType { get; set; } = null!;
 
-    public string Description { get; set; } = null!;
+    public int? DescriptionId { get; set; } // Новое поле
+    public virtual Description Description { get; set; } // Новая связь
 
     public DateTime RequestDate { get; set; }
 

@@ -1,4 +1,5 @@
-﻿using LiveCharts;
+﻿using Client.ManagerFolder;
+using LiveCharts;
 using LiveCharts.Defaults;
 using LiveCharts.Wpf;
 using Newtonsoft.Json;
@@ -57,7 +58,11 @@ namespace TESTINGCOURSEWORK
         }
 
 
-
+        private void BalanceDashboardButton_Click(object sender, RoutedEventArgs e)
+        {
+            BalanceDashboard balanceDashboard = new BalanceDashboard();
+            balanceDashboard.Show();
+        }
         private async void Employee_Button_Click(object sender, RoutedEventArgs e)
         {
             HideAllGrid();

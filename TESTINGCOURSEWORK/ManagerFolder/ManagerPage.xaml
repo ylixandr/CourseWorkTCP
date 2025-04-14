@@ -254,7 +254,7 @@
             <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="14" Content="Удалить транзакцию" Grid.Column="1" Margin="6,5,12,5" Click="DeleteTransactionButton_Click"/>
             <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="14" Content="Отчетность" Width="100" Margin="5" Grid.Column="2" Click="GenerateReportButton_Click"/>
             <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="12"  Content="Добавить транзакцию" Width="150" Margin="5" Grid.Column="3" Click="AddTransactionButton_Click"/>
-
+            <Button Content="Дашборд баланса" Width="150" Height="30" Click="BalanceDashboardButton_Click"/>
 
         </Grid>
         <Button Click="Balance_Button_Click"  FontWeight="Bold" FontSize="24" Background="Transparent" HorizontalAlignment="Center"  BorderBrush="Transparent" Grid.Row="3" Content="Учет баланса"></Button>

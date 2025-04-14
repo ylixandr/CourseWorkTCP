@@ -91,7 +91,7 @@ namespace TESTINGCOURSEWORK.ManagerFolder
         private void LoadTypesFromJson()
         {
             // Загрузка типов начислений
-            string accrualFilePath = "AccrualTypes.json";
+            string accrualFilePath = "data\\AccrualTypes.json";
             if (File.Exists(accrualFilePath))
             {
                 string json = File.ReadAllText(accrualFilePath);
@@ -111,7 +111,7 @@ namespace TESTINGCOURSEWORK.ManagerFolder
             }
 
             // Загрузка типов удержаний
-            string deductionFilePath = "DeductionTypes.json";
+            string deductionFilePath = "data\\DeductionTypes.json";
             if (File.Exists(deductionFilePath))
             {
                 string json = File.ReadAllText(deductionFilePath);
@@ -134,7 +134,7 @@ namespace TESTINGCOURSEWORK.ManagerFolder
 
         private void LoadDeductionRates()
         {
-            string ratesFilePath = "DeductionRates.json";
+            string ratesFilePath = "data\\DeductionRates.json";
             if (File.Exists(ratesFilePath))
             {
                 string json = File.ReadAllText(ratesFilePath);
@@ -360,7 +360,7 @@ namespace TESTINGCOURSEWORK.ManagerFolder
                 worksheet.Cell(row + 3, 1).Value = "К ВЫДАЧЕ:";
                 worksheet.Cell(row + 3, 2).Value = ToBePaidTextBox.Text;
 
-                workbook.SaveAs($"PayrollSlip_{EmployeeIdTextBox.Text}.xlsx");
+                workbook.SaveAs($"salaryReports\\PayrollSlip_{EmployeeIdTextBox.Text}.xlsx");
             }
 
             MessageBox.Show("Расчетный лист успешно экспортирован в Excel!", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -371,7 +371,7 @@ namespace TESTINGCOURSEWORK.ManagerFolder
             if (!AccrualTypes.Contains(newType))
             {
                 AccrualTypes.Add(newType);
-                File.WriteAllText("AccrualTypes.json", JsonConvert.SerializeObject(AccrualTypes, Formatting.Indented));
+                File.WriteAllText("data\\AccrualTypes.json", JsonConvert.SerializeObject(AccrualTypes, Formatting.Indented));
             }
         }
 
@@ -380,7 +380,7 @@ namespace TESTINGCOURSEWORK.ManagerFolder
             if (AccrualTypes.Contains(type))
             {
                 AccrualTypes.Remove(type);
-                File.WriteAllText("AccrualTypes.json", JsonConvert.SerializeObject(AccrualTypes, Formatting.Indented));
+                File.WriteAllText("data\\AccrualTypes.json", JsonConvert.SerializeObject(AccrualTypes, Formatting.Indented));
             }
         }
 
@@ -389,7 +389,7 @@ namespace TESTINGCOURSEWORK.ManagerFolder
             if (!DeductionTypes.Contains(newType))
             {
                 DeductionTypes.Add(newType);
-                File.WriteAllText("DeductionTypes.json", JsonConvert.SerializeObject(DeductionTypes, Formatting.Indented));
+                File.WriteAllText("data\\DeductionTypes.json", JsonConvert.SerializeObject(DeductionTypes, Formatting.Indented));
             }
         }
 
@@ -398,7 +398,7 @@ namespace TESTINGCOURSEWORK.ManagerFolder
             if (DeductionTypes.Contains(type))
             {
                 DeductionTypes.Remove(type);
-                File.WriteAllText("DeductionTypes.json", JsonConvert.SerializeObject(DeductionTypes, Formatting.Indented));
+                File.WriteAllText("data\\DeductionTypes.json", JsonConvert.SerializeObject(DeductionTypes, Formatting.Indented));
             }
         }
 
