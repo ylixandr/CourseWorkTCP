@@ -260,13 +260,7 @@ namespace TESTINGCOURSEWORK
         }
 
 
-        private void AddTransactionButton_Click(object sender, RoutedEventArgs e)
-        {
-            AddTransactionPage addTransactionPage = new AddTransactionPage();
-            addTransactionPage.Show();
-            this.Hide();
-
-        }
+  
 
         private void HideAllGrid()
         {
@@ -348,52 +342,8 @@ namespace TESTINGCOURSEWORK
 
         }
 
-        private void AddProductButton_Click(object sender, RoutedEventArgs e)
-        {
-            AddProductWindow addProductWindow = new AddProductWindow();
-            addProductWindow.Show();
-            this.Hide();
-        }
-
-        private async void AddFromApplicationsButton_Click(object sender, RoutedEventArgs e)
-        {
-            SelectApplicationsPage selectApplicationsPage = new SelectApplicationsPage();
-            selectApplicationsPage.ShowDialog();
-            this.Hide();
-        }
-
-        private async void AdjustStockButton_Click(object sender, RoutedEventArgs e)
-        {
-
-            try
-            {
-                // Отправляем запрос на сервер для получения данных о продукции
-                string response = await NetworkService.Instance.SendMessageAsync("getProductData");
-
-                // Если данных нет, показываем сообщение
-                if (response == "NoData")
-                {
-                    ProductDataGrid.ItemsSource = null;
-                    MessageBox.Show("Нет данных о продукции.");
-                }
-                else
-                {
-                    // Десериализация данных в список продуктов
-                    var products = JsonConvert.DeserializeObject<ObservableCollection<TCPServer.Product>>(response);
-
-                    // Привязка данных к DataGrid
-                    ObservableCollection<TCPServer.Product> products1 = products;
-                    AdjustStockWindow adjustStockWindow = new AdjustStockWindow(products1);
-                    adjustStockWindow.Show();
-                    this.Hide();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка при загрузке данных о продукции: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-
-        }
+      
+       
 
         private void Button_Click_Accounting(object sender, RoutedEventArgs e)
         {
