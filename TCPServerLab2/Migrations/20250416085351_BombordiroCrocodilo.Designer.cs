@@ -12,8 +12,8 @@ using TCPServer;
 namespace TCPServer.Migrations
 {
     [DbContext(typeof(CrmsystemContext))]
-    [Migration("20250414174612_AddBalanceModuleTables")]
-    partial class AddBalanceModuleTables
+    [Migration("20250416085351_BombordiroCrocodilo")]
+    partial class BombordiroCrocodilo
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -53,87 +53,6 @@ namespace TCPServer.Migrations
                     b.HasIndex(new[] { "Id" }, "IX_Account");
 
                     b.ToTable("Account", (string)null);
-                });
-
-            modelBuilder.Entity("TCPServer.Application", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AccountId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ContactInfo")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<DateTime?>("DateSubmitted")
-                        .HasColumnType("datetime");
-
-                    b.Property<int?>("DescriptionId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StatusId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal?>("TotalPrice")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<string>("UnitOfMeasurement")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Id")
-                        .HasName("PK__Applicat__3214EC0781B00B3C");
-
-                    b.HasIndex("AccountId");
-
-                    b.HasIndex("DescriptionId");
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("StatusId");
-
-                    b.ToTable("Applications");
-                });
-
-            modelBuilder.Entity("TCPServer.BalanceHistory", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("Balance")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<DateTime>("PeriodEnd")
-                        .HasColumnType("datetime");
-
-                    b.Property<DateTime>("PeriodStart")
-                        .HasColumnType("datetime");
-
-                    b.Property<decimal>("TotalExpenses")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<decimal>("TotalIncome")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("BalanceHistories");
                 });
 
             modelBuilder.Entity("TCPServer.Description", b =>
@@ -191,13 +110,86 @@ namespace TCPServer.Migrations
                     b.Property<decimal?>("Salary")
                         .HasColumnType("decimal(10, 2)");
 
-                    b.HasKey("EmployeeId")
-                        .HasName("PK__tmp_ms_x__7AD04FF1202FE75A");
+                    b.HasKey("EmployeeId");
 
                     b.ToTable("Employees");
                 });
 
-            modelBuilder.Entity("TCPServer.Product", b =>
+            modelBuilder.Entity("TCPServer.ProductionModule.Inventory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("ReservedQuantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("WarehouseId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.ToTable("Inventories");
+                });
+
+            modelBuilder.Entity("TCPServer.ProductionModule.InventoryTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AuditLogId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("FromWarehouseId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductBatchId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("ToWarehouseId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("TransactionDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<string>("TransactionType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuditLogId");
+
+                    b.HasIndex("FromWarehouseId");
+
+                    b.HasIndex("ProductBatchId");
+
+                    b.HasIndex("ToWarehouseId");
+
+                    b.ToTable("InventoryTransactions");
+                });
+
+            modelBuilder.Entity("TCPServer.ProductionModule.Product", b =>
                 {
                     b.Property<int>("ProductId")
                         .ValueGeneratedOnAdd()
@@ -205,68 +197,149 @@ namespace TCPServer.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductId"));
 
-                    b.Property<string>("Description")
+                    b.Property<string>("Article")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("LastUpdated")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime")
-                        .HasDefaultValueSql("(getdate())");
-
-                    b.Property<string>("ProductName")
+                    b.Property<string>("Barcode")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(18, 2)");
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("int");
 
-                    b.Property<string>("UnitOfMeasurement")
+                    b.Property<string>("Currency")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal?>("UnitPrice")
-                        .HasColumnType("decimal(18, 2)");
+                    b.Property<int?>("DescriptionId")
+                        .HasColumnType("int");
 
-                    b.HasKey("ProductId")
-                        .HasName("PK__Products__B40CC6CD599DAFB3");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("PurchasePrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("SellingPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("ProductId");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("DescriptionId");
 
                     b.ToTable("Products");
                 });
 
-            modelBuilder.Entity("TCPServer.ProductTransaction", b =>
+            modelBuilder.Entity("TCPServer.ProductionModule.ProductBatch", b =>
                 {
-                    b.Property<int>("TransactionId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TransactionId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("DescriptionId")
-                        .HasColumnType("int");
+                    b.Property<string>("BatchNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Cost")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
                     b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(18, 2)");
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<DateTime>("TransactionDate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime")
-                        .HasDefaultValueSql("(getdate())");
+                    b.Property<string>("SerialNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("TransactionId")
-                        .HasName("PK__ProductT__55433A6B3E1C5F5D");
-
-                    b.HasIndex("DescriptionId");
+                    b.HasKey("Id");
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("ProductTransactions");
+                    b.ToTable("ProductBatches");
+                });
+
+            modelBuilder.Entity("TCPServer.ProductionModule.ProductCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ParentCategoryId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentCategoryId");
+
+                    b.ToTable("ProductCategories");
+                });
+
+            modelBuilder.Entity("TCPServer.ProductionModule.ProductComponent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ComponentProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ParentProductId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ComponentProductId");
+
+                    b.HasIndex("ParentProductId");
+
+                    b.ToTable("ProductComponents");
+                });
+
+            modelBuilder.Entity("TCPServer.ProductionModule.Warehouse", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Warehouses");
                 });
 
             modelBuilder.Entity("TCPServer.Role", b =>
@@ -282,162 +355,6 @@ namespace TCPServer.Migrations
                     b.HasKey("RoleId");
 
                     b.ToTable("Roles");
-                });
-
-            modelBuilder.Entity("TCPServer.Status", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("StatusName")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Id")
-                        .HasName("PK__Statuses__3214EC073AFCCA6F");
-
-                    b.ToTable("Statuses");
-                });
-
-            modelBuilder.Entity("TCPServer.StockAdjustmentRequest", b =>
-                {
-                    b.Property<int>("RequestId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RequestId"));
-
-                    b.Property<int?>("DescriptionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<DateTime>("RequestDate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime")
-                        .HasDefaultValueSql("(getdate())");
-
-                    b.Property<string>("TransactionType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("RequestId")
-                        .HasName("PK__StockAdj__33A8517ADCD2675B");
-
-                    b.HasIndex("DescriptionId");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("StockAdjustmentRequests");
-                });
-
-            modelBuilder.Entity("TCPServer.SupportTicket", b =>
-                {
-                    b.Property<int>("TicketId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TicketId"));
-
-                    b.Property<int?>("DescriptionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StatusId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SubmissionDate")
-                        .HasColumnType("datetime");
-
-                    b.Property<string>("UserEmail")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("TicketId")
-                        .HasName("PK__SupportT__712CC6072A30559B");
-
-                    b.HasIndex("DescriptionId");
-
-                    b.HasIndex("StatusId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("SupportTickets");
-                });
-
-            modelBuilder.Entity("TCPServer.Transaction", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<int>("CategoryId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("DescriptionId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("RelatedEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("RelatedEntityType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("TransactionDate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime")
-                        .HasDefaultValueSql("(getdate())");
-
-                    b.HasKey("Id")
-                        .HasName("PK__Transact__3214EC078998B034");
-
-                    b.HasIndex("CategoryId");
-
-                    b.HasIndex("DescriptionId");
-
-                    b.ToTable("Transactions");
-                });
-
-            modelBuilder.Entity("TCPServer.TransactionCategory", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("TransactionCategories");
                 });
 
             modelBuilder.Entity("TCPServer.balanceModule.Asset", b =>
@@ -497,24 +414,69 @@ namespace TCPServer.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("OperationId")
+                    b.Property<string>("Details")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("EntityId")
                         .HasColumnType("int");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime>("Timestamp")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime")
                         .HasDefaultValueSql("GETDATE()");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OperationId");
-
-                    b.HasIndex("UserId");
-
                     b.ToTable("AuditLogs");
+                });
+
+            modelBuilder.Entity("TCPServer.balanceModule.BalanceSnapshot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AuditLogId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("AuditLogId1")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Equity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<decimal>("TotalAssets")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalLiabilities")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuditLogId");
+
+                    b.HasIndex("AuditLogId1");
+
+                    b.ToTable("BalanceSnapshots");
                 });
 
             modelBuilder.Entity("TCPServer.balanceModule.Equity", b =>
@@ -544,6 +506,33 @@ namespace TCPServer.Migrations
                     b.HasIndex("DescriptionId");
 
                     b.ToTable("Equity");
+                });
+
+            modelBuilder.Entity("TCPServer.balanceModule.ExchangeRate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime");
+
+                    b.Property<string>("FromCurrency")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Rate")
+                        .HasColumnType("decimal(18,6)");
+
+                    b.Property<string>("ToCurrency")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ExchangeRates");
                 });
 
             modelBuilder.Entity("TCPServer.balanceModule.Liability", b =>
@@ -635,119 +624,112 @@ namespace TCPServer.Migrations
                     b.Navigation("Role");
                 });
 
-            modelBuilder.Entity("TCPServer.Application", b =>
+            modelBuilder.Entity("TCPServer.ProductionModule.Inventory", b =>
                 {
-                    b.HasOne("TCPServer.Account", "Account")
-                        .WithMany("Applications")
-                        .HasForeignKey("AccountId")
-                        .IsRequired()
-                        .HasConstraintName("FK__Applicati__Accou__3864608B");
-
-                    b.HasOne("TCPServer.Description", "Description")
-                        .WithMany("Applications")
-                        .HasForeignKey("DescriptionId")
-                        .HasConstraintName("FK_Applications_Descriptions");
-
-                    b.HasOne("TCPServer.Product", "Product")
-                        .WithMany("Applications")
+                    b.HasOne("TCPServer.ProductionModule.Product", "Product")
+                        .WithMany("Inventories")
                         .HasForeignKey("ProductId")
-                        .HasConstraintName("FK_Applications_Products");
-
-                    b.HasOne("TCPServer.Status", "Status")
-                        .WithMany("Applications")
-                        .HasForeignKey("StatusId")
-                        .IsRequired()
-                        .HasConstraintName("FK__Applicati__Statu__395884C4");
-
-                    b.Navigation("Account");
-
-                    b.Navigation("Description");
-
-                    b.Navigation("Product");
-
-                    b.Navigation("Status");
-                });
-
-            modelBuilder.Entity("TCPServer.ProductTransaction", b =>
-                {
-                    b.HasOne("TCPServer.Description", "Description")
-                        .WithMany("ProductTransactions")
-                        .HasForeignKey("DescriptionId")
-                        .HasConstraintName("FK_ProductTransactions_Descriptions");
-
-                    b.HasOne("TCPServer.Product", "Product")
-                        .WithMany("ProductTransactions")
-                        .HasForeignKey("ProductId")
-                        .IsRequired()
-                        .HasConstraintName("FK__ProductTr__Produ__4CA06362");
-
-                    b.Navigation("Description");
-
-                    b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("TCPServer.StockAdjustmentRequest", b =>
-                {
-                    b.HasOne("TCPServer.Description", "Description")
-                        .WithMany("StockAdjustmentRequests")
-                        .HasForeignKey("DescriptionId")
-                        .HasConstraintName("FK_StockAdjustmentRequests_Descriptions");
-
-                    b.HasOne("TCPServer.Product", "Product")
-                        .WithMany("StockAdjustmentRequests")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_StockAdjustmentRequests_Products");
-
-                    b.Navigation("Description");
-
-                    b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("TCPServer.SupportTicket", b =>
-                {
-                    b.HasOne("TCPServer.Description", "Description")
-                        .WithMany("SupportTickets")
-                        .HasForeignKey("DescriptionId")
-                        .HasConstraintName("FK_SupportTickets_Descriptions");
-
-                    b.HasOne("TCPServer.Status", "Status")
-                        .WithMany("SupportTickets")
-                        .HasForeignKey("StatusId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("TCPServer.Account", "User")
-                        .WithMany("SupportTickets")
-                        .HasForeignKey("UserId")
-                        .IsRequired()
-                        .HasConstraintName("FK__SupportTi__UserI__6EC0713C");
+                    b.HasOne("TCPServer.ProductionModule.Warehouse", "Warehouse")
+                        .WithMany("Inventories")
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("Description");
+                    b.Navigation("Product");
 
-                    b.Navigation("Status");
-
-                    b.Navigation("User");
+                    b.Navigation("Warehouse");
                 });
 
-            modelBuilder.Entity("TCPServer.Transaction", b =>
+            modelBuilder.Entity("TCPServer.ProductionModule.InventoryTransaction", b =>
                 {
-                    b.HasOne("TCPServer.TransactionCategory", "Category")
+                    b.HasOne("TCPServer.balanceModule.AuditLog", "AuditLog")
+                        .WithMany("InventoryTransactions")
+                        .HasForeignKey("AuditLogId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TCPServer.ProductionModule.Warehouse", "FromWarehouse")
+                        .WithMany("FromTransactions")
+                        .HasForeignKey("FromWarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TCPServer.ProductionModule.ProductBatch", "ProductBatch")
                         .WithMany("Transactions")
+                        .HasForeignKey("ProductBatchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TCPServer.ProductionModule.Warehouse", "ToWarehouse")
+                        .WithMany("ToTransactions")
+                        .HasForeignKey("ToWarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("AuditLog");
+
+                    b.Navigation("FromWarehouse");
+
+                    b.Navigation("ProductBatch");
+
+                    b.Navigation("ToWarehouse");
+                });
+
+            modelBuilder.Entity("TCPServer.ProductionModule.Product", b =>
+                {
+                    b.HasOne("TCPServer.ProductionModule.ProductCategory", "Category")
+                        .WithMany("Products")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_Transactions_TransactionCategories");
+                        .IsRequired();
 
                     b.HasOne("TCPServer.Description", "Description")
-                        .WithMany("Transactions")
-                        .HasForeignKey("DescriptionId")
-                        .HasConstraintName("FK_Transactions_Descriptions");
+                        .WithMany("Products")
+                        .HasForeignKey("DescriptionId");
 
                     b.Navigation("Category");
 
                     b.Navigation("Description");
+                });
+
+            modelBuilder.Entity("TCPServer.ProductionModule.ProductBatch", b =>
+                {
+                    b.HasOne("TCPServer.ProductionModule.Product", "Product")
+                        .WithMany("Batches")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("TCPServer.ProductionModule.ProductCategory", b =>
+                {
+                    b.HasOne("TCPServer.ProductionModule.ProductCategory", "ParentCategory")
+                        .WithMany("SubCategories")
+                        .HasForeignKey("ParentCategoryId");
+
+                    b.Navigation("ParentCategory");
+                });
+
+            modelBuilder.Entity("TCPServer.ProductionModule.ProductComponent", b =>
+                {
+                    b.HasOne("TCPServer.ProductionModule.Product", "ComponentProduct")
+                        .WithMany()
+                        .HasForeignKey("ComponentProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TCPServer.ProductionModule.Product", "ParentProduct")
+                        .WithMany("Components")
+                        .HasForeignKey("ParentProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ComponentProduct");
+
+                    b.Navigation("ParentProduct");
                 });
 
             modelBuilder.Entity("TCPServer.balanceModule.Asset", b =>
@@ -760,25 +742,19 @@ namespace TCPServer.Migrations
                     b.Navigation("Description");
                 });
 
-            modelBuilder.Entity("TCPServer.balanceModule.AuditLog", b =>
+            modelBuilder.Entity("TCPServer.balanceModule.BalanceSnapshot", b =>
                 {
-                    b.HasOne("TCPServer.balanceModule.Operation", "Operation")
+                    b.HasOne("TCPServer.balanceModule.AuditLog", "AuditLog")
                         .WithMany()
-                        .HasForeignKey("OperationId")
+                        .HasForeignKey("AuditLogId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_AuditLogs_Operations");
+                        .IsRequired();
 
-                    b.HasOne("TCPServer.Account", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_AuditLogs_Accounts");
+                    b.HasOne("TCPServer.balanceModule.AuditLog", null)
+                        .WithMany("BalanceSnapshots")
+                        .HasForeignKey("AuditLogId1");
 
-                    b.Navigation("Operation");
-
-                    b.Navigation("User");
+                    b.Navigation("AuditLog");
                 });
 
             modelBuilder.Entity("TCPServer.balanceModule.Equity", b =>
@@ -820,17 +796,8 @@ namespace TCPServer.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("TCPServer.Account", b =>
-                {
-                    b.Navigation("Applications");
-
-                    b.Navigation("SupportTickets");
-                });
-
             modelBuilder.Entity("TCPServer.Description", b =>
                 {
-                    b.Navigation("Applications");
-
                     b.Navigation("Assets");
 
                     b.Navigation("Equity");
@@ -839,22 +806,37 @@ namespace TCPServer.Migrations
 
                     b.Navigation("Operations");
 
-                    b.Navigation("ProductTransactions");
+                    b.Navigation("Products");
+                });
 
-                    b.Navigation("StockAdjustmentRequests");
+            modelBuilder.Entity("TCPServer.ProductionModule.Product", b =>
+                {
+                    b.Navigation("Batches");
 
-                    b.Navigation("SupportTickets");
+                    b.Navigation("Components");
 
+                    b.Navigation("Inventories");
+                });
+
+            modelBuilder.Entity("TCPServer.ProductionModule.ProductBatch", b =>
+                {
                     b.Navigation("Transactions");
                 });
 
-            modelBuilder.Entity("TCPServer.Product", b =>
+            modelBuilder.Entity("TCPServer.ProductionModule.ProductCategory", b =>
                 {
-                    b.Navigation("Applications");
+                    b.Navigation("Products");
 
-                    b.Navigation("ProductTransactions");
+                    b.Navigation("SubCategories");
+                });
 
-                    b.Navigation("StockAdjustmentRequests");
+            modelBuilder.Entity("TCPServer.ProductionModule.Warehouse", b =>
+                {
+                    b.Navigation("FromTransactions");
+
+                    b.Navigation("Inventories");
+
+                    b.Navigation("ToTransactions");
                 });
 
             modelBuilder.Entity("TCPServer.Role", b =>
@@ -862,16 +844,11 @@ namespace TCPServer.Migrations
                     b.Navigation("Accounts");
                 });
 
-            modelBuilder.Entity("TCPServer.Status", b =>
+            modelBuilder.Entity("TCPServer.balanceModule.AuditLog", b =>
                 {
-                    b.Navigation("Applications");
+                    b.Navigation("BalanceSnapshots");
 
-                    b.Navigation("SupportTickets");
-                });
-
-            modelBuilder.Entity("TCPServer.TransactionCategory", b =>
-                {
-                    b.Navigation("Transactions");
+                    b.Navigation("InventoryTransactions");
                 });
 #pragma warning restore 612, 618
         }

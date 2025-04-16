@@ -8,7 +8,7 @@ namespace TCPServer.ProductionModule
 {
     public class Product
     {
-        public int Id { get; set; }
+        public int ProductId { get; set; }
         public string Name { get; set; }
         public string Article { get; set; } // Артикул
         public string Barcode { get; set; } // Штрих-код

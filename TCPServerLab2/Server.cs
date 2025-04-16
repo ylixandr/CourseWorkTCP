@@ -221,63 +221,8 @@ public class Server
                 }
 
 
-                else if (credentials[0] == "getSupport")
-                {
-                    // Извлекаем UserId из запроса
-                    if (int.TryParse(credentials[1], out int appUserId))
-                    {
-                        Console.WriteLine($"Запрос на получение поддержки для пользователя с ID: {appUserId}");
-                        try
-                        {
-                            string jsonData = await GetSupportsByUserId(appUserId); // Получаем данные о заявках пользователя
-                            byte[] responseData = Encoding.UTF8.GetBytes(jsonData); // Преобразуем в байты
-                            await stream.WriteAsync(responseData, 0, responseData.Length); // Отправляем клиенту
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Ошибка при обработке заявок: {ex.Message}");
-                            byte[] errorResponse = Encoding.UTF8.GetBytes("Error");
-                            await stream.WriteAsync(errorResponse, 0, errorResponse.Length);
-                        }
-                    }
-                    else
-                    {
-                        byte[] errorResponse = Encoding.UTF8.GetBytes("InvalidUserId");
-                        await stream.WriteAsync(errorResponse, 0, errorResponse.Length);
-                    }
-                }
-                else if (credentials[0] == "addSupport")
-                {
-
-                    try
-                    {
-                        // Распаковываем данные из сообщения
-                        string email = credentials[1];
-                        string description = credentials[2];
-
-
-                        if (int.TryParse(credentials[3], out int supUserId))
-                        {
-                            Console.WriteLine($"Получен запрос на добавление заявки id {supUserId}");
-
-                            // Вызываем метод для добавления заявки
-                            string response = await AddSupportAsync(email, description, supUserId)
-                                ? "Success"
-                                : "Error";
-
-                            // Отправляем ответ клиенту
-                            byte[] responseData = Encoding.UTF8.GetBytes(response);
-                            await stream.WriteAsync(responseData, 0, responseData.Length);
-                        }
-
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Ошибка обработки запроса: {ex.Message}");
-                        byte[] responseData = Encoding.UTF8.GetBytes("Error");
-                        await stream.WriteAsync(responseData, 0, responseData.Length);
-                    }
-                }
+             
+          
                 else if (credentials[0] == "updateRole")
                 {
                     if (int.TryParse(credentials[1], out int admuserId) && int.TryParse(credentials[2], out int newRoleId))
@@ -1051,27 +996,7 @@ public class Server
         }
     }
 
-    private async Task<string> GetSupportsByUserId(int userId)
-    {
-        using (var dbContext = new CrmsystemContext())
-        {
-            var supports = await dbContext.SupportTickets
-                .Include(a => a.User)
-                .Include(a => a.Status)
-                .Include(a => a.Description) // Подключаем Description
-                .Where(a => a.User.Id == userId)
-                .Select(a => new
-                {
-                    a.TicketId,
-                    a.SubmissionDate,
-                    Description = a.Description != null ? a.Description.Content : null, // Используем Description.Content
-                    StatusName = a.Status.StatusName,
-                })
-                .ToListAsync();
-
-            return supports.Count == 0 ? "NoData" : JsonConvert.SerializeObject(supports);
-        }
-    }
+  
 
     private async Task<bool> SalaryEmployeeByIdAsync(int employeeId)
     {
@@ -1116,52 +1041,7 @@ public class Server
             return false;
         }
     }
-    private async Task<bool> AddSupportAsync(string email, string description, int userID)
-    {
-        try
-        {
-            using (var context = new CrmsystemContext())
-            {
-                var account = await context.Accounts.FirstOrDefaultAsync(a => a.Id == userID);
-                if (account == null)
-                    throw new Exception("Пользователь не найден.");
-
-                // Находим статус "Открыт" (или другой статус по умолчанию) для SupportStatus
-                var defaultStatus = await context.Statuses
-                    .FirstOrDefaultAsync(s => s.StatusName == "Open" && s.Type == "SupportStatus");
-                if (defaultStatus == null)
-                    throw new Exception("Статус по умолчанию для тикетов техподдержки не найден.");
-
-                // Создаем запись в Descriptions
-                var descriptionEntity = new Description
-                {
-                    Content = description
-                };
-                context.Descriptions.Add(descriptionEntity);
-                await context.SaveChangesAsync();
-
-                var support = new SupportTicket
-                {
-                    User = account,
-                    UserId = userID,
-                    UserEmail = email,
-                    DescriptionId = descriptionEntity.Id,
-                    StatusId = defaultStatus.Id, // Используем найденный статус
-                    SubmissionDate = DateTime.Now
-                };
-
-                context.SupportTickets.Add(support);
-                await context.SaveChangesAsync();
-            }
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Ошибка при добавлении заявки: {ex.Message}");
-            return false;
-        }
-    }
+   
 
     private async Task<Account> ValidateUserAsync(string username, string password)
     {

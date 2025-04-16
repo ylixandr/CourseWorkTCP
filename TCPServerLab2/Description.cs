@@ -16,7 +16,7 @@ namespace TCPServer
         // Существующие навигационные свойства
       
        
-        public virtual ICollection<SupportTicket> SupportTickets { get; set; }
+      
         public virtual ICollection<Asset> Assets { get; set; }
         public virtual ICollection<Liability> Liabilities { get; set; }
         public virtual ICollection<Equity> Equity { get; set; }
@@ -28,7 +28,7 @@ namespace TCPServer
         {
           
             
-            SupportTickets = new HashSet<SupportTicket>();
+
             Assets = new HashSet<Asset>();
             Liabilities = new HashSet<Liability>();
             Equity = new HashSet<Equity>();

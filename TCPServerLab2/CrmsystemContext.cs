@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using TCPServer.balanceModule;
-using TCPServer.ProductionModule;
+
 
 namespace TCPServer
 {
@@ -21,9 +21,9 @@ namespace TCPServer
         public virtual DbSet<Account> Accounts { get; set; }
         public virtual DbSet<Employee> Employees { get; set; }
         public virtual DbSet<Role> Roles { get; set; }
-        public virtual DbSet<Status> Statuses { get; set; }
+      
         public virtual DbSet<Description> Descriptions { get; set; }
-        public virtual DbSet<SupportTicket> SupportTickets { get; set; }
+        
         public DbSet<Asset> Assets { get; set; }
         public DbSet<Liability> Liabilities { get; set; }
         public DbSet<Equity> Equity { get; set; }
@@ -32,20 +32,20 @@ namespace TCPServer
         public DbSet<BalanceSnapshot> BalanceSnapshots { get; set; }
 
         // Новые DbSet для модуля "Учёт продукции"
-        public DbSet<Product> Products { get; set; }
-        public DbSet<ProductCategory> ProductCategories { get; set; }
-        public DbSet<ProductBatch> ProductBatches { get; set; }
-        public DbSet<Warehouse> Warehouses { get; set; }
-        public DbSet<Inventory> Inventories { get; set; }
-        public DbSet<InventoryTransaction> InventoryTransactions { get; set; }
-        public DbSet<ProductComponent> ProductComponents { get; set; }
+        public DbSet<ProductionModule.Product> Products { get; set; }
+        public DbSet<ProductionModule.ProductCategory> ProductCategories { get; set; }
+        public DbSet<ProductionModule.ProductBatch> ProductBatches { get; set; }
+        public DbSet<ProductionModule.Warehouse> Warehouses { get; set; }
+        public DbSet<ProductionModule.Inventory> Inventories { get; set; }
+        public DbSet<ProductionModule.InventoryTransaction> InventoryTransactions { get; set; }
+        public DbSet<ProductionModule.ProductComponent> ProductComponents { get; set; }
         public DbSet<ExchangeRate> ExchangeRates { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseSqlServer("Data Source=YLIXANDR;Initial Catalog=CRMSystem;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite;Multi Subnet Failover=False");
+                optionsBuilder.UseSqlServer("Data Source=YLIXANDR;Initial Catalog=CourseWork;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite;Multi Subnet Failover=False");
             }
         }
 
@@ -82,28 +82,6 @@ namespace TCPServer
                 entity.Property(e => e.RoleName).HasMaxLength(50);
             });
 
-            modelBuilder.Entity<Status>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.StatusName).HasMaxLength(50);
-                entity.Property(e => e.Type).HasMaxLength(50);
-            });
-
-            modelBuilder.Entity<SupportTicket>(entity =>
-            {
-                entity.HasKey(e => e.TicketId);
-                entity.Property(e => e.SubmissionDate).HasColumnType("datetime");
-                entity.Property(e => e.UserEmail).HasMaxLength(255);
-                entity.HasOne(d => d.User)
-                      .WithMany(p => p.SupportTickets)
-                      .HasForeignKey(d => d.UserId)
-                      .OnDelete(DeleteBehavior.ClientSetNull)
-                      .HasConstraintName("FK__SupportTi__UserI__6EC0713C");
-                entity.HasOne(d => d.Description)
-                      .WithMany(p => p.SupportTickets)
-                      .HasForeignKey(d => d.DescriptionId)
-                      .HasConstraintName("FK_SupportTickets_Descriptions");
-            });
 
             modelBuilder.Entity<Asset>(entity =>
             {
@@ -200,15 +178,13 @@ namespace TCPServer
                 entity.HasMany(d => d.Operations)
                       .WithOne(o => o.Description)
                       .HasForeignKey(o => o.DescriptionId);
-                entity.HasMany(d => d.SupportTickets)
-                      .WithOne(s => s.Description)
-                      .HasForeignKey(s => s.DescriptionId);
+               
             });
 
             // Конфигурация новых сущностей для модуля "Учёт продукции"
-            modelBuilder.Entity<Product>(entity =>
+            modelBuilder.Entity<ProductionModule.Product>(entity =>
             {
-                entity.HasKey(e => e.Id);
+                entity.HasKey(e => e.ProductId);
                 entity.Property(e => e.PurchasePrice).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.SellingPrice).HasColumnType("decimal(18,2)");
                 entity.HasOne(e => e.Category)
@@ -219,7 +195,7 @@ namespace TCPServer
                       .HasForeignKey(e => e.DescriptionId);
             });
 
-            modelBuilder.Entity<ProductCategory>(entity =>
+            modelBuilder.Entity<ProductionModule.ProductCategory>(entity =>
             {
                 entity.HasKey(e => e.Id);
                 entity.HasOne(e => e.ParentCategory)
@@ -227,7 +203,7 @@ namespace TCPServer
                       .HasForeignKey(e => e.ParentCategoryId);
             });
 
-            modelBuilder.Entity<ProductBatch>(entity =>
+            modelBuilder.Entity<ProductionModule.ProductBatch>(entity =>
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18,2)");
@@ -237,12 +213,12 @@ namespace TCPServer
                       .HasForeignKey(e => e.ProductId);
             });
 
-            modelBuilder.Entity<Warehouse>(entity =>
+            modelBuilder.Entity<ProductionModule.Warehouse>(entity =>
             {
                 entity.HasKey(e => e.Id);
             });
 
-            modelBuilder.Entity<Inventory>(entity =>
+            modelBuilder.Entity<ProductionModule.Inventory>(entity =>
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18,2)");
@@ -255,7 +231,7 @@ namespace TCPServer
                       .HasForeignKey(e => e.WarehouseId);
             });
 
-            modelBuilder.Entity<InventoryTransaction>(entity =>
+            modelBuilder.Entity<ProductionModule.InventoryTransaction>(entity =>
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18,2)");
@@ -278,7 +254,7 @@ namespace TCPServer
                       .HasForeignKey(e => e.AuditLogId);
             });
 
-            modelBuilder.Entity<ProductComponent>(entity =>
+            modelBuilder.Entity<ProductionModule.ProductComponent>(entity =>
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18,2)");

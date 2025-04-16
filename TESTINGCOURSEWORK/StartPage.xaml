@@ -13,36 +13,7 @@
             <ColumnDefinition Width="*" />
             
         </Grid.ColumnDefinitions>
-        <Button x:Name="client_Button" Click="client_Button_Click"  Grid.Column="0">
-            <Grid  >
-                <Image Source="blue.jpg" Stretch="Fill">
-                    <Image.Effect>
-                        <BlurEffect Radius="20"/>
-                    </Image.Effect>
-                </Image>
-                <Image Margin="42,144,42,193" Source="/Images/StartPage/logo-person.png" Stretch="Fill" RenderTransformOrigin="0.5,0.5">
-                    <Image.RenderTransform>
-                        <TransformGroup>
-                            <ScaleTransform ScaleX="-1"/>
-                            <SkewTransform/>
-                            <RotateTransform/>
-                            <TranslateTransform/>
-                        </TransformGroup>
-                    </Image.RenderTransform>
-                </Image>
-                <Label FontWeight="Black" FontSize="40" Margin="64,317,34,0" RenderTransformOrigin="0.5,0.5" Height="59" VerticalAlignment="Top">
-                    <Label.RenderTransform>
-                        <TransformGroup>
-                            <ScaleTransform ScaleY="1"/>
-                            <SkewTransform/>
-                            <RotateTransform/>
-                            <TranslateTransform/>
-                        </TransformGroup>
-                    </Label.RenderTransform> Клиент
-                </Label>
-
-            </Grid>
-        </Button>
+     
 
 
 

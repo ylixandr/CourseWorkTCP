@@ -17,5 +17,4 @@ public partial class Account
 
     public virtual Role Role { get; set; } = null!;
 
-    public virtual ICollection<SupportTicket> SupportTickets { get; set; } = new List<SupportTicket>();
 }

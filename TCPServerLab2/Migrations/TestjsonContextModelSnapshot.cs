@@ -152,7 +152,7 @@ namespace TCPServer.Migrations
                     b.Property<int>("AuditLogId")
                         .HasColumnType("int");
 
-                    b.Property<int>("FromWarehouseId")
+                    b.Property<int?>("FromWarehouseId")
                         .HasColumnType("int");
 
                     b.Property<int>("ProductBatchId")
@@ -161,7 +161,7 @@ namespace TCPServer.Migrations
                     b.Property<decimal>("Quantity")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("ToWarehouseId")
+                    b.Property<int?>("ToWarehouseId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("TransactionDate")
@@ -188,11 +188,11 @@ namespace TCPServer.Migrations
 
             modelBuilder.Entity("TCPServer.ProductionModule.Product", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("ProductId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductId"));
 
                     b.Property<string>("Article")
                         .IsRequired()
@@ -222,7 +222,7 @@ namespace TCPServer.Migrations
                     b.Property<decimal>("SellingPrice")
                         .HasColumnType("decimal(18,2)");
 
-                    b.HasKey("Id");
+                    b.HasKey("ProductId");
 
                     b.HasIndex("CategoryId");
 
@@ -352,65 +352,6 @@ namespace TCPServer.Migrations
                     b.HasKey("RoleId");
 
                     b.ToTable("Roles");
-                });
-
-            modelBuilder.Entity("TCPServer.Status", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("StatusName")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Statuses");
-                });
-
-            modelBuilder.Entity("TCPServer.SupportTicket", b =>
-                {
-                    b.Property<int>("TicketId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TicketId"));
-
-                    b.Property<int?>("DescriptionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StatusId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SubmissionDate")
-                        .HasColumnType("datetime");
-
-                    b.Property<string>("UserEmail")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("TicketId");
-
-                    b.HasIndex("DescriptionId");
-
-                    b.HasIndex("StatusId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("SupportTickets");
                 });
 
             modelBuilder.Entity("TCPServer.balanceModule.Asset", b =>
@@ -710,8 +651,7 @@ namespace TCPServer.Migrations
                     b.HasOne("TCPServer.ProductionModule.Warehouse", "FromWarehouse")
                         .WithMany("FromTransactions")
                         .HasForeignKey("FromWarehouseId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("TCPServer.ProductionModule.ProductBatch", "ProductBatch")
                         .WithMany("Transactions")
@@ -722,8 +662,7 @@ namespace TCPServer.Migrations
                     b.HasOne("TCPServer.ProductionModule.Warehouse", "ToWarehouse")
                         .WithMany("ToTransactions")
                         .HasForeignKey("ToWarehouseId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("AuditLog");
 
@@ -790,32 +729,6 @@ namespace TCPServer.Migrations
                     b.Navigation("ParentProduct");
                 });
 
-            modelBuilder.Entity("TCPServer.SupportTicket", b =>
-                {
-                    b.HasOne("TCPServer.Description", "Description")
-                        .WithMany("SupportTickets")
-                        .HasForeignKey("DescriptionId")
-                        .HasConstraintName("FK_SupportTickets_Descriptions");
-
-                    b.HasOne("TCPServer.Status", "Status")
-                        .WithMany("SupportTickets")
-                        .HasForeignKey("StatusId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("TCPServer.Account", "User")
-                        .WithMany("SupportTickets")
-                        .HasForeignKey("UserId")
-                        .IsRequired()
-                        .HasConstraintName("FK__SupportTi__UserI__6EC0713C");
-
-                    b.Navigation("Description");
-
-                    b.Navigation("Status");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("TCPServer.balanceModule.Asset", b =>
                 {
                     b.HasOne("TCPServer.Description", "Description")
@@ -880,11 +793,6 @@ namespace TCPServer.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("TCPServer.Account", b =>
-                {
-                    b.Navigation("SupportTickets");
-                });
-
             modelBuilder.Entity("TCPServer.Description", b =>
                 {
                     b.Navigation("Assets");
@@ -896,8 +804,6 @@ namespace TCPServer.Migrations
                     b.Navigation("Operations");
 
                     b.Navigation("Products");
-
-                    b.Navigation("SupportTickets");
                 });
 
             modelBuilder.Entity("TCPServer.ProductionModule.Product", b =>
@@ -933,11 +839,6 @@ namespace TCPServer.Migrations
             modelBuilder.Entity("TCPServer.Role", b =>
                 {
                     b.Navigation("Accounts");
-                });
-
-            modelBuilder.Entity("TCPServer.Status", b =>
-                {
-                    b.Navigation("SupportTickets");
                 });
 
             modelBuilder.Entity("TCPServer.balanceModule.AuditLog", b =>

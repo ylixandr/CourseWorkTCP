@@ -68,7 +68,7 @@ namespace TCPServer.ProductionModule
                         .Include(p => p.Description)
                         .Select(p => new ProductDto
                         {
-                            Id = p.Id,
+                            Id = p.ProductId,
                             Name = p.Name,
                             CategoryId = p.CategoryId,
                             PurchasePrice = p.PurchasePrice,
@@ -145,14 +145,14 @@ namespace TCPServer.ProductionModule
                         // Создаём партию и инвентарь
                         var batch = new ProductBatch
                         {
-                            ProductId = product.Id,
+                            ProductId = product.ProductId,
                             Quantity = productData.InitialQuantity.Value
                         };
                         dbContext.ProductBatches.Add(batch);
 
                         var inventory = new Inventory
                         {
-                            ProductId = product.Id,
+                            ProductId = product.ProductId,
                             WarehouseId = 1, // По умолчанию первый склад
                             Quantity = productData.InitialQuantity.Value,
                             ReservedQuantity = 0
@@ -165,7 +165,7 @@ namespace TCPServer.ProductionModule
                             UserName = "System",
                             Action = "Создание",
                             EntityType = "Asset",
-                            EntityId = product.Id,
+                            EntityId = product.ProductId,
                             Details = $"Добавлен актив ТМЦ: {product.Name}, Сумма: {asset.Amount}",
                             Timestamp = DateTime.Now
                         };
@@ -180,14 +180,14 @@ namespace TCPServer.ProductionModule
                         UserName = "System",
                         Action = "Создание",
                         EntityType = "Product",
-                        EntityId = product.Id,
+                        EntityId = product.ProductId,
                         Details = $"Добавлен продукт: {product.Name}, Цена закупки: {product.PurchasePrice}",
                         Timestamp = DateTime.Now
                     };
                     dbContext.AuditLogs.Add(productAuditLog);
                     await dbContext.SaveChangesAsync();
 
-                    return JsonConvert.SerializeObject(new { Success = true, ProductId = product.Id });
+                    return JsonConvert.SerializeObject(new { Success = true, ProductId = product.ProductId });
                 }
             }
             catch (Exception ex)
@@ -210,7 +210,7 @@ namespace TCPServer.ProductionModule
                 {
                     var product = await dbContext.Products
                         .Include(p => p.Description)
-                        .FirstOrDefaultAsync(p => p.Id == productData.Id);
+                        .FirstOrDefaultAsync(p => p.ProductId == productData.Id);
 
                     if (product == null)
                     {
@@ -247,7 +247,7 @@ namespace TCPServer.ProductionModule
                         UserName = "System",
                         Action = "Обновление",
                         EntityType = "Product",
-                        EntityId = product.Id,
+                        EntityId = product.ProductId,
                         Details = $"Обновлён продукт: {product.Name}, Новая цена закупки: {product.PurchasePrice}",
                         Timestamp = DateTime.Now
                     };
@@ -275,7 +275,7 @@ namespace TCPServer.ProductionModule
                 {
                     var product = await dbContext.Products
                         .Include(p => p.Description)
-                        .FirstOrDefaultAsync(p => p.Id == productId);
+                        .FirstOrDefaultAsync(p => p.ProductId == productId);
 
                     if (product == null)
                     {
@@ -311,7 +311,7 @@ namespace TCPServer.ProductionModule
                         UserName = "System",
                         Action = "Удаление",
                         EntityType = "Product",
-                        EntityId = product.Id,
+                        EntityId = product.ProductId,
                         Details = $"Удалён продукт: {product.Name}",
                         Timestamp = DateTime.Now
                     };
@@ -527,14 +527,14 @@ namespace TCPServer.ProductionModule
 
                 using (var dbContext = new CrmsystemContext())
                 {
-                    // Проверяем продукт
+                    
                     var product = await dbContext.Products.FindAsync(transactionData.ProductBatchId);
                     if (product == null)
                     {
                         return "Error: Продукт не найден";
                     }
 
-                    // Создаём партию (используем ProductId как ProductBatchId)
+                    
                     var batch = await dbContext.ProductBatches
                         .FirstOrDefaultAsync(b => b.ProductId == transactionData.ProductBatchId);
                     if (batch == null)
@@ -547,8 +547,7 @@ namespace TCPServer.ProductionModule
                         dbContext.ProductBatches.Add(batch);
                     }
 
-                    // Проверяем тип транзакции
-                    var transactionType = transactionData.TransactionType?.ToLower();
+                   var transactionType = transactionData.TransactionType?.ToLower();
                     if (!new[] { "receipt", "shipment", "transfer" }.Contains(transactionType))
                     {
                         return "Error: Неверный тип транзакции";
@@ -556,7 +555,7 @@ namespace TCPServer.ProductionModule
 
                     if (transactionType == "receipt")
                     {
-                        // Проверяем склад
+                        
                         if (!transactionData.ToWarehouseId.HasValue)
                         {
                             return "Error: Укажите склад назначения";
@@ -567,7 +566,7 @@ namespace TCPServer.ProductionModule
                             return "Error: Склад не найден";
                         }
 
-                        // Обновляем инвентарь
+                        
                         var inventory = await dbContext.Inventories
                             .FirstOrDefaultAsync(i => i.ProductId == transactionData.ProductBatchId && i.WarehouseId == transactionData.ToWarehouseId.Value);
                         if (inventory == null)
@@ -588,7 +587,7 @@ namespace TCPServer.ProductionModule
 
                         batch.Quantity += transactionData.Quantity;
 
-                        // Интеграция с балансом: увеличиваем актив
+                       
                         var asset = new Asset
                         {
                             Category = "ТМЦ",
@@ -599,13 +598,13 @@ namespace TCPServer.ProductionModule
                         };
                         dbContext.Assets.Add(asset);
 
-                        // Логирование актива
+                     
                         var assetAuditLog = new AuditLog
                         {
                             UserName = "System",
                             Action = "Создание",
                             EntityType = "Asset",
-                            EntityId = product.Id,
+                            EntityId = product.ProductId,
                             Details = $"Добавлен актив ТМЦ: {product.Name}, Сумма: {asset.Amount}",
                             Timestamp = DateTime.Now
                         };
@@ -613,7 +612,7 @@ namespace TCPServer.ProductionModule
                     }
                     else if (transactionType == "shipment")
                     {
-                        // Проверяем склад
+                       
                         if (!transactionData.FromWarehouseId.HasValue)
                         {
                             return "Error: Укажите склад отправления";
@@ -624,7 +623,7 @@ namespace TCPServer.ProductionModule
                             return "Error: Склад не найден";
                         }
 
-                        // Проверяем наличие
+                  
                         var inventory = await dbContext.Inventories
                             .FirstOrDefaultAsync(i => i.ProductId == transactionData.ProductBatchId && i.WarehouseId == transactionData.FromWarehouseId.Value);
                         if (inventory == null || inventory.Quantity < transactionData.Quantity)
@@ -635,7 +634,6 @@ namespace TCPServer.ProductionModule
                         inventory.Quantity -= transactionData.Quantity;
                         batch.Quantity -= transactionData.Quantity;
 
-                        // Интеграция с балансом: уменьшаем актив
                         var asset = await dbContext.Assets
                             .FirstOrDefaultAsync(a => a.Name == product.Name && a.Category == "ТМЦ");
                         if (asset != null)
@@ -647,13 +645,12 @@ namespace TCPServer.ProductionModule
                             }
                         }
 
-                        // Логирование актива
                         var assetAuditLog = new AuditLog
                         {
                             UserName = "System",
                             Action = "Обновление",
                             EntityType = "Asset",
-                            EntityId = product.Id,
+                            EntityId = product.ProductId,
                             Details = $"Уменьшен актив ТМЦ: {product.Name}, Сумма: {transactionData.Quantity * product.PurchasePrice}",
                             Timestamp = DateTime.Now
                         };
@@ -661,7 +658,7 @@ namespace TCPServer.ProductionModule
                     }
                     else if (transactionType == "transfer")
                     {
-                        // Проверяем склады
+                      
                         if (!transactionData.FromWarehouseId.HasValue || !transactionData.ToWarehouseId.HasValue)
                         {
                             return "Error: Укажите склады отправления и назначения";
@@ -673,7 +670,6 @@ namespace TCPServer.ProductionModule
                             return "Error: Склад не найден";
                         }
 
-                        // Проверяем наличие
                         var fromInventory = await dbContext.Inventories
                             .FirstOrDefaultAsync(i => i.ProductId == transactionData.ProductBatchId && i.WarehouseId == transactionData.FromWarehouseId.Value);
                         if (fromInventory == null || fromInventory.Quantity < transactionData.Quantity)
@@ -681,12 +677,11 @@ namespace TCPServer.ProductionModule
                             return "Error: Недостаточно продукции на складе отправления";
                         }
 
-                        // Обновляем инвентарь отправления
                         fromInventory.Quantity -= transactionData.Quantity;
 
-                        // Обновляем инвентарь назначения
-                        var toInventory = await dbContext.Inventories
-                            .FirstOrDefaultAsync(i => i.ProductId == transactionData.ProductBatchId && i.WarehouseId == transactionData.ToWarehouseId.Value);
+                 
+                       var toInventory = await dbContext.Inventories
+                           .FirstOrDefaultAsync(i => i.ProductId == transactionData.ProductBatchId && i.WarehouseId == transactionData.ToWarehouseId.Value);
                         if (toInventory == null)
                         {
                             toInventory = new Inventory
@@ -704,7 +699,7 @@ namespace TCPServer.ProductionModule
                         }
                     }
 
-                    // Создаём транзакцию
+                 
                     var transaction = new InventoryTransaction
                     {
                         ProductBatchId = transactionData.ProductBatchId,

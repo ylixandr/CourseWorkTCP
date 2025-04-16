@@ -12,7 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using TESTINGCOURSEWORK;
-using TESTINGCOURSEWORK.SupplierFolder;
+
 
 namespace CourseWorkTest
 {
@@ -42,13 +42,7 @@ namespace CourseWorkTest
             this.Hide();
         }
 
-        private void client_Button_Click(object sender, RoutedEventArgs e)
-        {
-            SupplierRegistrationPage clientRegPage = new SupplierRegistrationPage();
-            clientRegPage.Show();
-            this.Hide();
-        }
-
+       
        
     }
 }
