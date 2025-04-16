@@ -85,23 +85,7 @@
 
 
         </Grid>-->
-        <DataGrid x:Name="TransactionDataGrid" Grid.Row="1" Grid.ColumnSpan="3" Margin="2,0,14,10"
-   Grid.RowSpan="6" Height="350" VerticalAlignment="Bottom" 
-   AutoGenerateColumns="False" HeadersVisibility="Column" 
-   ColumnHeaderHeight="40" RowHeight="30"
-   CanUserAddRows="False" CanUserDeleteRows="False"
-   IsReadOnly="True"
-   ItemsSource="{Binding Transactions}" Visibility="Hidden" Grid.Column="1">
-
-            <!-- Настройка колонок и заголовков -->
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="0.5*"/>
-                <DataGridTextColumn Header="Дата транзакции" Binding="{Binding TransactionDate, StringFormat=d}" Width="*"/>
-                <DataGridTextColumn Header="Сумма" Binding="{Binding Amount}" Width="*"/>
-                <DataGridTextColumn Header="Тип транзакции" Binding="{Binding TransactionType}" Width="*"/>
-                <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="*"/>
-            </DataGrid.Columns>
-        </DataGrid>
+        
 
         <DataGrid x:Name="EmployeeDataGrid" Grid.Row="1" Grid.ColumnSpan="3" Margin="1,0,14,10"
            Grid.RowSpan="6" Height="350" VerticalAlignment="Bottom" 
@@ -123,60 +107,7 @@
                 <DataGridTextColumn Header="Дата найма" Binding="{Binding BirthDate}" Width="*" Visibility="Hidden"/>
             </DataGrid.Columns>
         </DataGrid>
-        <DataGrid x:Name="ManagerApplicationDataGrid" Grid.Row="1" Grid.ColumnSpan="3" Margin="1,0,9,10"
-          Grid.RowSpan="6" Height="349" VerticalAlignment="Bottom"
-          AutoGenerateColumns="False" HeadersVisibility="Column" 
-          ColumnHeaderHeight="40" RowHeight="30"
-          CanUserAddRows="False" CanUserDeleteRows="False"
-          IsReadOnly="True" Visibility="Hidden" Grid.Column="1">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="auto"/>
-                <DataGridTextColumn Header="Логин" Binding="{Binding Login}" Width="Auto"/>
-                <DataGridTextColumn Header="Контактная информация" Binding="{Binding ContactInfo}" Width="Auto"/>
-                <DataGridTextColumn Header="Название продукта" Binding="{Binding ProductName}" Width="Auto"/>
-                <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="Auto"/>
-                <DataGridTextColumn Header="Сумма" Binding="{Binding TotalPrice}" Width="Auto"/>
-                <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="Auto">
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Status}" Value="Одобрено">
-                                    <Setter Property="Background" Value="LightGreen"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding Status}" Value="Отклонено">
-                                    <Setter Property="Background" Value="LightCoral"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding Status}" Value="Ожидает">
-                                    <Setter Property="Background" Value="LightYellow"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGridTextColumn.CellStyle>
-                </DataGridTextColumn>
-                <DataGridTextColumn Header="Дата подачи" Binding="{Binding DateSubmitted}" Width="Auto"/>
-                <DataGridTextColumn Header="Количество" Binding="{Binding Quantity}" Width="Auto"/>
-                <DataGridTextColumn Header="Ед. Измерения" Binding="{Binding UnitOfMeasurement}" Width="Auto"/>
-
-            </DataGrid.Columns>
-        </DataGrid>
-        <Grid x:Name="topManagerPanel" Grid.ColumnSpan="4" Visibility="Visible">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="225*"/>
-                <ColumnDefinition Width="187*"/>
-                <ColumnDefinition Width="261*"/>
-                <ColumnDefinition Width="190*"/>
-            </Grid.ColumnDefinitions>
-            <Image Margin="194,0,0,10" Source="/blue.jpg" Stretch="Fill" Grid.ColumnSpan="4">
-                <Image.Effect>
-                    <BlurEffect Radius="10"/>
-                </Image.Effect>
-            </Image>
-            <Button BorderBrush="Transparent" Background="Transparent" FontSize="18" FontWeight="Bold" 
-            Content="Принять заявку" Margin="9,34,9,28" Click="Approve_Button_Click" Grid.Column="1"/>
-            <Button BorderBrush="Transparent" Background="Transparent" FontSize="18" FontWeight="Bold" 
-            Content="Отклонить заявку" Margin="8,34,19,28" Click="Reject_Button_Click" Grid.Column="2"/>
-            <Button BorderBrush="Transparent" Background="Transparent" FontSize="16" FontWeight="Bold" Content="Сформировать отчет" Margin="3,34,5,28" Click="ExportReportApp_Button_Click" Grid.Column="3"/>
-        </Grid>
+       
         <Grid x:Name="ProductGrid" Visibility="Hidden" Grid.ColumnSpan="4" HorizontalAlignment="Left" Margin="255,0,0,4" Width="749">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition></ColumnDefinition>
@@ -237,53 +168,13 @@
         <Button Click="Button_Click_Accounting" Background="Transparent" BorderBrush="Transparent" Grid.Row="2" Content="Учет продукции" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
 
 
-        <Grid x:Name="EditorGrid" Visibility="Hidden" Grid.ColumnSpan="4" HorizontalAlignment="Left" Margin="255,0,0,4" Width="749">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition></ColumnDefinition>
-                <ColumnDefinition></ColumnDefinition>
-                <ColumnDefinition></ColumnDefinition>
-                <ColumnDefinition></ColumnDefinition>
-            </Grid.ColumnDefinitions>
-
-            <Image Grid.ColumnSpan="4" Margin="0,0,-9,0" Source="/blue.jpg" Stretch="Fill">
-                <Image.Effect>
-                    <BlurEffect Radius="10"/>
-                </Image.Effect>
-            </Image>
-            <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="14" Content="Экспорт в Excel" Grid.Column="0" Margin="1,5,9,5" Click="ExportToExcelButton_Click"/>
-            <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="14" Content="Удалить транзакцию" Grid.Column="1" Margin="6,5,12,5" Click="DeleteTransactionButton_Click"/>
-            <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="14" Content="Отчетность" Width="100" Margin="5" Grid.Column="2" Click="GenerateReportButton_Click"/>
-            <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="12"  Content="Добавить транзакцию" Width="150" Margin="5" Grid.Column="3" Click="AddTransactionButton_Click"/>
-            <Button Content="Дашборд баланса" Width="150" Height="30" Click="BalanceDashboardButton_Click"/>
-
-        </Grid>
-        <Button Click="Balance_Button_Click"  FontWeight="Bold" FontSize="24" Background="Transparent" HorizontalAlignment="Center"  BorderBrush="Transparent" Grid.Row="3" Content="Учет баланса"></Button>
+      
+        <Button Click="BalanceDashboardButton_Click"  FontWeight="Bold" FontSize="24" Background="Transparent" HorizontalAlignment="Center"  BorderBrush="Transparent" Grid.Row="3" Content="Учет баланса"></Button>
         <!--<Label  Margin="20,6,0,15" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Учет баланса;" HorizontalAlignment="Left" Grid.Row="3" Width="158"/>-->
         <Button  Background="Transparent" BorderBrush="Transparent" Click="Employee_Button_Click" HorizontalAlignment="Center" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Персонал" Grid.Row="4" Width="124"></Button>
         <Button Click="Finance_Button_Click" Content="Информация" BorderBrush="Transparent" Background="Transparent" FontSize="24" FontWeight="Bold" Grid.Row="5"/>
         <Button Click="Exit_Button_Click" Content="Выход" BorderBrush="Transparent" Background="Transparent" FontSize="24" FontWeight="Bold" Grid.Row="6" Grid.ColumnSpan="2" Margin="0,0,220,13"/>
-        <Grid x:Name="Financial_EditorGrid" Visibility="Hidden" Grid.ColumnSpan="4" HorizontalAlignment="Left" Margin="255,0,0,4" Width="749">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition></ColumnDefinition>
-                <ColumnDefinition></ColumnDefinition>
-                <ColumnDefinition></ColumnDefinition>
-                <ColumnDefinition></ColumnDefinition>
-            </Grid.ColumnDefinitions>
-
-            <Image Grid.ColumnSpan="4" Margin="0,0,-9,0" Source="/blue.jpg" Stretch="Fill">
-                <Image.Effect>
-                    <BlurEffect Radius="10"/>
-                </Image.Effect>
-            </Image>
-            <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="14" Content="Зарплата" Grid.Column="0" Margin="1,5,9,5" Click="ExportToExcelButton_Click"/>
-            <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="14" Content="Удалить транзакцию" Grid.Column="1" Margin="6,5,12,5" Click="DeleteTransactionButton_Click"/>
-            <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="14" Content="Отчетность" Width="100" Margin="5" Grid.Column="2" Click="GenerateReportButton_Click"/>
-            <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="12"  Content="Добавить транзакцию" Width="150" Margin="5" Grid.Column="3" Click="AddTransactionButton_Click"/>
-
-
-        </Grid>
-
-
+       
 
 
     </Grid>

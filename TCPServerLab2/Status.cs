@@ -9,6 +9,6 @@ public partial class Status
     public string StatusName { get; set; }
     public string Type { get; set; } // Новое поле: "ApplicationStatus", "SupportStatus"
 
-    public virtual ICollection<Application> Applications { get; set; } = new List<Application>();
+   
     public virtual ICollection<SupportTicket> SupportTickets { get; set; } = new List<SupportTicket>();
 }

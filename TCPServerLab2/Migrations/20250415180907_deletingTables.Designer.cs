@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TCPServer;
 
@@ -11,9 +12,11 @@ using TCPServer;
 namespace TCPServer.Migrations
 {
     [DbContext(typeof(CrmsystemContext))]
-    partial class TestjsonContextModelSnapshot : ModelSnapshot
+    [Migration("20250415180907_deletingTables")]
+    partial class deletingTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -152,6 +155,9 @@ namespace TCPServer.Migrations
                     b.Property<int>("AuditLogId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("AuditLogId1")
+                        .HasColumnType("int");
+
                     b.Property<int>("FromWarehouseId")
                         .HasColumnType("int");
 
@@ -176,6 +182,8 @@ namespace TCPServer.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AuditLogId");
+
+                    b.HasIndex("AuditLogId1");
 
                     b.HasIndex("FromWarehouseId");
 
@@ -702,10 +710,14 @@ namespace TCPServer.Migrations
             modelBuilder.Entity("TCPServer.ProductionModule.InventoryTransaction", b =>
                 {
                     b.HasOne("TCPServer.balanceModule.AuditLog", "AuditLog")
-                        .WithMany("InventoryTransactions")
+                        .WithMany()
                         .HasForeignKey("AuditLogId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("TCPServer.balanceModule.AuditLog", null)
+                        .WithMany("InventoryTransactions")
+                        .HasForeignKey("AuditLogId1");
 
                     b.HasOne("TCPServer.ProductionModule.Warehouse", "FromWarehouse")
                         .WithMany("FromTransactions")

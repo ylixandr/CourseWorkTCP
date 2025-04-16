@@ -17,6 +17,5 @@ namespace TCPServer
         public Transaction MinTransaction { get; set; }
         public double AverageTransaction { get; set; }
         public List<MonthlySummary> MonthlySummary { get; set; }
-        public List<SuspiciousTransaction> Errors { get; set; }
     }
 }

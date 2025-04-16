@@ -38,8 +38,7 @@ namespace TESTINGCOURSEWORK
         public ObservableCollection<double> OutgoingValues { get; set; } = new ObservableCollection<double>();
 
         public ObservableCollection<ChartPoint> BalanceData { get; set; } = new ObservableCollection<ChartPoint>();
-        private ObservableCollection<Models.Transaction> transactions;
-        public ObservableCollection<Models.Transaction> Transactions { get { return transactions; } set { transactions = value; } }
+      
         public ObservableCollection<TCPServer.Product> Products { get; set; } = new ObservableCollection<TCPServer.Product>();
 
         private ObservableCollection<TCPServer.Employee> employees;
@@ -225,165 +224,21 @@ namespace TESTINGCOURSEWORK
 
         }
 
-        private async void Balance_Button_Click(object sender, RoutedEventArgs e)
-        {
-            HideAllGrid();
-            EditorGrid.Visibility = Visibility.Visible;
-            TransactionDataGrid.Visibility = Visibility.Visible;
-            try
-            {
-                string response = await NetworkService.Instance.SendMessageAsync("getTransactions");
-
-                if (response == "NoData")
-                {
-                    MessageBox.Show("Нет данных для отображения.");
-                    return;
-                }
-                else
-                {
-                    List<Models.Transaction>? transactions = new List<Models.Transaction>();
-                    transactions = JsonConvert.DeserializeObject<List<Models.Transaction>>(response);
-                    Transactions = new ObservableCollection<Models.Transaction>(transactions);
-                    TransactionDataGrid.ItemsSource = Transactions;
-
-                }
-
-            }
-            catch (Exception ex)
-            {
-
-                MessageBox.Show($"Ошибка: {ex.Message}");
-            }
-
-        }
+    
 
         private async void ExportToExcelButton_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                string command = "export_transactions";
-                string transactionsJson = await NetworkService.Instance.SendMessageAsync(command);
-
-                if (transactionsJson == "Error")
-                {
-                    MessageBox.Show("Ошибка при получении данных о транзакциях.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
-
-                // Десериализация данных из JSON
-                var transactions = JsonConvert.DeserializeObject<List<Models.Transaction>>(transactionsJson);
-
-                // Создание и сохранение Excel-файла
-                ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-
-                using (var package = new ExcelPackage())
-                {
-                    ExcelWorksheet worksheet = package.Workbook.Worksheets.Add("Transactions");
-
-                    // Добавление заголовков
-                    worksheet.Cells[1, 1].Value = "ID";
-                    worksheet.Cells[1, 2].Value = "Дата транзакции";
-                    worksheet.Cells[1, 3].Value = "Сумма";
-                    worksheet.Cells[1, 4].Value = "Тип транзакции";
-                    worksheet.Cells[1, 5].Value = "Описание";
-
-                    // Заполнение данных транзакций
-                    int row = 2;
-                    foreach (var transaction in transactions)
-                    {
-                        worksheet.Cells[row, 1].Value = transaction.Id;
-                        worksheet.Cells[row, 2].Value = transaction.TransactionDate.ToString("yyyy-MM-dd HH:mm:ss");
-                        worksheet.Cells[row, 3].Value = transaction.Amount;
-                        worksheet.Cells[row, 4].Value = transaction.TransactionType;
-                        worksheet.Cells[row, 5].Value = transaction.Description;
-                        row++;
-                    }
-
-                    string filePath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "Transactions.xlsx");
-                    package.SaveAs(new FileInfo(filePath));
-                    MessageBox.Show($"Файл сохранен на рабочем столе как {filePath}", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Произошла ошибка: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-
+           
         }
 
         private async void DeleteTransactionButton_Click(object sender, RoutedEventArgs e)
         {
-            if (TransactionDataGrid.SelectedItem is Models.Transaction selectedTransaction)
-            {
-                // Формирование сообщения для сервера
-                string loginData = $"deleteTransaction:{selectedTransaction.Id}";
-
-                // Отправка сообщения на сервер
-                string response = await NetworkService.Instance.SendMessageAsync(loginData);
-
-                // Проверка ответа сервера
-                if (response == "Transaction deleted")
-                {
-                    MessageBox.Show(" Транзакция успешно удалена");
-                    // Обновление отображения
-                    (TransactionDataGrid.ItemsSource as ObservableCollection<Models.Transaction>)?.Remove(selectedTransaction);
-                }
-                else
-                {
-                    MessageBox.Show("Не удалось удалить транзакцию.");
-                }
-            }
-            else
-            {
-                MessageBox.Show("Пожалуйста, выберите транзакцию");
-            }
+         
         }
 
         private async void GenerateReportButton_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                string command = "generate_report";
-                string reportJson = await NetworkService.Instance.SendMessageAsync(command);
-
-                // Десериализация данных
-                var report = JsonConvert.DeserializeObject<ReportModel>(reportJson);
-
-                // Формирование текста отчета
-                var reportText = new StringBuilder();
-                reportText.AppendLine("=== Финансовый отчет ===");
-                reportText.AppendLine($"Баланс компании (начальный): {report.Balance:0C}");
-                reportText.AppendLine($"Баланс после всех операций: {report.Balance + report.IncomeSum - report.ExpenseSum:C}");
-                reportText.AppendLine($"Общее количество транзакций: {report.TotalTransactions}");
-                reportText.AppendLine($"Общая сумма поступлений: {report.IncomeSum:C}");
-                reportText.AppendLine($"Общая сумма списаний: {report.ExpenseSum:C}");
-                reportText.AppendLine($"Средняя сумма транзакции: {report.AverageTransaction:C}");
-                reportText.AppendLine($"Самая крупная транзакция: {report.MaxTransaction?.Amount:C} ({report.MaxTransaction?.Description})");
-                reportText.AppendLine($"Самая мелкая транзакция: {report.MinTransaction?.Amount:C} ({report.MinTransaction?.Description})");
-                reportText.AppendLine("\n=== Транзакции по месяцам ===");
-                foreach (var month in report.MonthlySummary)
-                {
-                    reportText.AppendLine($"Месяц: {month.Month}");
-                    reportText.AppendLine($"  Количество транзакций: {month.Total}");
-                    reportText.AppendLine($"  Поступления: {month.Income:C}");
-                    reportText.AppendLine($"  Списания: {month.Expense:C}");
-                }
-                reportText.AppendLine("\n=== Ошибки или подозрительные транзакции ===");
-                foreach (var error in report.Errors)
-                {
-                    reportText.AppendLine($"  Тип: {error.TransactionType}, Сумма: {error.Amount:C}");
-                }
-
-                // Показ отчета в окне
-                MessageBox.Show(reportText.ToString(), "Отчетность", MessageBoxButton.OK, MessageBoxImage.Information);
-
-                // Сохранение отчета в текстовый файл
-                SaveReportToFile(reportText.ToString());
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка генерации отчета: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            
         }
 
         private void SaveReportToFile(string reportContent)
@@ -415,126 +270,20 @@ namespace TESTINGCOURSEWORK
 
         private void HideAllGrid()
         {
-            EditorGrid.Visibility = Visibility.Hidden;
+            
 
             topEditingPanel.Visibility = Visibility.Hidden;
             EmployeeDataGrid.Visibility = Visibility.Hidden;
-            TransactionDataGrid.Visibility = Visibility.Hidden;
-            ManagerApplicationDataGrid.Visibility = Visibility.Hidden;
-            topManagerPanel.Visibility = Visibility.Hidden;
+            
             ProductGrid.Visibility = Visibility.Hidden;
             ProductDataGrid.Visibility = Visibility.Hidden;
-            Financial_EditorGrid.Visibility = Visibility.Hidden;
+           
             graphicsGrid.Visibility = Visibility.Hidden;
 
         }
 
-        private void supplier_Button_Click(object sender, RoutedEventArgs e)
-        {
-            HideAllGrid();
-            topManagerPanel.Visibility = Visibility.Visible;
-            try
-            {
-
-
-                // Делаем видимыми верхнюю панель и DataGrid
-
-                ManagerApplicationDataGrid.Visibility = Visibility.Visible;
-
-                // Загружаем данные о необработанных заявках
-                LoadUnprocessedApplications();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка: {ex.Message}");
-            }
-        }
-
-
-        private async void Approve_Button_Click(object sender, RoutedEventArgs e)
-        {
-            if (ManagerApplicationDataGrid.SelectedItem is not ApplicationViewModel selectedApplication)
-            {
-                MessageBox.Show("Пожалуйста, выберите заявку для обработки.");
-                return;
-            }
-
-            try
-            {
-                string response = await NetworkService.Instance.SendMessageAsync($"approveApplication:{selectedApplication.Id}");
-                if (response == "Success")
-                {
-                    MessageBox.Show("Заявка одобрена.");
-                    LoadUnprocessedApplications(); // Обновляем данные в DataGrid
-                }
-                else
-                {
-                    MessageBox.Show("Ошибка при одобрении заявки.");
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка: {ex.Message}");
-            }
-        }
-
-
-        private async void Reject_Button_Click(object sender, RoutedEventArgs e)
-        {
-            if (ManagerApplicationDataGrid.SelectedItem is not ApplicationViewModel selectedApplication)
-            {
-                MessageBox.Show("Пожалуйста, выберите заявку для обработки.");
-                return;
-            }
-
-            try
-            {
-                string response = await NetworkService.Instance.SendMessageAsync($"rejectApplication:{selectedApplication.Id}");
-                if (response == "Success")
-                {
-                    MessageBox.Show("Заявка отклонена.");
-                    LoadUnprocessedApplications(); // Обновляем данные в DataGrid
-                }
-                else
-                {
-                    MessageBox.Show("Ошибка при отклонении заявки.");
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка: {ex.Message}");
-            }
-        }
-
-
-
-        private async void LoadUnprocessedApplications()
-        {
-            try
-            {
-                string response = await NetworkService.Instance.SendMessageAsync("getUnprocessedApplications");
-                if (response == "NoData")
-                {
-                    ManagerApplicationDataGrid.ItemsSource = null;
-                    MessageBox.Show("Нет необработанных заявок.");
-                }
-                else
-                {
-                    var applications = JsonConvert.DeserializeObject<List<ApplicationViewModel>>(response);
-
-                    // Если нужно отфильтровать только заявки с заполненным количеством и ед. измерения:
-                    applications = applications.Where(app => app.Quantity > 0 && !string.IsNullOrEmpty(app.UnitOfMeasurement)).ToList();
-
-                    ManagerApplicationDataGrid.ItemsSource = applications;
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка: {ex.Message}");
-            }
-        }
-
-
+          
+   
         private async void ExportReportApp_Button_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -649,14 +398,9 @@ namespace TESTINGCOURSEWORK
         private void Button_Click_Accounting(object sender, RoutedEventArgs e)
         {
             HideAllGrid();
-            // Показать верхнюю панель
-            ProductGrid.Visibility = Visibility.Visible;
+           ProductDashboard productDashboard = new ProductDashboard();
+            productDashboard.Show();
 
-            // Показать DataGrid для учета продукции
-            ProductDataGrid.Visibility = Visibility.Visible;
-
-            // Загружаем данные для учета продукции (например, из базы данных или другого источника)
-            LoadProductData();
         }
         private async void LoadProductData()
         {
@@ -822,41 +566,41 @@ namespace TESTINGCOURSEWORK
 
         private async void TransactionChartButton_Click(object sender, RoutedEventArgs e)
         {
-            SalaryBarChart.Visibility = Visibility.Hidden;
-            StatusPieChart.Visibility = Visibility.Hidden;
-            try
-            {
-                // Отправляем запрос на сервер
-                string response = await NetworkService.Instance.SendMessageAsync("getTransactionSummary");
+            //SalaryBarChart.Visibility = Visibility.Hidden;
+            //StatusPieChart.Visibility = Visibility.Hidden;
+            //try
+            //{
+            //    // Отправляем запрос на сервер
+            //    string response = await NetworkService.Instance.SendMessageAsync("getTransactionSummary");
 
-                if (response == "NoData")
-                {
-                    MessageBox.Show("Нет данных для отображения.");
-                    return;
-                }
-                TransactionPieChart.Visibility = Visibility.Visible;
-                // Десериализация данных
-                var transactionData = JsonConvert.DeserializeObject<List<TCPServer.TransactionSummary>>(response);
+            //    if (response == "NoData")
+            //    {
+            //        MessageBox.Show("Нет данных для отображения.");
+            //        return;
+            //    }
+            //    TransactionPieChart.Visibility = Visibility.Visible;
+            //    // Десериализация данных
+            //    var transactionData = JsonConvert.DeserializeObject<List<TCPServer.TransactionSummary>>(response);
 
-                // Очищаем старые серии
-                TransactionPieChart.Series.Clear();
+            //    // Очищаем старые серии
+            //    TransactionPieChart.Series.Clear();
 
-                // Создаём серии для каждого типа транзакций
-                foreach (var data in transactionData)
-                {
-                    TransactionPieChart.Series.Add(new PieSeries
-                    {
-                        Title = data.TransactionType,
-                        Values = new ChartValues<decimal> { data.TotalAmount },
-                        DataLabels = true,
-                        LabelPoint = chartPoint => $"{chartPoint.Y} ({chartPoint.Participation:P})"
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка: {ex.Message}");
-            }
+            //    // Создаём серии для каждого типа транзакций
+            //    foreach (var data in transactionData)
+            //    {
+            //        TransactionPieChart.Series.Add(new PieSeries
+            //        {
+            //            Title = data.TransactionType,
+            //            Values = new ChartValues<decimal> { data.TotalAmount },
+            //            DataLabels = true,
+            //            LabelPoint = chartPoint => $"{chartPoint.Y} ({chartPoint.Participation:P})"
+            //        });
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    MessageBox.Show($"Ошибка: {ex.Message}");
+            //}
         }
 
         private async void StatusChartButton_Click(object sender, RoutedEventArgs e)
@@ -946,6 +690,11 @@ namespace TESTINGCOURSEWORK
         private void Exit_Button_Click(object sender, RoutedEventArgs e)
         {
             Application.Current.Shutdown();
+        }
+
+        private void supplier_Button_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 

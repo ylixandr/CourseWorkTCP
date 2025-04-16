@@ -11,6 +11,8 @@ using LiveCharts.Wpf;
 using OfficeOpenXml; // Добавляем для EPPlus
 using System.IO;
 using TCPServer;
+using Client.Models;
+using TCPServer.balanceModule;
 
 namespace Client.ManagerFolder
 {
@@ -27,6 +29,8 @@ namespace Client.ManagerFolder
         public ChartValues<decimal> EquityValues { get; set; } = new ChartValues<decimal>();
         public List<string> Labels { get; set; } = new List<string>();
 
+        private readonly List<string> _currentAssetCategories = new List<string> { "Денежные средства", "Дебиторская задолженность" };
+        private readonly List<string> _currentLiabilityCategories = new List<string> { "Краткосрочные кредиты", "Кредиторская задолженность" };
         public BalanceDashboard()
         {
             // Указываем лицензию EPPlus
@@ -47,7 +51,38 @@ namespace Client.ManagerFolder
         {
             BalanceChart.DataContext = this;
         }
+        private (decimal CurrentRatio, decimal QuickRatio, decimal ROA, decimal ROE, decimal DebtToEquity) CalculateFinancialRatios(BalanceData balanceData)
+        {
+            decimal totalAssets = balanceData.Assets.Total;
+            decimal totalLiabilities = balanceData.Liabilities.Total;
+            decimal equity = balanceData.Equity;
 
+            // Проверяем списки категорий
+            var assetsCategories = balanceData.Assets.Categories ?? new List<CategoryData>();
+            var liabilitiesCategories = balanceData.Liabilities.Categories ?? new List<CategoryData>();
+
+            decimal currentAssets = assetsCategories
+                .Where(c => c.Category != null && (c.Category == "Денежные средства" || c.Category == "Дебиторская задолженность"))
+                .Sum(c => c.Total);
+
+            decimal quickAssets = assetsCategories
+                .Where(c => c.Category != null && c.Category == "Денежные средства")
+                .Sum(c => c.Total);
+
+            decimal currentLiabilities = liabilitiesCategories
+                .Where(c => c.Category != null && (c.Category == "Краткосрочные кредиты" || c.Category == "Кредиторская задолженность"))
+                .Sum(c => c.Total);
+
+            decimal netProfit = totalAssets * 0.1m; // Заглушка для чистой прибыли
+
+            decimal currentRatio = currentLiabilities != 0 ? currentAssets / currentLiabilities : 0;
+            decimal quickRatio = currentLiabilities != 0 ? quickAssets / currentLiabilities : 0;
+            decimal roa = totalAssets != 0 ? netProfit / totalAssets : 0;
+            decimal roe = equity != 0 ? netProfit / equity : 0;
+            decimal debtToEquity = equity != 0 ? totalLiabilities / equity : 0;
+
+            return (currentRatio, quickRatio, roa, roe, debtToEquity);
+        }
         private async void ExportToExcelButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -163,16 +198,109 @@ namespace Client.ManagerFolder
                 return;
             }
 
-            var request = new
-            {
-                StartDate = StartDatePicker.SelectedDate.Value.ToString("yyyy-MM-dd"),
-                EndDate = EndDatePicker.SelectedDate.Value.ToString("yyyy-MM-dd")
-            };
+            DateTime startDate = StartDatePicker.SelectedDate.Value;
+            DateTime endDate = EndDatePicker.SelectedDate.Value;
+            string interval = ((ComboBoxItem)ChartIntervalComboBox.SelectedItem).Content.ToString();
 
-            string jsonData = JsonConvert.SerializeObject(request);
-            string command = $"getBalanceSnapshot{jsonData}";
-            await LoadBalanceData(command);
-            await UpdateChartAsync();
+            try
+            {
+                using (var dbContext = new CrmsystemContext())
+                {
+                    var snapshots = dbContext.BalanceSnapshots
+                        .Where(s => s.Timestamp >= startDate && s.Timestamp <= endDate)
+                        .OrderBy(s => s.Timestamp)
+                        .ToList();
+
+                    AssetsValues.Clear();
+                    LiabilitiesValues.Clear();
+                    EquityValues.Clear();
+                    Labels.Clear();
+
+                    if (snapshots.Any())
+                    {
+                        if (interval == "Месяцы")
+                        {
+                            var groupedData = snapshots
+                                .GroupBy(s => new { s.Timestamp.Year, s.Timestamp.Month })
+                                .Select(g => new
+                                {
+                                    Date = new DateTime(g.Key.Year, g.Key.Month, 1),
+                                    Assets = g.Average(s => s.TotalAssets),
+                                    Liabilities = g.Average(s => s.TotalLiabilities),
+                                    Equity = g.Average(s => s.Equity)
+                                })
+                                .OrderBy(g => g.Date);
+
+                            foreach (var data in groupedData)
+                            {
+                                AssetsValues.Add(data.Assets);
+                                LiabilitiesValues.Add(data.Liabilities);
+                                EquityValues.Add(data.Equity);
+                                Labels.Add(data.Date.ToString("MMM yyyy"));
+                            }
+                        }
+                        else if (interval == "Кварталы")
+                        {
+                            var groupedData = snapshots
+                                .GroupBy(s => new { s.Timestamp.Year, Quarter = (s.Timestamp.Month - 1) / 3 + 1 })
+                                .Select(g => new
+                                {
+                                    Year = g.Key.Year, // Сохраняем Year
+                                    Quarter = g.Key.Quarter, // Сохраняем Quarter
+                                    Date = new DateTime(g.Key.Year, (g.Key.Quarter - 1) * 3 + 1, 1),
+                                    Assets = g.Average(s => s.TotalAssets),
+                                    Liabilities = g.Average(s => s.TotalLiabilities),
+                                    Equity = g.Average(s => s.Equity)
+                                })
+                                .OrderBy(g => g.Date);
+
+                            foreach (var data in groupedData)
+                            {
+                                AssetsValues.Add(data.Assets);
+                                LiabilitiesValues.Add(data.Liabilities);
+                                EquityValues.Add(data.Equity);
+                                Labels.Add($"Q{data.Quarter} {data.Year}"); // Используем data.Quarter и data.Year
+                            }
+                        }
+                        else if (interval == "Годы")
+                        {
+                            var groupedData = snapshots
+                                .GroupBy(s => new { s.Timestamp.Year })
+                                .Select(g => new
+                                {
+                                    Year = g.Key.Year, // Сохраняем Year
+                                    Date = new DateTime(g.Key.Year, 1, 1),
+                                    Assets = g.Average(s => s.TotalAssets),
+                                    Liabilities = g.Average(s => s.TotalLiabilities),
+                                    Equity = g.Average(s => s.Equity)
+                                })
+                                .OrderBy(g => g.Date);
+
+                            foreach (var data in groupedData)
+                            {
+                                AssetsValues.Add(data.Assets);
+                                LiabilitiesValues.Add(data.Liabilities);
+                                EquityValues.Add(data.Equity);
+                                Labels.Add(data.Year.ToString()); // Используем data.Year
+                            }
+                        }
+
+                        // Обновляем прогноз
+                        var (forecastAssets, forecastLiabilities, forecastEquity) = ForecastBalance(startDate, endDate, interval);
+                        ForecastAssetsTextBlock.Text = forecastAssets.ToString("F2");
+                        ForecastLiabilitiesTextBlock.Text = forecastLiabilities.ToString("F2");
+                        ForecastEquityTextBlock.Text = forecastEquity.ToString("F2");
+                    }
+                    else
+                    {
+                        MessageBox.Show("Нет данных за выбранный период.", "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при загрузке данных: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private async void ComparePeriodsButton_Click(object sender, RoutedEventArgs e)
@@ -184,50 +312,56 @@ namespace Client.ManagerFolder
                 return;
             }
 
-            var request = new
-            {
-                Period1Start = Period1StartPicker.SelectedDate.Value.ToString("yyyy-MM-dd"),
-                Period1End = Period1EndPicker.SelectedDate.Value.ToString("yyyy-MM-dd"),
-                Period2Start = Period2StartPicker.SelectedDate.Value.ToString("yyyy-MM-dd"),
-                Period2End = Period2EndPicker.SelectedDate.Value.ToString("yyyy-MM-dd")
-            };
+            DateTime period1Start = Period1StartPicker.SelectedDate.Value;
+            DateTime period1End = Period1EndPicker.SelectedDate.Value;
+            DateTime period2Start = Period2StartPicker.SelectedDate.Value;
+            DateTime period2End = Period2EndPicker.SelectedDate.Value;
 
-            string jsonData = JsonConvert.SerializeObject(request);
-            string command = $"compareBalanceSnapshots{jsonData}";
-            string response = await NetworkService.Instance.SendMessageAsync(command);
-
-            if (response.StartsWith("Error"))
+            try
             {
-                MessageBox.Show($"Ошибка: {response}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
+                using (var dbContext = new CrmsystemContext())
+                {
+                    // Период 1
+                    var period1Snapshots = dbContext.BalanceSnapshots
+                        .Where(s => s.Timestamp >= period1Start && s.Timestamp <= period1End)
+                        .ToList();
+
+                    if (period1Snapshots.Any())
+                    {
+                        Period1AssetsTextBlock.Text = period1Snapshots.Average(s => s.TotalAssets).ToString("F2");
+                        Period1LiabilitiesTextBlock.Text = period1Snapshots.Average(s => s.TotalLiabilities).ToString("F2");
+                        Period1EquityTextBlock.Text = period1Snapshots.Average(s => s.Equity).ToString("F2");
+                    }
+                    else
+                    {
+                        Period1AssetsTextBlock.Text = "0";
+                        Period1LiabilitiesTextBlock.Text = "0";
+                        Period1EquityTextBlock.Text = "0";
+                    }
+
+                    // Период 2
+                    var period2Snapshots = dbContext.BalanceSnapshots
+                        .Where(s => s.Timestamp >= period2Start && s.Timestamp <= period2End)
+                        .ToList();
+
+                    if (period2Snapshots.Any())
+                    {
+                        Period2AssetsTextBlock.Text = period2Snapshots.Average(s => s.TotalAssets).ToString("F2");
+                        Period2LiabilitiesTextBlock.Text = period2Snapshots.Average(s => s.TotalLiabilities).ToString("F2");
+                        Period2EquityTextBlock.Text = period2Snapshots.Average(s => s.Equity).ToString("F2");
+                    }
+                    else
+                    {
+                        Period2AssetsTextBlock.Text = "0";
+                        Period2LiabilitiesTextBlock.Text = "0";
+                        Period2EquityTextBlock.Text = "0";
+                    }
+                }
             }
-
-            var comparisonData = JsonConvert.DeserializeObject<dynamic>(response);
-
-            Period1AssetsTextBlock.Text = ((decimal)comparisonData.Period1.Assets).ToString("F2");
-            Period1LiabilitiesTextBlock.Text = ((decimal)comparisonData.Period1.Liabilities).ToString("F2");
-            Period1EquityTextBlock.Text = ((decimal)comparisonData.Period1.Equity).ToString("F2");
-
-            Period2AssetsTextBlock.Text = ((decimal)comparisonData.Period2.Assets).ToString("F2");
-            Period2LiabilitiesTextBlock.Text = ((decimal)comparisonData.Period2.Liabilities).ToString("F2");
-            Period2EquityTextBlock.Text = ((decimal)comparisonData.Period2.Equity).ToString("F2");
-
-            AssetsValues.Clear();
-            LiabilitiesValues.Clear();
-            EquityValues.Clear();
-            Labels.Clear();
-
-            AssetsValues.Add((decimal)comparisonData.Period1.Assets);
-            AssetsValues.Add((decimal)comparisonData.Period2.Assets);
-            LiabilitiesValues.Add((decimal)comparisonData.Period1.Liabilities);
-            LiabilitiesValues.Add((decimal)comparisonData.Period2.Liabilities);
-            EquityValues.Add((decimal)comparisonData.Period1.Equity);
-            EquityValues.Add((decimal)comparisonData.Period2.Equity);
-
-            Labels.Add("Период 1");
-            Labels.Add("Период 2");
-
-            BalanceChart.Update(true);
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при сравнении периодов: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private async Task UpdateChartAsync()
@@ -336,60 +470,97 @@ namespace Client.ManagerFolder
                     return;
                 }
 
-                var balanceData = JsonConvert.DeserializeObject<dynamic>(response);
+                // Десериализуем в тип BalanceData вместо dynamic
+                var balanceData = JsonConvert.DeserializeObject<BalanceData>(response);
 
-                TotalAssetsTextBlock.Text = ((decimal)balanceData.Assets.Total).ToString("F2");
-                TotalLiabilitiesTextBlock.Text = ((decimal)balanceData.Liabilities.Total).ToString("F2");
-                EquityTextBlock.Text = ((decimal)balanceData.Equity).ToString("F2");
-                BalanceCheckTextBlock.Text = ((decimal)balanceData.BalanceCheck).ToString("F2");
+                if (balanceData == null)
+                {
+                    MessageBox.Show("Не удалось загрузить данные баланса.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
 
-                AssetsListView.ItemsSource = balanceData.Assets.Categories;
-                LiabilitiesListView.ItemsSource = balanceData.Liabilities.Categories;
+                // Проверки на null уже не нужны, так как свойства класса имеют значения по умолчанию
+                TotalAssetsTextBlock.Text = balanceData.Assets.Total.ToString("F2");
+                TotalLiabilitiesTextBlock.Text = balanceData.Liabilities.Total.ToString("F2");
+                EquityTextBlock.Text = balanceData.Equity.ToString("F2");
+                BalanceCheckTextBlock.Text = balanceData.BalanceCheck.ToString("F2");
+
+                AssetsListView.ItemsSource = balanceData.Assets.Categories ?? new List<CategoryData>();
+                LiabilitiesListView.ItemsSource = balanceData.Liabilities.Categories ?? new List<CategoryData>();
+
+                var ratios = CalculateFinancialRatios(balanceData);
+                CurrentRatioTextBlock.Text = ratios.CurrentRatio.ToString("F2");
+                QuickRatioTextBlock.Text = ratios.QuickRatio.ToString("F2");
+                ROATextBlock.Text = ratios.ROA.ToString("F2");
+                ROETextBlock.Text = ratios.ROE.ToString("F2");
+                DebtToEquityTextBlock.Text = ratios.DebtToEquity.ToString("F2");
 
                 await LoadAllAssets();
                 await LoadAllLiabilities();
+                await LoadAuditLogs();
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Ошибка при загрузке данных: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
-        private async Task LoadAllAssets()
+        private async Task LoadAuditLogs()
         {
             try
             {
                 using (var dbContext = new CrmsystemContext())
                 {
-                    var assetsQuery = dbContext.Assets.AsQueryable();
-                    if (StartDatePicker.SelectedDate.HasValue)
-                        assetsQuery = assetsQuery.Where(a => a.AcquisitionDate >= StartDatePicker.SelectedDate.Value);
-                    if (EndDatePicker.SelectedDate.HasValue)
-                        assetsQuery = assetsQuery.Where(a => a.AcquisitionDate <= EndDatePicker.SelectedDate.Value);
-
-                    var assets = await assetsQuery
-                        .Include(a => a.Description)
+                    var logs = await dbContext.AuditLogs
+                        .OrderByDescending(l => l.Timestamp)
                         .ToListAsync();
-
-                    AllAssets = assets.Select(a => new AssetViewModel
+                    if (!logs.Any())
                     {
-                        Id = a.Id,
-                        Category = a.Category,
-                        Name = a.Name,
-                        Amount = a.Amount,
-                        Currency = a.Currency,
-                        AcquisitionDate = a.AcquisitionDate,
-                        DepreciationRate = a.DepreciationRate?.ToString("F2"),
-                        Description = a.Description?.Content
-                    }).ToList();
-
-                    FilteredAssets = AllAssets;
-                    ApplyAssetFilters(null, null);
+                        MessageBox.Show("Логи аудита отсутствуют в базе данных.", "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                    AuditLogsListView.ItemsSource = logs;
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при загрузке списка активов: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Ошибка при загрузке логов: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        private async Task LoadAllAssets()
+        {
+            try
+            {
+                string response = await NetworkService.Instance.SendMessageAsync("getAllAssets");
+
+                if (response.StartsWith("Error"))
+                {
+                    MessageBox.Show($"Ошибка: {response}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                var assets = JsonConvert.DeserializeObject<List<AssetViewModel>>(response) ?? new List<AssetViewModel>();
+
+                if (!assets.Any())
+                {
+                    MessageBox.Show("Список активов пуст.", "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+
+                AllAssets = assets.Select(a => new AssetViewModel
+                {
+                    Id = a.Id,
+                    Category = a.Category ?? "Не указано",
+                    Name = a.Name ?? "Без названия",
+                    Amount = a.Amount,
+                    Currency = a.Currency ?? "USD",
+                    AcquisitionDate = a.AcquisitionDate,
+                    DepreciationRate = a.DepreciationRate,
+                    Description = a.Description ?? ""
+                }).ToList();
+
+                ApplyAssetFilters(null, null);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при загрузке активов: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -397,99 +568,205 @@ namespace Client.ManagerFolder
         {
             try
             {
-                using (var dbContext = new CrmsystemContext())
+                string response = await NetworkService.Instance.SendMessageAsync("getAllLiabilities");
+
+                if (response.StartsWith("Error"))
                 {
-                    var liabilitiesQuery = dbContext.Liabilities.AsQueryable();
-                    if (StartDatePicker.SelectedDate.HasValue)
-                        liabilitiesQuery = liabilitiesQuery.Where(l => l.DueDate >= StartDatePicker.SelectedDate.Value);
-                    if (EndDatePicker.SelectedDate.HasValue)
-                        liabilitiesQuery = liabilitiesQuery.Where(l => l.DueDate <= EndDatePicker.SelectedDate.Value);
-
-                    var liabilities = await liabilitiesQuery
-                        .Include(l => l.Description)
-                        .ToListAsync();
-
-                    AllLiabilities = liabilities.Select(l => new LiabilityViewModel
-                    {
-                        Id = l.Id,
-                        Category = l.Category,
-                        Name = l.Name,
-                        Amount = l.Amount,
-                        DueDate = l.DueDate,
-                        Description = l.Description?.Content
-                    }).ToList();
-
-                    FilteredLiabilities = AllLiabilities;
-                    ApplyLiabilityFilters(null, null);
-
-                    var today = DateTime.Today;
-                    var dueSoon = AllLiabilities
-                        .Where(l => (l.DueDate - today).TotalDays <= 7 && (l.DueDate - today).TotalDays >= 0)
-                        .ToList();
-
-                    if (dueSoon.Any())
-                    {
-                        string message = "Приближаются сроки погашения обязательств:\n";
-                        foreach (var liability in dueSoon)
-                        {
-                            message += $"- {liability.Name} (Срок: {liability.DueDate:yyyy-MM-dd}, Сумма: {liability.Amount:F2})\n";
-                        }
-                        MessageBox.Show(message, "Уведомление", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    }
+                    MessageBox.Show($"Ошибка: {response}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
                 }
+
+                var liabilities = JsonConvert.DeserializeObject<List<LiabilityViewModel>>(response) ?? new List<LiabilityViewModel>();
+
+                if (!liabilities.Any())
+                {
+                    MessageBox.Show("Список обязательств пуст.", "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+
+                AllLiabilities = liabilities.Select(l => new LiabilityViewModel
+                {
+                    Id = l.Id,
+                    Category = l.Category ?? "Не указано",
+                    Name = l.Name ?? "Без названия",
+                    Amount = l.Amount,
+                    DueDate = l.DueDate,
+                    Description = l.Description ?? ""
+                }).ToList();
+
+                ApplyLiabilityFilters(null, null);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при загрузке списка обязательств: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Ошибка при загрузке обязательств: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
+        private (decimal forecastAssets, decimal forecastLiabilities, decimal forecastEquity) ForecastBalance(DateTime startDate, DateTime endDate, string interval, int periods = 3)
+        {
+            using (var dbContext = new CrmsystemContext())
+            {
+                // Фильтруем снимки по заданному периоду
+                var snapshots = dbContext.BalanceSnapshots
+                    .Where(s => s.Timestamp >= startDate && s.Timestamp <= endDate)
+                    .OrderBy(s => s.Timestamp)
+                    .ToList();
+
+                if (snapshots.Count < 2)
+                {
+                    return (decimal.Parse(TotalAssetsTextBlock.Text),
+                            decimal.Parse(TotalLiabilitiesTextBlock.Text),
+                            decimal.Parse(EquityTextBlock.Text));
+                }
+
+                // Группируем снимки по интервалу
+                var groupedSnapshots = new List<BalanceSnapshot>();
+                if (interval == "Месяцы")
+                {
+                    groupedSnapshots = snapshots
+                        .GroupBy(s => new { s.Timestamp.Year, s.Timestamp.Month })
+                        .Select(g => new BalanceSnapshot
+                        {
+                            TotalAssets = g.Average(s => s.TotalAssets),
+                            TotalLiabilities = g.Average(s => s.TotalLiabilities),
+                            Equity = g.Average(s => s.Equity),
+                            Timestamp = new DateTime(g.Key.Year, g.Key.Month, 1)
+                        })
+                        .OrderBy(s => s.Timestamp)
+                        .ToList();
+                }
+                else if (interval == "Кварталы")
+                {
+                    groupedSnapshots = snapshots
+                        .GroupBy(s => new { s.Timestamp.Year, Quarter = (s.Timestamp.Month - 1) / 3 + 1 })
+                        .Select(g => new BalanceSnapshot
+                        {
+                            TotalAssets = g.Average(s => s.TotalAssets),
+                            TotalLiabilities = g.Average(s => s.TotalLiabilities),
+                            Equity = g.Average(s => s.Equity),
+                            Timestamp = new DateTime(g.Key.Year, (g.Key.Quarter - 1) * 3 + 1, 1)
+                        })
+                        .OrderBy(s => s.Timestamp)
+                        .ToList();
+                }
+                else if (interval == "Годы")
+                {
+                    groupedSnapshots = snapshots
+                        .GroupBy(s => new { s.Timestamp.Year })
+                        .Select(g => new BalanceSnapshot
+                        {
+                            TotalAssets = g.Average(s => s.TotalAssets),
+                            TotalLiabilities = g.Average(s => s.TotalLiabilities),
+                            Equity = g.Average(s => s.Equity),
+                            Timestamp = new DateTime(g.Key.Year, 1, 1)
+                        })
+                        .OrderBy(s => s.Timestamp)
+                        .ToList();
+                }
+
+                if (groupedSnapshots.Count < 2)
+                {
+                    return (snapshots.Last().TotalAssets,
+                            snapshots.Last().TotalLiabilities,
+                            snapshots.Last().Equity);
+                }
+
+                // Рассчитываем средние изменения
+                decimal assetsChange = 0, liabilitiesChange = 0, equityChange = 0;
+                for (int i = 1; i < groupedSnapshots.Count; i++)
+                {
+                    assetsChange += (groupedSnapshots[i].TotalAssets - groupedSnapshots[i - 1].TotalAssets) / (groupedSnapshots.Count - 1);
+                    liabilitiesChange += (groupedSnapshots[i].TotalLiabilities - groupedSnapshots[i - 1].TotalLiabilities) / (groupedSnapshots.Count - 1);
+                    equityChange += (groupedSnapshots[i].Equity - groupedSnapshots[i - 1].Equity) / (groupedSnapshots.Count - 1);
+                }
+
+                decimal currentAssets = groupedSnapshots.Last().TotalAssets;
+                decimal currentLiabilities = groupedSnapshots.Last().TotalLiabilities;
+                decimal currentEquity = groupedSnapshots.Last().Equity;
+
+                decimal forecastAssets = currentAssets + assetsChange * periods;
+                decimal forecastLiabilities = currentLiabilities + liabilitiesChange * periods;
+                decimal forecastEquity = currentEquity + equityChange * periods;
+
+                return (forecastAssets, forecastLiabilities, forecastEquity);
+            }
+        }
         private void ApplyAssetFilters(object sender, EventArgs e)
         {
-            var categoryFilter = AssetFilterCategoryComboBox.SelectedItem != null
-                ? ((ComboBoxItem)AssetFilterCategoryComboBox.SelectedItem).Content.ToString()
-                : "Все";
-            var searchText = AssetSearchTextBox.Text?.ToLower() ?? "";
-
-            var filtered = AllAssets.AsEnumerable();
-
-            if (categoryFilter != "Все")
+            try
             {
-                filtered = filtered.Where(a => a.Category == categoryFilter);
-            }
+                var categoryFilter = AssetFilterCategoryComboBox.SelectedItem != null
+                    ? ((ComboBoxItem)AssetFilterCategoryComboBox.SelectedItem).Content.ToString()
+                    : "Все";
+                var searchText = AssetSearchTextBox.Text?.ToLower() ?? "";
 
-            if (!string.IsNullOrEmpty(searchText))
+                // Проверяем, что AllAssets инициализирован
+                if (AllAssets == null)
+                {
+                    FilteredAssets = new List<AssetViewModel>();
+                    AllAssetsListView.ItemsSource = FilteredAssets;
+                    return;
+                }
+
+                var filtered = AllAssets.AsEnumerable();
+
+                if (categoryFilter != "Все")
+                {
+                    filtered = filtered.Where(a => a.Category != null && a.Category == categoryFilter);
+                }
+
+                if (!string.IsNullOrEmpty(searchText))
+                {
+                    filtered = filtered.Where(a =>
+                        (a.Name != null && a.Name.ToLower().Contains(searchText)) ||
+                        (a.Description != null && a.Description.ToLower().Contains(searchText)));
+                }
+
+                FilteredAssets = filtered.ToList();
+                AllAssetsListView.ItemsSource = FilteredAssets;
+            }
+            catch (Exception ex)
             {
-                filtered = filtered.Where(a => (a.Name?.ToLower().Contains(searchText) ?? false) ||
-                                               (a.Description?.ToLower().Contains(searchText) ?? false));
+                MessageBox.Show($"Ошибка при фильтрации активов: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-
-            FilteredAssets = filtered.ToList();
-            AllAssetsListView.ItemsSource = FilteredAssets;
         }
-
         private void ApplyLiabilityFilters(object sender, EventArgs e)
         {
-            var categoryFilter = LiabilityFilterCategoryComboBox.SelectedItem != null
-                ? ((ComboBoxItem)LiabilityFilterCategoryComboBox.SelectedItem).Content.ToString()
-                : "Все";
-            var searchText = LiabilitySearchTextBox.Text?.ToLower() ?? "";
-
-            var filtered = AllLiabilities.AsEnumerable();
-
-            if (categoryFilter != "Все")
+            try
             {
-                filtered = filtered.Where(l => l.Category == categoryFilter);
-            }
+                var categoryFilter = LiabilityFilterCategoryComboBox.SelectedItem != null
+                    ? ((ComboBoxItem)LiabilityFilterCategoryComboBox.SelectedItem).Content.ToString()
+                    : "Все";
+                var searchText = LiabilitySearchTextBox.Text?.ToLower() ?? "";
 
-            if (!string.IsNullOrEmpty(searchText))
+                // Проверяем, что AllLiabilities инициализирован
+                if (AllLiabilities == null)
+                {
+                    FilteredLiabilities = new List<LiabilityViewModel>();
+                    AllLiabilitiesListView.ItemsSource = FilteredLiabilities;
+                    return;
+                }
+
+                var filtered = AllLiabilities.AsEnumerable();
+
+                if (categoryFilter != "Все")
+                {
+                    filtered = filtered.Where(l => l.Category != null && l.Category == categoryFilter);
+                }
+
+                if (!string.IsNullOrEmpty(searchText))
+                {
+                    filtered = filtered.Where(l =>
+                        (l.Name != null && l.Name.ToLower().Contains(searchText)) ||
+                        (l.Description != null && l.Description.ToLower().Contains(searchText)));
+                }
+
+                FilteredLiabilities = filtered.ToList();
+                AllLiabilitiesListView.ItemsSource = FilteredLiabilities;
+            }
+            catch (Exception ex)
             {
-                filtered = filtered.Where(l => (l.Name?.ToLower().Contains(searchText) ?? false) ||
-                                               (l.Description?.ToLower().Contains(searchText) ?? false));
+                MessageBox.Show($"Ошибка при фильтрации обязательств: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-
-            FilteredLiabilities = filtered.ToList();
-            AllLiabilitiesListView.ItemsSource = FilteredLiabilities;
         }
 
         private async void AddAssetButton_Click(object sender, RoutedEventArgs e)
@@ -541,8 +818,55 @@ namespace Client.ManagerFolder
                 var result = JsonConvert.DeserializeObject<dynamic>(response);
                 if (result.Success == true)
                 {
+                    // Логирование и сохранение снимка баланса
+                    using (var dbContext = new CrmsystemContext())
+                    {
+                        var auditLog = new AuditLog
+                        {
+                            UserName = "Manager",
+                            Action = "Создание",
+                            EntityType = "Asset",
+                            EntityId = (int)result.AssetId,
+                            Details = $"Добавлен актив: {assetData.Name}, Сумма: {assetData.Amount}",
+                        };
+
+                        dbContext.AuditLogs.Add(auditLog);
+                        await dbContext.SaveChangesAsync(); // Сохраняем AuditLog, чтобы получить Id
+
+                        await LoadBalanceData(); // Обновляем данные баланса
+
+                        // Проверяем корректность данных перед парсингом
+                        decimal totalAssets, totalLiabilities, equity;
+                        if (!decimal.TryParse(TotalAssetsTextBlock.Text, out totalAssets))
+                        {
+                            totalAssets = 0;
+                            MessageBox.Show("Не удалось определить общие активы. Установлено значение по умолчанию: 0.", "Предупреждение", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        }
+                        if (!decimal.TryParse(TotalLiabilitiesTextBlock.Text, out totalLiabilities))
+                        {
+                            totalLiabilities = 0;
+                            MessageBox.Show("Не удалось определить общие обязательства. Установлено значение по умолчанию: 0.", "Предупреждение", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        }
+                        if (!decimal.TryParse(EquityTextBlock.Text, out equity))
+                        {
+                            equity = 0;
+                            MessageBox.Show("Не удалось определить капитал. Установлено значение по умолчанию: 0.", "Предупреждение", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        }
+
+                        var snapshot = new BalanceSnapshot
+                        {
+                            TotalAssets = totalAssets,
+                            TotalLiabilities = totalLiabilities,
+                            Equity = equity,
+                            AuditLogId = auditLog.Id, // Связываем с AuditLog
+                            Timestamp = DateTime.Now
+                        };
+
+                        dbContext.BalanceSnapshots.Add(snapshot);
+                        await dbContext.SaveChangesAsync();
+                    }
+
                     MessageBox.Show($"Актив успешно добавлен! Id: {result.AssetId}", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
-                    await LoadBalanceData();
                     await UpdateChartAsync();
                 }
                 else
@@ -555,7 +879,6 @@ namespace Client.ManagerFolder
                 MessageBox.Show($"Ошибка при добавлении актива: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
         private void AllAssetsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (AllAssetsListView.SelectedItem != null)
@@ -620,8 +943,36 @@ namespace Client.ManagerFolder
                 var result = JsonConvert.DeserializeObject<dynamic>(response);
                 if (result.Success == true)
                 {
+                    // Логирование и сохранение снимка баланса
+                    using (var dbContext = new CrmsystemContext())
+                    {
+                        var auditLog = new AuditLog
+                        {
+                            UserName = "User1",
+                            Action = "Обновление",
+                            EntityType = "Asset",
+                            EntityId = selectedAsset.Id,
+                            Details = $"Обновлён актив: {assetData.Name}, Новая сумма: {assetData.Amount}",
+                        };
+
+                        dbContext.AuditLogs.Add(auditLog);
+                        await dbContext.SaveChangesAsync(); // Сохраняем AuditLog, чтобы получить Id
+
+                        await LoadBalanceData(); // Обновляем данные баланса
+
+                        var snapshot = new BalanceSnapshot
+                        {
+                            TotalAssets = decimal.Parse(TotalAssetsTextBlock.Text),
+                            TotalLiabilities = decimal.Parse(TotalLiabilitiesTextBlock.Text),
+                            Equity = decimal.Parse(EquityTextBlock.Text),
+                            AuditLogId = auditLog.Id // Связываем с AuditLog
+                        };
+
+                        dbContext.BalanceSnapshots.Add(snapshot);
+                        await dbContext.SaveChangesAsync();
+                    }
+
                     MessageBox.Show("Актив успешно обновлён!", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
-                    await LoadBalanceData();
                     await UpdateChartAsync();
                 }
                 else
@@ -654,8 +1005,37 @@ namespace Client.ManagerFolder
                 var result = JsonConvert.DeserializeObject<dynamic>(response);
                 if (result.Success == true)
                 {
+                    // Логирование и сохранение снимка баланса
+                    using (var dbContext = new CrmsystemContext())
+                    {
+                        var auditLog = new AuditLog
+                        {
+                            UserName = "User1",
+                            Action = "Удаление",
+                            EntityType = "Asset",
+                            EntityId = selectedAsset.Id,
+                            Details = $"Удалён актив: {selectedAsset.Name}",
+                        };
+
+                        dbContext.AuditLogs.Add(auditLog);
+                        await dbContext.SaveChangesAsync(); // Сохраняем AuditLog, чтобы получить Id
+
+                        await LoadBalanceData(); // Обновляем данные баланса
+
+                        var snapshot = new BalanceSnapshot
+                        {
+                            TotalAssets = decimal.Parse(TotalAssetsTextBlock.Text),
+                            TotalLiabilities = decimal.Parse(TotalLiabilitiesTextBlock.Text),
+                            Equity = decimal.Parse(EquityTextBlock.Text),
+                            AuditLogId = auditLog.Id, // Связываем с AuditLog
+                            Timestamp = DateTime.Now
+                        };
+
+                        dbContext.BalanceSnapshots.Add(snapshot);
+                        await dbContext.SaveChangesAsync();
+                    }
+
                     MessageBox.Show("Актив успешно удалён!", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
-                    await LoadBalanceData();
                     await UpdateChartAsync();
                 }
                 else
@@ -668,7 +1048,6 @@ namespace Client.ManagerFolder
                 MessageBox.Show($"Ошибка при удалении актива: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
         private async void AddLiabilityButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -769,8 +1148,37 @@ namespace Client.ManagerFolder
                 var result = JsonConvert.DeserializeObject<dynamic>(response);
                 if (result.Success == true)
                 {
+                    // Логирование и сохранение снимка баланса
+                    using (var dbContext = new CrmsystemContext())
+                    {
+                        var auditLog = new AuditLog
+                        {
+                            UserName = "User1",
+                            Action = "Обновление",
+                            EntityType = "Liability",
+                            EntityId = selectedLiability.Id,
+                            Details = $"Обновлено обязательство: {liabilityData.Name}, Новая сумма: {liabilityData.Amount}",
+                        };
+
+                        dbContext.AuditLogs.Add(auditLog);
+                        await dbContext.SaveChangesAsync(); // Сохраняем AuditLog, чтобы получить Id
+
+                        await LoadBalanceData(); // Обновляем данные баланса
+
+                        var snapshot = new BalanceSnapshot
+                        {
+                            TotalAssets = decimal.Parse(TotalAssetsTextBlock.Text),
+                            TotalLiabilities = decimal.Parse(TotalLiabilitiesTextBlock.Text),
+                            Equity = decimal.Parse(EquityTextBlock.Text),
+                            AuditLogId = auditLog.Id, // Связываем с AuditLog
+                            Timestamp = DateTime.Now
+                        };
+
+                        dbContext.BalanceSnapshots.Add(snapshot);
+                        await dbContext.SaveChangesAsync();
+                    }
+
                     MessageBox.Show("Обязательство успешно обновлено!", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
-                    await LoadBalanceData();
                     await UpdateChartAsync();
                 }
                 else
@@ -803,8 +1211,36 @@ namespace Client.ManagerFolder
                 var result = JsonConvert.DeserializeObject<dynamic>(response);
                 if (result.Success == true)
                 {
+                    // Логирование и сохранение снимка баланса
+                    using (var dbContext = new CrmsystemContext())
+                    {
+                        var auditLog = new AuditLog
+                        {
+                            UserName = "User1",
+                            Action = "Удаление",
+                            EntityType = "Liability",
+                            EntityId = selectedLiability.Id,
+                            Details = $"Удалено обязательство: {selectedLiability.Name}",
+                        };
+
+                        dbContext.AuditLogs.Add(auditLog);
+                        await dbContext.SaveChangesAsync(); // Сохраняем AuditLog, чтобы получить Id
+
+                        await LoadBalanceData(); // Обновляем данные баланса
+
+                        var snapshot = new BalanceSnapshot
+                        {
+                            TotalAssets = decimal.Parse(TotalAssetsTextBlock.Text),
+                            TotalLiabilities = decimal.Parse(TotalLiabilitiesTextBlock.Text),
+                            Equity = decimal.Parse(EquityTextBlock.Text),
+                            AuditLogId = auditLog.Id // Связываем с AuditLog
+                        };
+
+                        dbContext.BalanceSnapshots.Add(snapshot);
+                        await dbContext.SaveChangesAsync();
+                    }
+
                     MessageBox.Show("Обязательство успешно удалено!", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
-                    await LoadBalanceData();
                     await UpdateChartAsync();
                 }
                 else
@@ -840,4 +1276,28 @@ namespace Client.ManagerFolder
         public DateTime DueDate { get; set; }
         public string Description { get; set; }
     }
+}
+public class BalanceData
+{
+    public BalanceAssets Assets { get; set; }
+    public BalanceLiabilities Liabilities { get; set; }
+    public decimal Equity { get; set; }
+    public decimal BalanceCheck { get; set; }
+}
+
+public class BalanceAssets
+{
+    public decimal Total { get; set; }
+    public List<CategoryData> Categories { get; set; } = new List<CategoryData>(); // Инициализация по умолчанию
+}
+
+public class BalanceLiabilities
+{
+    public decimal Total { get; set; }
+    public List<CategoryData> Categories { get; set; } = new List<CategoryData>(); // Инициализация по умолчанию
+}
+public class CategoryData
+{
+    public string Category { get; set; }
+    public decimal Total { get; set; }
 }

@@ -33,66 +33,66 @@ namespace TESTINGCOURSEWORK.ManagerFolder
 
         private async void ConfirmButton_Click(object sender, RoutedEventArgs e)
         {
-            // Валидация данных
-            if (ProductComboBox.SelectedItem == null || string.IsNullOrWhiteSpace(QuantityTextBox.Text) || OperationTypeComboBox.SelectedItem == null)
-            {
-                MessageBox.Show("Пожалуйста, заполните все поля.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
+            //// Валидация данных
+            //if (ProductComboBox.SelectedItem == null || string.IsNullOrWhiteSpace(QuantityTextBox.Text) || OperationTypeComboBox.SelectedItem == null)
+            //{
+            //    MessageBox.Show("Пожалуйста, заполните все поля.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+            //    return;
+            //}
 
-            if (!decimal.TryParse(QuantityTextBox.Text, out var quantity) || quantity <= 0)
-            {
-                MessageBox.Show("Некорректное значение количества.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
+            //if (!decimal.TryParse(QuantityTextBox.Text, out var quantity) || quantity <= 0)
+            //{
+            //    MessageBox.Show("Некорректное значение количества.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+            //    return;
+            //}
 
-            var selectedProduct = (Product)ProductComboBox.SelectedItem;
-            var transactionType = ((ComboBoxItem)OperationTypeComboBox.SelectedItem).Tag.ToString()!;
-            var description = DescriptionTextBox.Text;
+            //var selectedProduct = (Product)ProductComboBox.SelectedItem;
+            //var transactionType = ((ComboBoxItem)OperationTypeComboBox.SelectedItem).Tag.ToString()!;
+            //var description = DescriptionTextBox.Text;
 
-            // Создаем запись в Descriptions
-            int? descriptionId = null;
-            if (!string.IsNullOrWhiteSpace(description))
-            {
-                using (var context = new CrmsystemContext())
-                {
-                    var descriptionEntity = new Description
-                    {
-                        Content = description
-                    };
-                    context.Descriptions.Add(descriptionEntity);
-                    await context.SaveChangesAsync();
-                    descriptionId = descriptionEntity.Id;
-                }
-            }
+            //// Создаем запись в Descriptions
+            //int? descriptionId = null;
+            //if (!string.IsNullOrWhiteSpace(description))
+            //{
+            //    using (var context = new CrmsystemContext())
+            //    {
+            //        var descriptionEntity = new Description
+            //        {
+            //            Content = description
+            //        };
+            //        context.Descriptions.Add(descriptionEntity);
+            //        await context.SaveChangesAsync();
+            //        descriptionId = descriptionEntity.Id;
+            //    }
+            //}
 
-            // Формирование данных для запроса
-            var request = new StockAdjustmentRequest
-            {
-                ProductId = selectedProduct.ProductId,
-                Quantity = transactionType == "Приход" ? quantity : -quantity,
-                TransactionType = transactionType,
-                DescriptionId = descriptionId // Используем DescriptionId вместо Description
-            };
+            //// Формирование данных для запроса
+            //var request = new StockAdjustmentRequest
+            //{
+            //    ProductId = selectedProduct.ProductId,
+            //    Quantity = transactionType == "Приход" ? quantity : -quantity,
+            //    TransactionType = transactionType,
+            //    DescriptionId = descriptionId // Используем DescriptionId вместо Description
+            //};
 
-            // Отправка на сервер
-            string command = "adjustStock";
-            string jsonData = JsonConvert.SerializeObject(request);
+            //// Отправка на сервер
+            //string command = "adjustStock";
+            //string jsonData = JsonConvert.SerializeObject(request);
 
-            string response = await NetworkService.Instance.SendMessageAsync($"{command}:{jsonData}");
+            //string response = await NetworkService.Instance.SendMessageAsync($"{command}:{jsonData}");
 
-            // Обработка ответа
-            if (response == "Success")
-            {
-                MessageBox.Show("Операция успешно выполнена.", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
-                ManagerPage managerPage = new ManagerPage();
-                managerPage.Show();
-                this.Close();
-            }
-            else
-            {
-                MessageBox.Show("Ошибка при выполнении операции.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            //// Обработка ответа
+            //if (response == "Success")
+            //{
+            //    MessageBox.Show("Операция успешно выполнена.", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+            //    ManagerPage managerPage = new ManagerPage();
+            //    managerPage.Show();
+            //    this.Close();
+            //}
+            //else
+            //{
+            //    MessageBox.Show("Ошибка при выполнении операции.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            //}
         }
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
