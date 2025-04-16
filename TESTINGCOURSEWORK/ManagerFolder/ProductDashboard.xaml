@@ -2,19 +2,17 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:cartesianChart="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
-        Title="Дашборд учёта продукции" Height="1191" Width="1000"
-        Background="#F5F5F5" WindowStartupLocation="CenterScreen">
+        Title="Дашборд учёта продукции" Height="800" Width="1000"
+        Background="#F5F5F5">
     <Window.Resources>
         <!-- Цветовая палитра -->
         <SolidColorBrush x:Key="PrimaryColor" Color="#3F51B5"/>
-        <!-- Индиго -->
         <SolidColorBrush x:Key="AccentColor" Color="#FF4081"/>
-        <!-- Розовый акцент -->
         <SolidColorBrush x:Key="TextColor" Color="#212121"/>
         <SolidColorBrush x:Key="SuccessColor" Color="#4CAF50"/>
         <SolidColorBrush x:Key="WarningColor" Color="#FF9800"/>
 
-        <!-- Стиль для кнопок (улучшенный) -->
+        <!-- Стиль для кнопок -->
         <Style x:Key="ModernButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{StaticResource PrimaryColor}"/>
             <Setter Property="Foreground" Value="White"/>
@@ -198,11 +196,10 @@
                                 <TextBlock Text="Список продуктов" Style="{StaticResource SectionHeaderStyle}"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,5">
                                     <TextBlock Text="Категория:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                    <ComboBox x:Name="ProductFilterCategoryComboBox" Width="120" Style="{StaticResource ModernComboBoxStyle}" SelectionChanged="ApplyProductFilters">
-                                        <ComboBoxItem Content="Все" IsSelected="True"/>
-                                    </ComboBox>
+                                    <ComboBox x:Name="ProductFilterCategoryComboBox" Width="120" Style="{StaticResource ModernComboBoxStyle}" 
+                                              DisplayMemberPath="Name" SelectionChanged="ApplyProductFilters"/>
                                     <TextBlock Text="Поиск:" VerticalAlignment="Center" Margin="10,0,5,0"/>
-                                    <TextBox x:Name="ProductSearchTextBox" Width="120" FontSize="12" TextChanged="ApplyProductFilters"/>
+                                    <TextBox x:Name="ProductSearchTextBox" Width="120" FontSize="12" TextChanged="ApplyProductFilters" Text=""/>
                                 </StackPanel>
                                 <ListView x:Name="ProductsListView" Height="150" Style="{StaticResource ModernListViewStyle}" SelectionChanged="ProductsListView_SelectionChanged">
                                     <ListView.View>
@@ -267,7 +264,8 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,5">
                                         <TextBlock Text="Категория:" Width="100" VerticalAlignment="Center" FontSize="12"/>
-                                        <ComboBox x:Name="ProductCategoryComboBox" Width="200" Style="{StaticResource ModernComboBoxStyle}"/>
+                                        <ComboBox x:Name="ProductCategoryComboBox" Width="600" Style="{StaticResource ModernComboBoxStyle}" 
+                                                  DisplayMemberPath="Name"/>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,5">
                                         <TextBlock Text="Закуп. цена:" Width="100" VerticalAlignment="Center" FontSize="12"/>
@@ -306,15 +304,18 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,5">
                                         <TextBlock Text="Продукт:" Width="100" VerticalAlignment="Center" FontSize="12"/>
-                                        <ComboBox x:Name="TransactionProductComboBox" Width="200" Style="{StaticResource ModernComboBoxStyle}"/>
+                                        <ComboBox x:Name="TransactionProductComboBox" Width="200" Style="{StaticResource ModernComboBoxStyle}" 
+                                                  DisplayMemberPath="Name"/>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,5">
                                         <TextBlock Text="Склад (откуда):" Width="100" VerticalAlignment="Center" FontSize="12"/>
-                                        <ComboBox x:Name="FromWarehouseComboBox" Width="200" Style="{StaticResource ModernComboBoxStyle}"/>
+                                        <ComboBox x:Name="FromWarehouseComboBox" Width="200" Style="{StaticResource ModernComboBoxStyle}" 
+                                                  DisplayMemberPath="Name"/>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,5">
                                         <TextBlock Text="Склад (куда):" Width="100" VerticalAlignment="Center" FontSize="12"/>
-                                        <ComboBox x:Name="ToWarehouseComboBox" Width="200" Style="{StaticResource ModernComboBoxStyle}"/>
+                                        <ComboBox x:Name="ToWarehouseComboBox" Width="200" Style="{StaticResource ModernComboBoxStyle}" 
+                                                  DisplayMemberPath="Name"/>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,5">
                                         <TextBlock Text="Количество:" Width="100" VerticalAlignment="Center" FontSize="12"/>

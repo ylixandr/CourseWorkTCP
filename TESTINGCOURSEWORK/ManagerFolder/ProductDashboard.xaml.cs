@@ -1,4 +1,4 @@
-﻿using Client.InventoryViewModel1;
+﻿using Client.InventoryViewModel;
 using LiveCharts;
 using LiveCharts.Wpf;
 using Microsoft.Win32;
@@ -8,6 +8,8 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using TCPServer.balanceModule;
+using TCPServer;
 using TCPServer.ProductionModule;
 
 namespace Client.ManagerFolder
@@ -16,14 +18,16 @@ namespace Client.ManagerFolder
     {
         private ObservableCollection<ProductViewModel> _products;
         private ObservableCollection<WarehouseViewModel> _warehouses;
-        private ObservableCollection<InventoryViewModel> _inventory;
+        private ObservableCollection<InventoryViewModel.InventoryViewModel> _inventory;
         private ObservableCollection<ProductCategoryViewModel> _categories;
         private ObservableCollection<InventoryTransactionViewModel> _transactions;
         private ObservableCollection<AuditLogViewModel> _auditLogs;
         private ProductSummaryViewModel _summary;
+        private readonly ProductService _productService;
 
         public ProductDashboard()
         {
+            _productService = new ProductService();
             InitializeComponent();
             InitializeData();
             LoadInitialData();
@@ -33,7 +37,7 @@ namespace Client.ManagerFolder
         {
             _products = new ObservableCollection<ProductViewModel>();
             _warehouses = new ObservableCollection<WarehouseViewModel>();
-            _inventory = new ObservableCollection<InventoryViewModel>();
+            _inventory = new ObservableCollection<InventoryViewModel.InventoryViewModel>();
             _categories = new ObservableCollection<ProductCategoryViewModel>();
             _transactions = new ObservableCollection<InventoryTransactionViewModel>();
             _auditLogs = new ObservableCollection<AuditLogViewModel>();
@@ -62,10 +66,10 @@ namespace Client.ManagerFolder
             try
             {
                 await LoadProductSummaryAsync();
+                await LoadCategoriesAsync();
                 await LoadProductsAsync();
                 await LoadWarehousesAsync();
                 await LoadInventoryAsync();
-                await LoadCategoriesAsync();
                 await LoadAuditLogsAsync();
                 UpdateChartData("Months");
             }
@@ -115,7 +119,7 @@ namespace Client.ManagerFolder
                 _products.Add(new ProductViewModel
                 {
                     Id = product.Id,
-                    Name = product.Name,
+                    Name = product.Name ?? "Без названия",
                     CategoryId = product.CategoryId,
                     CategoryName = category?.Name ?? "Неизвестно",
                     PurchasePrice = product.PurchasePrice,
@@ -123,6 +127,9 @@ namespace Client.ManagerFolder
                     Description = product.Description
                 });
             }
+
+            TransactionProductComboBox.Items.Clear();
+            TransactionProductComboBox.ItemsSource = _products;
         }
 
         private async Task LoadWarehousesAsync()
@@ -145,6 +152,8 @@ namespace Client.ManagerFolder
                 });
             }
 
+            FromWarehouseComboBox.Items.Clear();
+            ToWarehouseComboBox.Items.Clear();
             FromWarehouseComboBox.ItemsSource = _warehouses;
             ToWarehouseComboBox.ItemsSource = _warehouses;
         }
@@ -164,7 +173,7 @@ namespace Client.ManagerFolder
             {
                 var product = _products.FirstOrDefault(p => p.Id == item.ProductId);
                 var warehouse = _warehouses.FirstOrDefault(w => w.Id == item.WarehouseId);
-                _inventory.Add(new InventoryViewModel
+                _inventory.Add(new InventoryViewModel.InventoryViewModel
                 {
                     Id = item.Id,
                     ProductId = item.ProductId,
@@ -179,24 +188,41 @@ namespace Client.ManagerFolder
 
         private async Task LoadCategoriesAsync()
         {
-            // Предполагаем, что категории загружаются с сервера
-            // Если у тебя есть команда, например, "getAllCategories", добавь её здесь
-            // Для примера я добавлю заглушку
             _categories.Clear();
-            _categories.Add(new ProductCategoryViewModel { Id = 1, Name = "Все" });
+            var categories = await _productService.GetCategoriesAsync();
+            _categories.Add(new ProductCategoryViewModel { Id = 0, Name = "Все" });
+            foreach (var category in categories)
+            {
+                _categories.Add(new ProductCategoryViewModel
+                {
+                    Id = category.Id,
+                    Name = category.Name
+                });
+            }
+
+            ProductFilterCategoryComboBox.Items.Clear();
+            ProductCategoryComboBox.Items.Clear();
             ProductFilterCategoryComboBox.ItemsSource = _categories;
             ProductCategoryComboBox.ItemsSource = _categories;
-            TransactionProductComboBox.ItemsSource = _products;
         }
 
         private async Task LoadAuditLogsAsync()
         {
-            // Предполагаем, что логи аудита загружаются с сервера
-            // Если есть команда, например, "getAuditLogs", добавь её
             _auditLogs.Clear();
-            // Заглушка: в реальном коде замени на запрос к серверу
-            // var response = await NetworkService.SendDataAsync("getAuditLogs");
-            // var logs = JsonConvert.DeserializeObject<List<AuditLogDto>>(response);
+            var auditLogs = await _productService.GetAuditLogsAsync();
+            foreach (var log in auditLogs)
+            {
+                _auditLogs.Add(new AuditLogViewModel
+                {
+                    Id = log.Id,
+                    Action = log.Action,
+                    UserName = log.UserName,
+                    EntityType = log.EntityType,
+                    EntityId = log.EntityId,
+                    Details = log.Details,
+                    Timestamp = log.Timestamp
+                });
+            }
         }
 
         private void ProductsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -214,14 +240,14 @@ namespace Client.ManagerFolder
 
         private void WarehousesListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // Можно добавить логику для складов, если нужно
         }
 
         private async void AddProductButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                if (string.IsNullOrEmpty(ProductNameTextBox.Text) || ProductCategoryComboBox.SelectedItem == null ||
+                if (string.IsNullOrEmpty(ProductNameTextBox.Text) ||
+                    ProductCategoryComboBox.SelectedItem is not ProductCategoryViewModel selectedCategory ||
                     !decimal.TryParse(PurchasePriceTextBox.Text, out var purchasePrice) ||
                     !decimal.TryParse(SellingPriceTextBox.Text, out var sellingPrice))
                 {
@@ -238,7 +264,7 @@ namespace Client.ManagerFolder
                 var productDto = new ProductDto
                 {
                     Name = ProductNameTextBox.Text,
-                    CategoryId = (ProductCategoryComboBox.SelectedItem as ProductCategoryViewModel).Id,
+                    CategoryId = selectedCategory.Id,
                     PurchasePrice = purchasePrice,
                     SellingPrice = sellingPrice,
                     Description = ProductDescriptionTextBox.Text,
@@ -267,24 +293,26 @@ namespace Client.ManagerFolder
             }
         }
 
+
         private async void UpdateProductButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                if (ProductsListView.SelectedItem is not ProductViewModel selectedProduct ||
-                    string.IsNullOrEmpty(ProductNameTextBox.Text) || ProductCategoryComboBox.SelectedItem == null ||
+                if (ProductsListView.SelectedItem == null ||
+                    string.IsNullOrEmpty(ProductNameTextBox.Text) ||
+                    ProductCategoryComboBox.SelectedItem is not ProductCategoryViewModel selectedCategory ||
                     !decimal.TryParse(PurchasePriceTextBox.Text, out var purchasePrice) ||
                     !decimal.TryParse(SellingPriceTextBox.Text, out var sellingPrice))
                 {
                     MessageBox.Show("Выберите продукт и заполните все обязательные поля корректно.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
-
+                var selectedProduct = (ProductViewModel)ProductsListView.SelectedItem;
                 var productDto = new ProductDto
                 {
                     Id = selectedProduct.Id,
                     Name = ProductNameTextBox.Text,
-                    CategoryId = (ProductCategoryComboBox.SelectedItem as ProductCategoryViewModel).Id,
+                    CategoryId = selectedCategory.Id,
                     PurchasePrice = purchasePrice,
                     SellingPrice = sellingPrice,
                     Description = ProductDescriptionTextBox.Text
@@ -347,7 +375,8 @@ namespace Client.ManagerFolder
         {
             try
             {
-                if (TransactionTypeComboBox.SelectedItem == null || TransactionProductComboBox.SelectedItem == null ||
+                if (TransactionTypeComboBox.SelectedItem == null ||
+                    TransactionProductComboBox.SelectedItem is not ProductViewModel selectedProduct ||
                     !decimal.TryParse(TransactionQuantityTextBox.Text, out var quantity) || quantity <= 0)
                 {
                     MessageBox.Show("Заполните все обязательные поля корректно.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -355,21 +384,20 @@ namespace Client.ManagerFolder
                 }
 
                 var transactionType = (TransactionTypeComboBox.SelectedItem as ComboBoxItem).Content.ToString().ToLower();
-                var product = TransactionProductComboBox.SelectedItem as ProductViewModel;
-                int? fromWarehouseId = FromWarehouseComboBox.SelectedItem != null ? (FromWarehouseComboBox.SelectedItem as WarehouseViewModel).Id : null;
-                int? toWarehouseId = ToWarehouseComboBox.SelectedItem != null ? (ToWarehouseComboBox.SelectedItem as WarehouseViewModel).Id : null;
+                int? fromWarehouseId = FromWarehouseComboBox.SelectedItem is WarehouseViewModel fromWarehouse ? fromWarehouse.Id : null;
+                int? toWarehouseId = ToWarehouseComboBox.SelectedItem is WarehouseViewModel toWarehouse ? toWarehouse.Id : null;
 
-                if (transactionType == "receipt" && !toWarehouseId.HasValue)
+                if (transactionType == "приём" && !toWarehouseId.HasValue)
                 {
                     MessageBox.Show("Укажите склад назначения для приёма.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
-                if (transactionType == "shipment" && !fromWarehouseId.HasValue)
+                if (transactionType == "отгрузка" && !fromWarehouseId.HasValue)
                 {
                     MessageBox.Show("Укажите склад отправления для отгрузки.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
-                if (transactionType == "transfer" && (!fromWarehouseId.HasValue || !toWarehouseId.HasValue))
+                if (transactionType == "перемещение" && (!fromWarehouseId.HasValue || !toWarehouseId.HasValue))
                 {
                     MessageBox.Show("Укажите оба склада для перемещения.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
@@ -377,7 +405,7 @@ namespace Client.ManagerFolder
 
                 var transactionDto = new InventoryTransactionDto
                 {
-                    ProductBatchId = product.Id,
+                    ProductBatchId = selectedProduct.Id,
                     FromWarehouseId = fromWarehouseId,
                     ToWarehouseId = toWarehouseId,
                     Quantity = quantity,
@@ -407,12 +435,14 @@ namespace Client.ManagerFolder
             }
         }
 
+
         private async void ApplyProductFilters(object sender, RoutedEventArgs e)
         {
             try
             {
                 var category = ProductFilterCategoryComboBox.SelectedItem as ProductCategoryViewModel;
-                var searchText = ProductSearchTextBox.Text.ToLower();
+                ProductFilterCategoryComboBox.SelectedItem = category.Name;
+                var searchText = ProductSearchTextBox?.Text.ToLower();
 
                 var filteredProducts = _products.Where(p =>
                     (category == null || category.Name == "Все" || p.CategoryId == category.Id) &&
@@ -480,7 +510,6 @@ namespace Client.ManagerFolder
                 Period2QuantityTextBlock.Text = result.Period2.Quantity.ToString("F2");
                 Period2ValueTextBlock.Text = result.Period2.Value.ToString("F2");
 
-                // Показатели
                 var turnover = CalculateInventoryTurnover();
                 var avgUnitCost = _inventory.Any() ? _inventory.Average(i => _products.FirstOrDefault(p => p.Id == i.ProductId)?.PurchasePrice ?? 0) : 0;
                 var reservedPercentage = _inventory.Any() ? (_inventory.Sum(i => i.ReservedQuantity) / _inventory.Sum(i => i.Quantity)) * 100 : 0;
@@ -489,8 +518,7 @@ namespace Client.ManagerFolder
                 AverageUnitCostTextBlock.Text = avgUnitCost.ToString("F2");
                 ReservedPercentageTextBlock.Text = reservedPercentage.ToString("F2");
 
-                // Прогноз (упрощённый: линейный тренд)
-                var forecastQuantity = _inventory.Sum(i => i.Quantity) * 1.1m; // +10%
+                var forecastQuantity = _inventory.Sum(i => i.Quantity) * 1.1m;
                 var forecastValue = _inventory.Sum(i => i.Quantity * (_products.FirstOrDefault(p => p.Id == i.ProductId)?.PurchasePrice ?? 0)) * 1.1m;
 
                 ForecastQuantityTextBlock.Text = forecastQuantity.ToString("F2");
@@ -515,7 +543,6 @@ namespace Client.ManagerFolder
         {
             try
             {
-                // Заглушка: в реальном коде запроси данные с сервера, например, "getInventoryHistory"
                 var quantityValues = new ChartValues<decimal>();
                 var valueValues = new ChartValues<decimal>();
                 var labels = new List<string>();
@@ -626,17 +653,58 @@ namespace Client.ManagerFolder
 
         private decimal CalculateInventoryTurnover()
         {
-            // Упрощённый расчёт: количество транзакций / общее количество
             return _transactions.Any() ? _transactions.Count / _inventory.Sum(i => i.Quantity) : 0;
         }
 
-        private void DeleteWarehouseButton_Click(object sender, RoutedEventArgs e)
+        private async void DeleteWarehouseButton_Click(object sender, RoutedEventArgs e)
         {
+            if (WarehousesListView.SelectedItem == null)
+            {
+                MessageBox.Show("Выберите Склад для удаления!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
+            try
+            {
+                var selectedWarehouse = (WarehouseViewModel)WarehousesListView.SelectedItem;
+                var liabilityData = new { Id = selectedWarehouse.Id };
+                string jsonData = JsonConvert.SerializeObject(liabilityData);
+                string command = $"deleteWarehouse{jsonData}";
+                string response = await NetworkService.Instance.SendMessageAsync(command);
+
+                var result = JsonConvert.DeserializeObject<dynamic>(response);
+                if (result.Success == true)
+                {
+                    using (var dbContext = new CrmsystemContext())
+                    {
+                        var auditLog = new AuditLog
+                        {
+                            UserName = "User1",
+                            Action = "Удаление",
+                            EntityType = "Warehouse",
+                            EntityId = selectedWarehouse.Id,
+                            Details = $"Удален склад: {selectedWarehouse.Name}",
+                        };
+
+                        dbContext.AuditLogs.Add(auditLog);
+                        await dbContext.SaveChangesAsync();
+                    }
+
+                    MessageBox.Show("Склад успешно удалено!", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                    await LoadWarehousesAsync();
+                }
+                else
+                {
+                    MessageBox.Show($"Ошибка: {result.Error}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при удалении обязательства: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 
-    // Предполагаемая модель AuditLogViewModel
     public class AuditLogViewModel
     {
         public int Id { get; set; }
@@ -646,5 +714,13 @@ namespace Client.ManagerFolder
         public int EntityId { get; set; }
         public string Details { get; set; }
         public DateTime Timestamp { get; set; }
+    }
+
+    public class WarehouseViewModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Location { get; set; }
+        public string Description { get; set; }
     }
 }

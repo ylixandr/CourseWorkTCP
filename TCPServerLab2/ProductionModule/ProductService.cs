@@ -10,7 +10,7 @@ using TCPServer.ProductionModule;
 
 namespace TCPServer.ProductionModule
 {
-    public static class ProductService
+    public  class ProductService
     {
         // ... (Остальные методы без изменений: GetProductSnapshotAsync, GetAllProductsAsync, AddProductAsync, UpdateProductAsync, DeleteProductAsync, GetAllWarehousesAsync, AddWarehouseAsync, UpdateWarehouseAsync, DeleteWarehouseAsync, GetInventoryAsync)
         public static async Task<string> GetProductSnapshotAsync()
@@ -195,7 +195,26 @@ namespace TCPServer.ProductionModule
                 return JsonConvert.SerializeObject(new { Success = false, Error = ex.Message });
             }
         }
+        public  async Task<List<ProductCategory>> GetCategoriesAsync()
+        {
+            using var context = new CrmsystemContext();
+            return await context.ProductCategories.ToListAsync();
+        }
 
+        public  async Task<List<Product>> GetProductsAsync()
+        {
+            using var context = new CrmsystemContext();
+            return await context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Description)
+                .ToListAsync();
+        }
+
+        public  async Task<List<AuditLog>> GetAuditLogsAsync()
+        {
+            using var context = new CrmsystemContext();
+            return await context.AuditLogs.ToListAsync();
+        }
         public static async Task<string> UpdateProductAsync(string jsonData)
         {
             try

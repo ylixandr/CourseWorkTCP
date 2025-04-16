@@ -210,8 +210,8 @@ public class Server
                     }
                 }
 
-             
-              
+
+
                 else if (receivedData == "getEmployeeSalaries")
                 {
                     Console.WriteLine("Запрос на получение данных о зарплатах сотрудников");
@@ -221,8 +221,8 @@ public class Server
                 }
 
 
-             
-          
+
+
                 else if (credentials[0] == "updateRole")
                 {
                     if (int.TryParse(credentials[1], out int admuserId) && int.TryParse(credentials[2], out int newRoleId))
@@ -445,6 +445,15 @@ public class Server
                     byte[] responseData = Encoding.UTF8.GetBytes(response);
                     await stream.WriteAsync(responseData, 0, responseData.Length);
                 }
+                else if (receivedData.StartsWith("deleteWarehouse"))
+                {
+                    Console.WriteLine("Удаление обязательства.");
+                    string jsonData = receivedData.Substring("deleteWarehouse".Length);
+                    string response = await DeleteLiabilityAsync(jsonData);
+                    byte[] responseData = Encoding.UTF8.GetBytes(response);
+                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                }
+
             }
         }
         finally
@@ -958,7 +967,36 @@ public class Server
             return $"Error: Не удалось обновить обязательство: {ex.Message}";
         }
     }
+    private async Task<string> DeleteWarehouseAsync(string jsonData)
+    {
+        try
+        {
+            var data = JsonConvert.DeserializeObject<dynamic>(jsonData);
+            int warehouseId = data.Id;
 
+            using (var dbContext = new CrmsystemContext())
+            {
+                var warehouse = await dbContext.Warehouses
+                    .FirstOrDefaultAsync(l => l.Id == warehouseId);
+
+                if (warehouse == null)
+                {
+                    return "Error: Обязательство не найдено";
+                }
+
+               
+                // Удаляем обязательство
+                dbContext.Warehouses.Remove(warehouse);
+                await dbContext.SaveChangesAsync();
+
+                return JsonConvert.SerializeObject(new { Success = true });
+            }
+        }
+        catch (Exception ex)
+        {
+            return $"Error: Не удалось удалить обязательство: {ex.Message}";
+        }
+    }
     private async Task<string> DeleteLiabilityAsync(string jsonData)
     {
         try
