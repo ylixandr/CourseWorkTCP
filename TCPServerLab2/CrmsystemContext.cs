@@ -251,7 +251,8 @@ namespace TCPServer
                       .OnDelete(DeleteBehavior.Restrict);
                 entity.HasOne(e => e.AuditLog)
                       .WithMany(a => a.InventoryTransactions)
-                      .HasForeignKey(e => e.AuditLogId);
+                      .HasForeignKey(e => e.AuditLogId)
+                      .IsRequired(false);
             });
 
             modelBuilder.Entity<ProductionModule.ProductComponent>(entity =>

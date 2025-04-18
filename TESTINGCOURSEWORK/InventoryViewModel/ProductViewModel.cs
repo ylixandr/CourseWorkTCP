@@ -12,11 +12,19 @@ namespace Client.InventoryViewModel
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public string CategoryName { get; set; } // Название категории для отображения
-        public int CategoryId { get; set; } // Id категории для связи
+        public string Article { get; set; }
+        public string Barcode { get; set; }
+        public int CategoryId { get; set; }
+        public string CategoryName { get; set; }
         public decimal PurchasePrice { get; set; }
         public decimal SellingPrice { get; set; }
-        public string Description { get; set; }
+        public string Currency { get; set; }
+        public int? DescriptionId { get; set; }
+
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 
     // Модель для категории продукции
@@ -26,6 +34,7 @@ namespace Client.InventoryViewModel
         public string Name { get; set; }
         public int? ParentCategoryId { get; set; }
         public string ParentCategoryName { get; set; } // Для отображения родительской категории
+        public override string ToString() => Name; // Теперь ComboBox будет показывать Name
     }
 
     // Модель для склада

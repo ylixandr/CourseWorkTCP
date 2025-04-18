@@ -57,23 +57,36 @@ namespace Client.ManagerFolder
             decimal totalLiabilities = balanceData.Liabilities.Total;
             decimal equity = balanceData.Equity;
 
-            // Проверяем списки категорий
             var assetsCategories = balanceData.Assets.Categories ?? new List<CategoryData>();
             var liabilitiesCategories = balanceData.Liabilities.Categories ?? new List<CategoryData>();
 
+            // Текущие активы: только "Cash", так как "AccountsReceivable" в данных нет
             decimal currentAssets = assetsCategories
-                .Where(c => c.Category != null && (c.Category == "Денежные средства" || c.Category == "Дебиторская задолженность"))
+                .Where(c => c.Category != null && c.Category == "Cash")
                 .Sum(c => c.Total);
 
+            // Быстрые активы: то же, что и текущие активы, так как используем только "Cash"
             decimal quickAssets = assetsCategories
-                .Where(c => c.Category != null && c.Category == "Денежные средства")
+                .Where(c => c.Category != null && c.Category == "Cash")
                 .Sum(c => c.Total);
 
+            // Текущие обязательства: "ShortTerm" и "AccountsPayable"
             decimal currentLiabilities = liabilitiesCategories
-                .Where(c => c.Category != null && (c.Category == "Краткосрочные кредиты" || c.Category == "Кредиторская задолженность"))
+                .Where(c => c.Category != null && (c.Category == "ShortTerm" || c.Category == "AccountsPayable"))
                 .Sum(c => c.Total);
 
-            decimal netProfit = totalAssets * 0.1m; // Заглушка для чистой прибыли
+            // Чистая прибыль: берём из нераспределённой прибыли в Equity
+            decimal netProfit;
+            using (var dbContext = new CrmsystemContext())
+            {
+                // Ищем запись в Equity с описанием "Нераспределённая прибыль"
+                var undistributedProfit = dbContext.Equity
+                    .Include(e => e.Description)
+                    .Where(e => e.Description.Content.Contains("Нераспределённая прибыль"))
+                    .Sum(e => e.Amount);
+
+                netProfit = undistributedProfit; // Используем нераспределённую прибыль как чистую прибыль
+            }
 
             decimal currentRatio = currentLiabilities != 0 ? currentAssets / currentLiabilities : 0;
             decimal quickRatio = currentLiabilities != 0 ? quickAssets / currentLiabilities : 0;

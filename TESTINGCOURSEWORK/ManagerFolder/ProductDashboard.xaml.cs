@@ -28,9 +28,11 @@ namespace Client.ManagerFolder
         public ProductDashboard()
         {
             _productService = new ProductService();
+            
             InitializeComponent();
             InitializeData();
             LoadInitialData();
+
         }
 
         private void InitializeData()
@@ -53,12 +55,11 @@ namespace Client.ManagerFolder
             TotalWarehousesTextBlock.Text = "0";
             TotalQuantityTextBlock.Text = "0";
             TotalInventoryValueTextBlock.Text = "0.00";
-
-            InventoryChart.Series = new SeriesCollection
-            {
-                new LineSeries { Title = "Запас", Values = new ChartValues<decimal>(), Stroke = System.Windows.Media.Brushes.Green, Fill = System.Windows.Media.Brushes.Transparent },
-                new LineSeries { Title = "Стоимость", Values = new ChartValues<decimal>(), Stroke = System.Windows.Media.Brushes.Pink, Fill = System.Windows.Media.Brushes.Transparent }
-            };
+            //InventoryChart.Series = new SeriesCollection
+            //{
+            //    new LineSeries { Title = "Запас", Values = new ChartValues<decimal>(), Stroke = System.Windows.Media.Brushes.Green, Fill = System.Windows.Media.Brushes.Transparent },
+            //    new LineSeries { Title = "Стоимость", Values = new ChartValues<decimal>(), Stroke = System.Windows.Media.Brushes.Pink, Fill = System.Windows.Media.Brushes.Transparent }
+            //};
         }
 
         private async void LoadInitialData()
@@ -118,17 +119,20 @@ namespace Client.ManagerFolder
                 var category = _categories.FirstOrDefault(c => c.Id == product.CategoryId);
                 _products.Add(new ProductViewModel
                 {
-                    Id = product.Id,
+                    Id = product.ProductId,
                     Name = product.Name ?? "Без названия",
+                    Article = product.Article ?? "",
+                    Barcode = product.Barcode ?? "",
                     CategoryId = product.CategoryId,
                     CategoryName = category?.Name ?? "Неизвестно",
                     PurchasePrice = product.PurchasePrice,
                     SellingPrice = product.SellingPrice,
-                    Description = product.Description
+                    Currency = product.Currency ?? "RUB",
+                    DescriptionId = product.DescriptionId
                 });
             }
 
-            TransactionProductComboBox.Items.Clear();
+            TransactionProductComboBox.ItemsSource = null;
             TransactionProductComboBox.ItemsSource = _products;
         }
 
@@ -230,13 +234,17 @@ namespace Client.ManagerFolder
             if (ProductsListView.SelectedItem is ProductViewModel selectedProduct)
             {
                 ProductNameTextBox.Text = selectedProduct.Name;
+                ArticleTextBox.Text = selectedProduct.Article ?? "";
+                BarcodeTextBox.Text = selectedProduct.Barcode ?? "";
                 ProductCategoryComboBox.SelectedItem = _categories.FirstOrDefault(c => c.Id == selectedProduct.CategoryId);
                 PurchasePriceTextBox.Text = selectedProduct.PurchasePrice.ToString();
                 SellingPriceTextBox.Text = selectedProduct.SellingPrice.ToString();
-                InitialQuantityTextBox.Text = "";
-                ProductDescriptionTextBox.Text = selectedProduct.Description;
+                CurrencyComboBox.SelectedItem = CurrencyComboBox.Items.Cast<ComboBoxItem>()
+                    .FirstOrDefault(item => item.Content.ToString() == (selectedProduct.Currency ?? "RUB"));
+                DescriptionIdTextBox.Text = selectedProduct.DescriptionId?.ToString() ?? "";
             }
         }
+
 
         private void WarehousesListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -247,28 +255,33 @@ namespace Client.ManagerFolder
             try
             {
                 if (string.IsNullOrEmpty(ProductNameTextBox.Text) ||
+                    string.IsNullOrEmpty(ArticleTextBox.Text) ||
+                    string.IsNullOrEmpty(BarcodeTextBox.Text) ||
                     ProductCategoryComboBox.SelectedItem is not ProductCategoryViewModel selectedCategory ||
                     !decimal.TryParse(PurchasePriceTextBox.Text, out var purchasePrice) ||
-                    !decimal.TryParse(SellingPriceTextBox.Text, out var sellingPrice))
+                    !decimal.TryParse(SellingPriceTextBox.Text, out var sellingPrice) ||
+                    CurrencyComboBox.SelectedItem is not ComboBoxItem selectedCurrency)
                 {
                     MessageBox.Show("Заполните все обязательные поля корректно.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
-                decimal? initialQuantity = null;
-                if (!string.IsNullOrEmpty(InitialQuantityTextBox.Text) && decimal.TryParse(InitialQuantityTextBox.Text, out var quantity))
+                int? descriptionId = null;
+                if (!string.IsNullOrEmpty(DescriptionIdTextBox.Text) && int.TryParse(DescriptionIdTextBox.Text, out var descId))
                 {
-                    initialQuantity = quantity;
+                    descriptionId = descId;
                 }
 
                 var productDto = new ProductDto
                 {
                     Name = ProductNameTextBox.Text,
+                    Article = ArticleTextBox.Text,
+                    Barcode = ProductNameTextBox.Text,
                     CategoryId = selectedCategory.Id,
                     PurchasePrice = purchasePrice,
                     SellingPrice = sellingPrice,
-                    Description = ProductDescriptionTextBox.Text,
-                    InitialQuantity = initialQuantity
+                    Currency = selectedCurrency.Content.ToString(),
+                    DescriptionId = descriptionId
                 };
 
                 var jsonData = JsonConvert.SerializeObject(productDto);
@@ -298,24 +311,36 @@ namespace Client.ManagerFolder
         {
             try
             {
-                if (ProductsListView.SelectedItem == null ||
+                if (ProductsListView.SelectedItem is not ProductViewModel selectedProduct ||
                     string.IsNullOrEmpty(ProductNameTextBox.Text) ||
+                    string.IsNullOrEmpty(ArticleTextBox.Text) ||
+                    string.IsNullOrEmpty(BarcodeTextBox.Text) ||
                     ProductCategoryComboBox.SelectedItem is not ProductCategoryViewModel selectedCategory ||
                     !decimal.TryParse(PurchasePriceTextBox.Text, out var purchasePrice) ||
-                    !decimal.TryParse(SellingPriceTextBox.Text, out var sellingPrice))
+                    !decimal.TryParse(SellingPriceTextBox.Text, out var sellingPrice) ||
+                    CurrencyComboBox.SelectedItem is not ComboBoxItem selectedCurrency)
                 {
                     MessageBox.Show("Выберите продукт и заполните все обязательные поля корректно.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
-                var selectedProduct = (ProductViewModel)ProductsListView.SelectedItem;
+
+                int? descriptionId = null;
+                if (!string.IsNullOrEmpty(DescriptionIdTextBox.Text) && int.TryParse(DescriptionIdTextBox.Text, out var descId))
+                {
+                    descriptionId = descId;
+                }
+
                 var productDto = new ProductDto
                 {
-                    Id = selectedProduct.Id,
+                    ProductId = selectedProduct.Id,
                     Name = ProductNameTextBox.Text,
+                    Article = ArticleTextBox.Text,
+                    Barcode = BarcodeTextBox.Text,
                     CategoryId = selectedCategory.Id,
                     PurchasePrice = purchasePrice,
                     SellingPrice = sellingPrice,
-                    Description = ProductDescriptionTextBox.Text
+                    Currency = selectedCurrency.Content.ToString(),
+                    DescriptionId = descriptionId
                 };
 
                 var jsonData = JsonConvert.SerializeObject(productDto);
@@ -384,6 +409,18 @@ namespace Client.ManagerFolder
                 }
 
                 var transactionType = (TransactionTypeComboBox.SelectedItem as ComboBoxItem).Content.ToString().ToLower();
+                if(transactionType == "приём")
+                {
+                    transactionType = "receipt";
+                }
+                else if(transactionType == "перемещение")
+                {
+                    transactionType = "transfer";
+                }
+                else
+                {
+                    transactionType = "shipment";
+                }
                 int? fromWarehouseId = FromWarehouseComboBox.SelectedItem is WarehouseViewModel fromWarehouse ? fromWarehouse.Id : null;
                 int? toWarehouseId = ToWarehouseComboBox.SelectedItem is WarehouseViewModel toWarehouse ? toWarehouse.Id : null;
 
@@ -441,7 +478,7 @@ namespace Client.ManagerFolder
             try
             {
                 var category = ProductFilterCategoryComboBox.SelectedItem as ProductCategoryViewModel;
-                ProductFilterCategoryComboBox.SelectedItem = category.Name;
+
                 var searchText = ProductSearchTextBox?.Text.ToLower();
 
                 var filteredProducts = _products.Where(p =>
@@ -584,7 +621,7 @@ namespace Client.ManagerFolder
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка обновления графика: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Успешная загрузка", "", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 
@@ -634,13 +671,16 @@ namespace Client.ManagerFolder
         private void ClearProductForm()
         {
             ProductNameTextBox.Text = "";
+            ArticleTextBox.Text = "";
+            BarcodeTextBox.Text = "";
             ProductCategoryComboBox.SelectedItem = null;
             PurchasePriceTextBox.Text = "";
             SellingPriceTextBox.Text = "";
-            InitialQuantityTextBox.Text = "";
-            ProductDescriptionTextBox.Text = "";
-            ProductsListView.SelectedItem = null;
+            CurrencyComboBox.SelectedItem = CurrencyComboBox.Items.Cast<ComboBoxItem>()
+                .FirstOrDefault(item => item.Content.ToString() == "RUB");
+            DescriptionIdTextBox.Text = "";
         }
+
 
         private void ClearTransactionForm()
         {
@@ -722,5 +762,10 @@ namespace Client.ManagerFolder
         public string Name { get; set; }
         public string Location { get; set; }
         public string Description { get; set; }
+
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 }

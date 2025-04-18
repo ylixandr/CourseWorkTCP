@@ -57,6 +57,76 @@ namespace TCPServer.ProductionModule
             }
         }
 
+        public static async Task<string> UpdateProductAsync(string jsonData)
+        {
+            try
+            {
+                var productData = JsonConvert.DeserializeObject<ProductDto>(jsonData);
+                if (productData == null)
+                {
+                    return "Error: Неверный формат данных продукта";
+                }
+
+                using (var dbContext = new CrmsystemContext())
+                {
+                    var product = await dbContext.Products
+                        .FirstOrDefaultAsync(p => p.ProductId == productData.ProductId);
+
+                    if (product == null)
+                    {
+                        return "Error: Продукт не найден";
+                    }
+
+                    // Проверяем категорию
+                    var category = await dbContext.ProductCategories.FindAsync(productData.CategoryId);
+                    if (category == null)
+                    {
+                        return "Error: Категория не найдена";
+                    }
+
+                    // Проверяем DescriptionId
+                    if (productData.DescriptionId.HasValue)
+                    {
+                        var description = await dbContext.Descriptions.FindAsync(productData.DescriptionId);
+                        if (description == null)
+                        {
+                            return "Error: Описание не найдено";
+                        }
+                    }
+
+                    // Обновляем продукт
+                    product.Name = productData.Name;
+                    product.Article = productData.Article;
+                    product.Barcode = productData.Barcode;
+                    product.CategoryId = productData.CategoryId;
+                    product.PurchasePrice = productData.PurchasePrice;
+                    product.SellingPrice = productData.SellingPrice;
+                    product.Currency = productData.Currency;
+                    product.DescriptionId = productData.DescriptionId;
+
+                    // Логирование
+                    var auditLog = new AuditLog
+                    {
+                        UserName = "System",
+                        Action = "Обновление",
+                        EntityType = "Product",
+                        EntityId = product.ProductId,
+                        Details = $"Обновлён продукт: {product.Name}, Артикул: {product.Article}, Цена закупки: {product.PurchasePrice}, Валюта: {product.Currency}",
+                        Timestamp = DateTime.Now
+                    };
+                    dbContext.AuditLogs.Add(auditLog);
+
+                    await dbContext.SaveChangesAsync();
+
+                    return JsonConvert.SerializeObject(new { Success = true });
+                }
+            }
+            catch (Exception ex)
+            {
+                return $"Error: Не удалось обновить продукт: {ex.Message}";
+            }
+        }
+
         public static async Task<string> GetAllProductsAsync()
         {
             try
@@ -65,15 +135,17 @@ namespace TCPServer.ProductionModule
                 {
                     var products = await dbContext.Products
                         .Include(p => p.Category)
-                        .Include(p => p.Description)
                         .Select(p => new ProductDto
                         {
-                            Id = p.ProductId,
+                            ProductId = p.ProductId,
                             Name = p.Name,
+                            Article = p.Article,
+                            Barcode = p.Barcode,
                             CategoryId = p.CategoryId,
                             PurchasePrice = p.PurchasePrice,
                             SellingPrice = p.SellingPrice,
-                            Description = p.Description != null ? p.Description.Content : null
+                            Currency = p.Currency,
+                            DescriptionId = p.DescriptionId
                         })
                         .ToListAsync();
 
@@ -105,74 +177,65 @@ namespace TCPServer.ProductionModule
                         return "Error: Категория не найдена";
                     }
 
-                    // Создаём описание, если есть
-                    int? descriptionId = null;
-                    if (!string.IsNullOrEmpty(productData.Description))
+                    // Проверяем DescriptionId
+                    if (productData.DescriptionId.HasValue)
                     {
-                        var description = new Description { Content = productData.Description };
-                        dbContext.Descriptions.Add(description);
-                        await dbContext.SaveChangesAsync();
-                        descriptionId = description.Id;
+                        var description = await dbContext.Descriptions.FindAsync(productData.DescriptionId);
+                        if (description == null)
+                        {
+                            return "Error: Описание не найдено";
+                        }
+                    }
+
+                    // Проверяем уникальность артикула и штрих-кода
+                    if (await dbContext.Products.AnyAsync(p => p.Article == productData.Article))
+                    {
+                        return "Error: Артикул уже существует";
+                    }
+                    if (await dbContext.Products.AnyAsync(p => p.Barcode == productData.Barcode))
+                    {
+                        return "Error: Штрих-код уже существует";
                     }
 
                     // Создаём продукт
                     var product = new Product
                     {
                         Name = productData.Name,
+                        Article = productData.Article,
+                        Barcode = productData.Barcode,
                         CategoryId = productData.CategoryId,
                         PurchasePrice = productData.PurchasePrice,
                         SellingPrice = productData.SellingPrice,
-                        DescriptionId = descriptionId
+                        Currency = productData.Currency,
+                        DescriptionId = productData.DescriptionId
                     };
 
                     dbContext.Products.Add(product);
                     await dbContext.SaveChangesAsync();
 
-                    // Интеграция с балансом: создаём актив, если указано начальное количество
-                    if (productData.InitialQuantity.HasValue && productData.InitialQuantity.Value > 0)
+                    // Интеграция с балансом: создаём актив (без начального количества)
+                    var asset = new Asset
                     {
-                        var asset = new Asset
-                        {
-                            Category = "ТМЦ",
-                            Name = product.Name,
-                            Amount = productData.PurchasePrice * productData.InitialQuantity.Value,
-                            Currency = "RUB",
-                            AcquisitionDate = DateTime.Now,
-                            DescriptionId = descriptionId
-                        };
-                        dbContext.Assets.Add(asset);
+                        Category = "ТМЦ",
+                        Name = product.Name,
+                        Amount = productData.PurchasePrice, // Сумма за единицу товара
+                        Currency = productData.Currency,
+                        AcquisitionDate = DateTime.Now,
+                        DescriptionId = productData.DescriptionId
+                    };
+                    dbContext.Assets.Add(asset);
 
-                        // Создаём партию и инвентарь
-                        var batch = new ProductBatch
-                        {
-                            ProductId = product.ProductId,
-                            Quantity = productData.InitialQuantity.Value
-                        };
-                        dbContext.ProductBatches.Add(batch);
-
-                        var inventory = new Inventory
-                        {
-                            ProductId = product.ProductId,
-                            WarehouseId = 1, // По умолчанию первый склад
-                            Quantity = productData.InitialQuantity.Value,
-                            ReservedQuantity = 0
-                        };
-                        dbContext.Inventories.Add(inventory);
-
-                        // Логирование
-                        var auditLog = new AuditLog
-                        {
-                            UserName = "System",
-                            Action = "Создание",
-                            EntityType = "Asset",
-                            EntityId = product.ProductId,
-                            Details = $"Добавлен актив ТМЦ: {product.Name}, Сумма: {asset.Amount}",
-                            Timestamp = DateTime.Now
-                        };
-                        dbContext.AuditLogs.Add(auditLog);
-
-                        await dbContext.SaveChangesAsync();
-                    }
+                    // Логирование актива
+                    var assetAuditLog = new AuditLog
+                    {
+                        UserName = "System",
+                        Action = "Создание",
+                        EntityType = "Asset",
+                        EntityId = product.ProductId,
+                        Details = $"Добавлен актив ТМЦ: {product.Name}, Сумма: {asset.Amount}, Валюта: {asset.Currency}",
+                        Timestamp = DateTime.Now
+                    };
+                    dbContext.AuditLogs.Add(assetAuditLog);
 
                     // Логирование добавления продукта
                     var productAuditLog = new AuditLog
@@ -181,10 +244,11 @@ namespace TCPServer.ProductionModule
                         Action = "Создание",
                         EntityType = "Product",
                         EntityId = product.ProductId,
-                        Details = $"Добавлен продукт: {product.Name}, Цена закупки: {product.PurchasePrice}",
+                        Details = $"Добавлен продукт: {product.Name}, Артикул: {product.Article}, Цена закупки: {product.PurchasePrice}, Валюта: {product.Currency}",
                         Timestamp = DateTime.Now
                     };
                     dbContext.AuditLogs.Add(productAuditLog);
+
                     await dbContext.SaveChangesAsync();
 
                     return JsonConvert.SerializeObject(new { Success = true, ProductId = product.ProductId });
@@ -215,73 +279,7 @@ namespace TCPServer.ProductionModule
             using var context = new CrmsystemContext();
             return await context.AuditLogs.ToListAsync();
         }
-        public static async Task<string> UpdateProductAsync(string jsonData)
-        {
-            try
-            {
-                var productData = JsonConvert.DeserializeObject<ProductDto>(jsonData);
-                if (productData == null)
-                {
-                    return "Error: Неверный формат данных продукта";
-                }
-
-                using (var dbContext = new CrmsystemContext())
-                {
-                    var product = await dbContext.Products
-                        .Include(p => p.Description)
-                        .FirstOrDefaultAsync(p => p.ProductId == productData.Id);
-
-                    if (product == null)
-                    {
-                        return "Error: Продукт не найден";
-                    }
-
-                    // Проверяем категорию
-                    var category = await dbContext.ProductCategories.FindAsync(productData.CategoryId);
-                    if (category == null)
-                    {
-                        return "Error: Категория не найдена";
-                    }
-
-                    // Обновляем описание
-                    if (product.Description == null && !string.IsNullOrEmpty(productData.Description))
-                    {
-                        product.Description = new Description { Content = productData.Description };
-                        dbContext.Descriptions.Add(product.Description);
-                    }
-                    else if (product.Description != null)
-                    {
-                        product.Description.Content = productData.Description;
-                    }
-
-                    // Обновляем продукт
-                    product.Name = productData.Name;
-                    product.CategoryId = productData.CategoryId;
-                    product.PurchasePrice = productData.PurchasePrice;
-                    product.SellingPrice = productData.SellingPrice;
-
-                    // Логирование
-                    var auditLog = new AuditLog
-                    {
-                        UserName = "System",
-                        Action = "Обновление",
-                        EntityType = "Product",
-                        EntityId = product.ProductId,
-                        Details = $"Обновлён продукт: {product.Name}, Новая цена закупки: {product.PurchasePrice}",
-                        Timestamp = DateTime.Now
-                    };
-                    dbContext.AuditLogs.Add(auditLog);
-
-                    await dbContext.SaveChangesAsync();
-
-                    return JsonConvert.SerializeObject(new { Success = true });
-                }
-            }
-            catch (Exception ex)
-            {
-                return $"Error: Не удалось обновить продукт: {ex.Message}";
-            }
-        }
+      
 
         public static async Task<string> DeleteProductAsync(string jsonData)
         {
@@ -546,14 +544,12 @@ namespace TCPServer.ProductionModule
 
                 using (var dbContext = new CrmsystemContext())
                 {
-                    
                     var product = await dbContext.Products.FindAsync(transactionData.ProductBatchId);
                     if (product == null)
                     {
                         return "Error: Продукт не найден";
                     }
 
-                    
                     var batch = await dbContext.ProductBatches
                         .FirstOrDefaultAsync(b => b.ProductId == transactionData.ProductBatchId);
                     if (batch == null)
@@ -564,17 +560,18 @@ namespace TCPServer.ProductionModule
                             Quantity = 0
                         };
                         dbContext.ProductBatches.Add(batch);
+                        await dbContext.SaveChangesAsync(); // Сохраняем партию
                     }
 
-                   var transactionType = transactionData.TransactionType?.ToLower();
+                    var transactionType = transactionData.TransactionType?.ToLower();
                     if (!new[] { "receipt", "shipment", "transfer" }.Contains(transactionType))
                     {
                         return "Error: Неверный тип транзакции";
                     }
 
+                    AuditLog assetAuditLog = null;
                     if (transactionType == "receipt")
                     {
-                        
                         if (!transactionData.ToWarehouseId.HasValue)
                         {
                             return "Error: Укажите склад назначения";
@@ -585,7 +582,6 @@ namespace TCPServer.ProductionModule
                             return "Error: Склад не найден";
                         }
 
-                        
                         var inventory = await dbContext.Inventories
                             .FirstOrDefaultAsync(i => i.ProductId == transactionData.ProductBatchId && i.WarehouseId == transactionData.ToWarehouseId.Value);
                         if (inventory == null)
@@ -606,32 +602,31 @@ namespace TCPServer.ProductionModule
 
                         batch.Quantity += transactionData.Quantity;
 
-                       
                         var asset = new Asset
                         {
                             Category = "ТМЦ",
                             Name = product.Name,
                             Amount = transactionData.Quantity * product.PurchasePrice,
-                            Currency = "RUB",
+                            Currency = product.Currency, // Используем валюту продукта
                             AcquisitionDate = DateTime.Now
                         };
-                        dbContext.Assets.Add(asset);
 
-                     
-                        var assetAuditLog = new AuditLog
+                        assetAuditLog = new AuditLog
                         {
                             UserName = "System",
                             Action = "Создание",
                             EntityType = "Asset",
                             EntityId = product.ProductId,
-                            Details = $"Добавлен актив ТМЦ: {product.Name}, Сумма: {asset.Amount}",
+                            Details = $"Добавлен актив ТМЦ: {product.Name}, Сумма: {asset.Amount}, Валюта: {asset.Currency}",
                             Timestamp = DateTime.Now
                         };
                         dbContext.AuditLogs.Add(assetAuditLog);
+                        await dbContext.SaveChangesAsync(); // Сохраняем AuditLog перед добавлением Asset
+
+                        dbContext.Assets.Add(asset);
                     }
                     else if (transactionType == "shipment")
                     {
-                       
                         if (!transactionData.FromWarehouseId.HasValue)
                         {
                             return "Error: Укажите склад отправления";
@@ -642,7 +637,6 @@ namespace TCPServer.ProductionModule
                             return "Error: Склад не найден";
                         }
 
-                  
                         var inventory = await dbContext.Inventories
                             .FirstOrDefaultAsync(i => i.ProductId == transactionData.ProductBatchId && i.WarehouseId == transactionData.FromWarehouseId.Value);
                         if (inventory == null || inventory.Quantity < transactionData.Quantity)
@@ -664,7 +658,7 @@ namespace TCPServer.ProductionModule
                             }
                         }
 
-                        var assetAuditLog = new AuditLog
+                        assetAuditLog = new AuditLog
                         {
                             UserName = "System",
                             Action = "Обновление",
@@ -674,10 +668,10 @@ namespace TCPServer.ProductionModule
                             Timestamp = DateTime.Now
                         };
                         dbContext.AuditLogs.Add(assetAuditLog);
+                        await dbContext.SaveChangesAsync(); // Сохраняем AuditLog
                     }
                     else if (transactionType == "transfer")
                     {
-                      
                         if (!transactionData.FromWarehouseId.HasValue || !transactionData.ToWarehouseId.HasValue)
                         {
                             return "Error: Укажите склады отправления и назначения";
@@ -698,9 +692,8 @@ namespace TCPServer.ProductionModule
 
                         fromInventory.Quantity -= transactionData.Quantity;
 
-                 
-                       var toInventory = await dbContext.Inventories
-                           .FirstOrDefaultAsync(i => i.ProductId == transactionData.ProductBatchId && i.WarehouseId == transactionData.ToWarehouseId.Value);
+                        var toInventory = await dbContext.Inventories
+                            .FirstOrDefaultAsync(i => i.ProductId == transactionData.ProductBatchId && i.WarehouseId == transactionData.ToWarehouseId.Value);
                         if (toInventory == null)
                         {
                             toInventory = new Inventory
@@ -718,19 +711,16 @@ namespace TCPServer.ProductionModule
                         }
                     }
 
-                 
                     var transaction = new InventoryTransaction
                     {
                         ProductBatchId = transactionData.ProductBatchId,
-                        FromWarehouseId = transactionData.FromWarehouseId, // Nullable, так как может быть null
-                        ToWarehouseId = transactionData.ToWarehouseId,     // Nullable, так как может быть null
+                        FromWarehouseId = transactionData.FromWarehouseId,
+                        ToWarehouseId = transactionData.ToWarehouseId,
                         Quantity = transactionData.Quantity,
-                        TransactionType = transactionData.TransactionType, // Сохраняем как строку
+                        TransactionType = transactionData.TransactionType,
                         TransactionDate = DateTime.Now
                     };
-                    dbContext.InventoryTransactions.Add(transaction);
 
-                    // Логирование транзакции
                     var transactionAuditLog = new AuditLog
                     {
                         UserName = "System",
@@ -741,7 +731,9 @@ namespace TCPServer.ProductionModule
                         Timestamp = DateTime.Now
                     };
                     dbContext.AuditLogs.Add(transactionAuditLog);
+                    await dbContext.SaveChangesAsync(); // Сохраняем AuditLog перед добавлением InventoryTransaction
 
+                    dbContext.InventoryTransactions.Add(transaction);
                     await dbContext.SaveChangesAsync();
 
                     return JsonConvert.SerializeObject(new { Success = true, TransactionId = transaction.Id });
@@ -752,7 +744,6 @@ namespace TCPServer.ProductionModule
                 return JsonConvert.SerializeObject(new { Success = false, Error = ex.Message });
             }
         }
-
         public static async Task<string> CompareProductSnapshotsAsync(string jsonData)
         {
             try

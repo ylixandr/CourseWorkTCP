@@ -9,13 +9,15 @@ namespace TCPServer.ProductionModule
     // DTO для продукта
     public class ProductDto
     {
-        public int Id { get; set; }
+        public int ProductId { get; set; }
         public string Name { get; set; }
+        public string Article { get; set; }
+        public string Barcode { get; set; }
         public int CategoryId { get; set; }
         public decimal PurchasePrice { get; set; }
         public decimal SellingPrice { get; set; }
-        public string Description { get; set; }
-        public decimal? InitialQuantity { get; set; } // Для создания актива при добавлении
+        public string Currency { get; set; }
+        public int? DescriptionId { get; set; }
     }
 
     // DTO для категории продукции

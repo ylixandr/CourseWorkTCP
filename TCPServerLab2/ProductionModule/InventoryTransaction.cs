@@ -16,7 +16,7 @@ namespace TCPServer.ProductionModule
         public string TransactionType { get; set; } // "receipt", "shipment", "transfer"
         public decimal Quantity { get; set; }
         public DateTime TransactionDate { get; set; }
-        public int AuditLogId { get; set; }
+        public int? AuditLogId { get; set; }
 
         public virtual ProductBatch ProductBatch { get; set; }
         public virtual Warehouse FromWarehouse { get; set; }
