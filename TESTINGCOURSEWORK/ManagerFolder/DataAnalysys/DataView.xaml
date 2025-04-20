@@ -1,0 +1,91 @@
+﻿<UserControl x:Class="Client.ManagerFolder.DataAnalysys.DataView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Client.ManagerFolder.DataAnalysys"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800"
+             Background="#F5F7FA">
+    <UserControl.Resources>
+        <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <!-- Стиль для кнопок -->
+        <Style x:Key="ButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#007BFF"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#0056b3"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#A0A0A0"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <!-- Стиль для ComboBox -->
+        <Style x:Key="ComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="Margin" Value="5"/>
+        </Style>
+        <!-- Стиль для заголовков DataGrid -->
+        <Style x:Key="DataGridColumnHeaderStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#333333"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="ContentTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" TextWrapping="Wrap" TextAlignment="Center"/>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" x:Name="FilterRow"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto" x:Name="StatusRow"/>
+        </Grid.RowDefinitions>
+
+        <!-- Фильтры -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10" Visibility="{Binding IsFullScreen, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverse}">
+            <TextBlock Text="Формат данных:" FontSize="14" Foreground="#333333" VerticalAlignment="Center" Margin="0,0,10,0"/>
+            <ComboBox ItemsSource="{Binding DataFormats}" SelectedItem="{Binding SelectedFormat}" Style="{StaticResource ComboBoxStyle}" Width="200"/>
+            <TextBlock Text="Фильтр по периоду:" FontSize="14" Foreground="#333333" VerticalAlignment="Center" Margin="20,0,10,0"/>
+            <TextBox Text="{Binding PeriodFilter, UpdateSourceTrigger=PropertyChanged}" Width="150" FontSize="14" Padding="5" Margin="5"/>
+            <Button Content="Очистить фильтр" Style="{StaticResource ButtonStyle}" Command="{Binding ClearFilterCommand}"/>
+            <Button Content="{Binding FullScreenButtonText}" Style="{StaticResource ButtonStyle}" Command="{Binding ToggleFullScreenCommand}"/>
+        </StackPanel>
+
+        <!-- Таблица данных -->
+        <DataGrid Grid.Row="1" ItemsSource="{Binding FilteredData}" AutoGenerateColumns="False" CanUserSortColumns="True" IsReadOnly="True" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Период" Binding="{Binding Period}" Width="Auto" MinWidth="100"/>
+                <DataGridTextColumn Header="Активы" Binding="{Binding Assets}" Width="Auto" MinWidth="100" Visibility="{Binding VisibleColumns[Assets], Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                <DataGridTextColumn Header="Собственный капитал" Binding="{Binding Equity}" Width="Auto" MinWidth="120" Visibility="{Binding VisibleColumns[Equity], Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                <DataGridTextColumn Header="Заемный капитал" Binding="{Binding BorrowedCapital}" Width="Auto" MinWidth="120" Visibility="{Binding VisibleColumns[BorrowedCapital], Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                <DataGridTextColumn Header="Обязательства" Binding="{Binding Liabilities}" Width="Auto" MinWidth="100" Visibility="{Binding VisibleColumns[Liabilities], Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                <DataGridTextColumn Header="Чистая прибыль" Binding="{Binding NetProfit}" Width="Auto" MinWidth="100" Visibility="{Binding VisibleColumns[NetProfit], Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                <DataGridTextColumn Header="Собственный капитал (начало)" Binding="{Binding InitialEquity}" Width="Auto" MinWidth="140" Visibility="{Binding VisibleColumns[InitialEquity], Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                <DataGridTextColumn Header="Прирост капитала" Binding="{Binding CapitalIncrease}" Width="Auto" MinWidth="100" Visibility="{Binding VisibleColumns[CapitalIncrease], Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                <DataGridTextColumn Header="Убытки" Binding="{Binding Losses}" Width="Auto" MinWidth="100" Visibility="{Binding VisibleColumns[Losses], Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                <DataGridTextColumn Header="Собственный капитал (конец)" Binding="{Binding FinalEquity}" Width="Auto" MinWidth="140" Visibility="{Binding VisibleColumns[FinalEquity], Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                <DataGridTextColumn Header="Рентабельность капитала (%)" Binding="{Binding ReturnOnEquity}" Width="Auto" MinWidth="140" Visibility="{Binding VisibleColumns[ReturnOnEquity], Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                <DataGridTextColumn Header="Коэффициент ликвидности" Binding="{Binding LiquidityRatio}" Width="Auto" MinWidth="120" Visibility="{Binding VisibleColumns[LiquidityRatio], Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                <DataGridTextColumn Header="Доля заемного капитала (%)" Binding="{Binding BorrowedCapitalShare}" Width="Auto" MinWidth="140" Visibility="{Binding VisibleColumns[BorrowedCapitalShare], Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Статус -->
+        <TextBlock Grid.Row="2" Text="{Binding StatusMessage}" FontSize="12" Foreground="#666666" Margin="0,10,0,0" Visibility="{Binding IsFullScreen, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverse}"/>
+    </Grid>
+</UserControl>

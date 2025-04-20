@@ -18,79 +18,99 @@ namespace Client.ManagerFolder.DataAnalysys
         public IEnumerable<string> GetSheetNames(string filePath)
         {
             if (!File.Exists(filePath))
-                throw new Exception("Файл не найден.");
+                throw new Exception($"Файл не найден: {filePath}");
 
-            using (var package = new ExcelPackage(new FileInfo(filePath)))
+            try
             {
-                var sheets = package.Workbook.Worksheets.Select(ws => ws.Name).ToList();
-                if (!
-sheets.Any())
-                    throw new Exception("В файле нет листов.");
-                return sheets;
+                using (var package = new ExcelPackage(new FileInfo(filePath)))
+                {
+                    var sheets = package.Workbook.Worksheets.Select(ws => ws.Name).ToList();
+                    if (!sheets.Any())
+                        throw new Exception("В файле нет листов.");
+                    return sheets;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Ошибка при чтении листов из файла: {ex.Message}");
             }
         }
 
         public IEnumerable<string> GetColumnHeaders(string filePath, string sheetName)
         {
-            using (var package = new ExcelPackage(new FileInfo(filePath)))
+            try
             {
-                var worksheet = package.Workbook.Worksheets[sheetName];
-                if (worksheet == null)
-                    throw new Exception($"Лист '{sheetName}' не найден.");
-
-                if (worksheet.Dimension == null)
-                    throw new Exception("Лист пуст или не содержит данных.");
-
-                var headers = new List<string>();
-                for (int col = 1; col <= worksheet.Dimension.Columns; col++)
+                using (var package = new ExcelPackage(new FileInfo(filePath)))
                 {
-                    var header = worksheet.Cells[1, col].Text?.Trim();
-                    if (!string.IsNullOrEmpty(header))
-                        headers.Add(header);
+                    var worksheet = package.Workbook.Worksheets[sheetName];
+                    if (worksheet == null)
+                        throw new Exception($"Лист '{sheetName}' не найден.");
+
+                    if (worksheet.Dimension == null)
+                        throw new Exception($"Лист '{sheetName}' пуст или не содержит данных.");
+
+                    var headers = new List<string>();
+                    for (int col = 1; col <= worksheet.Dimension.Columns; col++)
+                    {
+                        var header = worksheet.Cells[1, col].Text?.Trim();
+                        if (!string.IsNullOrEmpty(header))
+                            headers.Add(header);
+                    }
+
+                    if (!headers.Any())
+                        throw new Exception($"В первой строке листа '{sheetName}' не найдены заголовки столбцов.");
+
+                    return headers;
                 }
-
-                if (!headers.Any())
-                    throw new Exception("Заголовки столбцов не найдены в первой строке.");
-
-                return headers;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Ошибка при чтении заголовков столбцов: {ex.Message}");
             }
         }
 
         public List<Dictionary<string, string>> PreviewData(string filePath, string sheetName, List<ColumnMapping> mappings)
         {
-            using (var package = new ExcelPackage(new FileInfo(filePath)))
+            try
             {
-                var worksheet = package.Workbook.Worksheets[sheetName];
-                if (worksheet == null)
-                    throw new Exception($"Лист '{sheetName}' не найден.");
-
-                if (worksheet.Dimension == null)
-                    throw new Exception("Лист пуст.");
-
-                var data = new List<Dictionary<string, string>>();
-                var headerMap = mappings.ToDictionary(m => m.SelectedColumn, m => m.ExpectedColumn);
-                var columnIndices = mappings.Where(m => !string.IsNullOrEmpty(m.SelectedColumn))
-                                           .ToDictionary(m => m.ExpectedColumn, m =>
-                                           {
-                                               var cell = worksheet.Cells[1, 1, 1, worksheet.Dimension.Columns]
-                                                                  .FirstOrDefault(c => c.Text == m.SelectedColumn);
-                                               if (cell == null)
-                                                   throw new Exception($"Столбец '{m.SelectedColumn}' не найден.");
-                                               return cell.Start.Column;
-                                           });
-
-                for (int row = 2; row <= Math.Min(worksheet.Dimension.Rows, 101); row++)
+                using (var package = new ExcelPackage(new FileInfo(filePath)))
                 {
-                    var rowData = new Dictionary<string, string>();
-                    foreach (var mapping in mappings.Where(m => !string.IsNullOrEmpty(m.SelectedColumn)))
+                    var worksheet = package.Workbook.Worksheets[sheetName];
+                    if (worksheet == null)
+                        throw new Exception($"Лист '{sheetName}' не найден.");
+
+                    if (worksheet.Dimension == null)
+                        throw new Exception($"Лист '{sheetName}' пуст.");
+
+                    var data = new List<Dictionary<string, string>>();
+                    var headerMap = mappings.ToDictionary(m => m.SelectedColumn, m => m.ExpectedColumn);
+                    var columnIndices = mappings.Where(m => !string.IsNullOrEmpty(m.SelectedColumn))
+                                               .ToDictionary(m => m.ExpectedColumn, m =>
+                                               {
+                                                   var cell = worksheet.Cells[1, 1, 1, worksheet.Dimension.Columns]
+                                                                      .FirstOrDefault(c => c.Text == m.SelectedColumn);
+                                                   if (cell == null)
+                                                       throw new Exception($"Столбец '{m.SelectedColumn}' не найден в листе '{sheetName}'.");
+                                                   return cell.Start.Column;
+                                               });
+
+                    for (int row = 2; row <= Math.Min(worksheet.Dimension.Rows, 101); row++)
                     {
-                        var value = worksheet.Cells[row, columnIndices[mapping.ExpectedColumn]].Text?.Trim();
-                        rowData[mapping.ExpectedColumn] = value;
+                        var rowData = new Dictionary<string, string>();
+                        foreach (var mapping in mappings.Where(m => !string.IsNullOrEmpty(m.SelectedColumn)))
+                        {
+                            var value = worksheet.Cells[row, columnIndices[mapping.ExpectedColumn]].Text?.Trim();
+                            rowData[mapping.ExpectedColumn] = value;
+                        }
+                        if (rowData.Any())
+                            data.Add(rowData);
                     }
-                    if (rowData.Any())
-                        data.Add(rowData);
+                    return data;
                 }
-                return data;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Ошибка при предварительном просмотре данных: {ex.Message}");
             }
         }
 
@@ -140,10 +160,10 @@ sheets.Any())
                 if (row.TryGetValue("Собственный капитал (конец)", out var final) && double.TryParse(final, out var finalValue))
                     model.FinalEquity = finalValue;
 
-                if (!string.IsNullOrEmpty(model.Period) && model.FinalEquity.HasValue)
+                if (!string.IsNullOrEmpty(model.Period))
                     data.Add(model);
                 else
-                    throw new Exception("Обязательные поля (Период, Собственный капитал (конец)) отсутствуют или некорректны.");
+                    throw new Exception("Обязательное поле (Период) отсутствует или некорректно.");
             }
             return data;
         }
@@ -174,9 +194,16 @@ sheets.Any())
 
         public void SaveToJson<T>(List<T> data, string fileName)
         {
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            var json = JsonSerializer.Serialize(data, options);
-            File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName), json);
+            try
+            {
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                var json = JsonSerializer.Serialize(data, options);
+                File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName), json);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Ошибка при сохранении данных в JSON: {ex.Message}");
+            }
         }
     }
 }

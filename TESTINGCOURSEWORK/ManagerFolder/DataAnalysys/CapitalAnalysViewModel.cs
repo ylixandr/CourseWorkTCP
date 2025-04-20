@@ -4,6 +4,7 @@ using System.Windows.Input;
 
 namespace Client.ManagerFolder.DataAnalysys
 {
+
     public class CapitalAnalysViewModel : INotifyPropertyChanged
     {
         private string _currentViewTitle = "Добро пожаловать";
@@ -93,7 +94,6 @@ namespace Client.ManagerFolder.DataAnalysys
 
         private void Navigate(object parameter)
         {
-            // Сбрасываем все активные состояния
             IsImportActive = false;
             IsDataActive = false;
             IsAnalysisActive = false;
@@ -112,21 +112,27 @@ namespace Client.ManagerFolder.DataAnalysys
                     break;
                 case "Data":
                     CurrentViewTitle = "Просмотр данных";
-                    SelectedView = null; // Заглушка, будет заменено на DataView
-                    StatusMessage = "Открыт раздел данных";
+                    var dataView = new DataView();
+                    SelectedView = dataView;
+                    StatusMessage = $"Открыт раздел данных. SelectedView установлен в DataView (Type: {dataView.GetType().Name}).";
                     IsDataActive = true;
                     break;
                 case "Analysis":
                     CurrentViewTitle = "Анализ капитала";
-                    SelectedView = null; // Заглушка, будет заменено на AnalysisView
-                    StatusMessage = "Открыт раздел анализа";
+                    var analysisView = new AnalysisView();
+                    SelectedView = analysisView;
+                    StatusMessage = $"Открыт раздел анализа. SelectedView установлен в AnalysisView (Type: {analysisView.GetType().Name}).";
                     IsAnalysisActive = true;
                     break;
                 case "Reports":
                     CurrentViewTitle = "Отчеты";
-                    SelectedView = null; // Заглушка, будет заменено на ReportsView
-                    StatusMessage = "Открыт раздел отчетов";
+                    var reportsView = new ReportsView();
+                    SelectedView = reportsView;
+                    StatusMessage = $"Открыт раздел отчетов. SelectedView установлен в ReportsView (Type: {reportsView.GetType().Name}).";
                     IsReportsActive = true;
+                    break;
+                default:
+                    StatusMessage = $"Неизвестный раздел: {section}";
                     break;
             }
         }
@@ -137,7 +143,7 @@ namespace Client.ManagerFolder.DataAnalysys
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
-
+}
     // Простая реализация ICommand
     public class RelayCommand : ICommand
     {
@@ -146,16 +152,25 @@ namespace Client.ManagerFolder.DataAnalysys
 
         public RelayCommand(Action<object> execute, Func<object, bool> canExecute = null)
         {
-            _execute = execute;
+            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
             _canExecute = canExecute;
         }
 
-        public bool CanExecute(object parameter) => _canExecute == null || _canExecute(parameter);
-        public void Execute(object parameter) => _execute(parameter);
-        public event EventHandler CanExecuteChanged
+        public bool CanExecute(object parameter)
         {
-            add => CommandManager.RequerySuggested += value;
-            remove => CommandManager.RequerySuggested -= value;
+            return _canExecute == null || _canExecute(parameter);
+        }
+
+        public void Execute(object parameter)
+        {
+            _execute(parameter);
+        }
+
+        public event EventHandler CanExecuteChanged;
+
+        // Метод для явного вызова CanExecuteChanged
+        public void RaiseCanExecuteChanged()
+        {
+            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
         }
     }
-}

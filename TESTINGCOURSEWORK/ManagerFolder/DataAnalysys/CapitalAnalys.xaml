@@ -9,6 +9,11 @@
         WindowStartupLocation="CenterScreen"
         Background="#F5F7FA">
     <Window.Resources>
+        <!-- Регистрация конвертеров -->
+        <local:NotNullConverter x:Key="NotNullConverter"/>
+        <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+
         <!-- Стили для кнопок навигации -->
         <Style x:Key="NavButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
@@ -89,13 +94,32 @@
             <TextBlock Grid.Row="0" Text="{Binding CurrentViewTitle}" FontSize="24" FontWeight="SemiBold" Foreground="#333333" Margin="0,0,0,20"/>
 
             <!-- Контент -->
-            <ContentControl Grid.Row="1" Content="{Binding SelectedView}">
-                <!-- Заглушка для начального контента -->
-                <ContentControl.ContentTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="Выберите раздел в меню" FontSize="16" Foreground="#666666" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </DataTemplate>
-                </ContentControl.ContentTemplate>
+            <ContentControl Grid.Row="1" Content="{Binding SelectedView}" Margin="10">
+                <ContentControl.Style>
+                    <Style TargetType="ContentControl">
+                        <Setter Property="ContentTemplate">
+                            <Setter.Value>
+                                <DataTemplate>
+                                    <TextBlock Text="Выберите раздел в меню" FontSize="16" Foreground="#666666" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </DataTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SelectedView}" Value="{x:Null}">
+                                <Setter Property="ContentTemplate">
+                                    <Setter.Value>
+                                        <DataTemplate>
+                                            <TextBlock Text="Выберите раздел в меню" FontSize="16" Foreground="#666666" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </DataTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding SelectedView, Converter={StaticResource NotNullConverter}}" Value="True">
+                                <Setter Property="ContentTemplate" Value="{x:Null}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ContentControl.Style>
             </ContentControl>
         </Grid>
 

@@ -60,7 +60,10 @@
         <DataGrid Grid.Row="3" ItemsSource="{Binding ColumnMappings}" AutoGenerateColumns="False" CanUserAddRows="False" Margin="0,0,0,10">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Ожидаемый столбец" Binding="{Binding ExpectedColumn}" IsReadOnly="True" Width="*"/>
-                <DataGridComboBoxColumn Header="Столбец в файле" ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.AvailableColumns}" SelectedItemBinding="{Binding SelectedColumn, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
+                <DataGridComboBoxColumn Header="Столбец в файле" 
+                                        ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.AvailableColumns}" 
+                                        SelectedItemBinding="{Binding SelectedColumn, UpdateSourceTrigger=PropertyChanged}" 
+                                        Width="*"/>
             </DataGrid.Columns>
         </DataGrid>
 
@@ -72,6 +75,6 @@
         </StackPanel>
 
         <!-- Сообщение об ошибке -->
-        <TextBlock Grid.Row="4" Text="{Binding ErrorMessage}" FontSize="12" Foreground="Red" VerticalAlignment="Center" Margin="0,0,10,0"/>
+        <TextBlock Grid.Row="4" Text="{Binding ErrorMessage}" FontSize="8" Foreground="Red" VerticalAlignment="Center" Margin="0,0,338,0" TextWrapping="Wrap" Height="38"/>
     </Grid>
 </Window>
