@@ -1,4 +1,5 @@
 ﻿using Client.ManagerFolder;
+using Client.ManagerFolder.DataAnalysys;
 using LiveCharts;
 using LiveCharts.Defaults;
 using LiveCharts.Wpf;
@@ -481,7 +482,9 @@ namespace TESTINGCOURSEWORK
         private void Finance_Button_Click(object sender, RoutedEventArgs e)
         {
             HideAllGrid();
-            graphicsGrid.Visibility = Visibility.Visible;
+            CapitalAnalys capitalAnalys = new CapitalAnalys();
+            capitalAnalys.Show();
+
 
 
         }
