@@ -2,33 +2,24 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Windows.Input;
-using OfficeOpenXml;
 
 namespace Client.ManagerFolder.DataAnalysys
 {
     public class ReportsViewModel : INotifyPropertyChanged
     {
         private readonly AnalysisService _analysisService;
-        private ObservableCollection<FinancialAnalysisResult> _reportResults;
         private string _selectedReportType;
         private string _statusMessage;
+        private string _reportText;
 
         public ObservableCollection<string> ReportTypes { get; } = new ObservableCollection<string>
         {
             "Полный отчет", "Рентабельность капитала", "Долговая нагрузка", "Коэффициент автономии", "Динамика капитала"
         };
-
-        public ObservableCollection<FinancialAnalysisResult> ReportResults
-        {
-            get => _reportResults;
-            set
-            {
-                _reportResults = value;
-                OnPropertyChanged(nameof(ReportResults));
-            }
-        }
 
         public string SelectedReportType
         {
@@ -39,7 +30,7 @@ namespace Client.ManagerFolder.DataAnalysys
                 {
                     _selectedReportType = value;
                     OnPropertyChanged(nameof(SelectedReportType));
-                    GenerateReport();
+                    UpdateReportText(); // Только обновляем текст
                 }
             }
         }
@@ -54,77 +45,169 @@ namespace Client.ManagerFolder.DataAnalysys
             }
         }
 
+        public string ReportText
+        {
+            get => _reportText;
+            set
+            {
+                _reportText = value;
+                OnPropertyChanged(nameof(ReportText));
+            }
+        }
+
         public ICommand GenerateReportCommand { get; }
 
         public ReportsViewModel()
         {
             _analysisService = new AnalysisService();
-            ReportResults = new ObservableCollection<FinancialAnalysisResult>();
-            GenerateReportCommand = new RelayCommand(GenerateReport);
+            GenerateReportCommand = new RelayCommand(GenerateAndSaveReport);
             SelectedReportType = "Полный отчет";
-            GenerateReport();
+            UpdateReportText(); // Инициализация текста отчета
         }
 
-        private void GenerateReport(object parameter = null)
+        private void UpdateReportText()
         {
             try
             {
                 var results = _analysisService.CalculateFinancialMetrics();
-                ReportResults.Clear();
-                foreach (var result in results)
+                if (!results.Any())
                 {
-                    ReportResults.Add(result);
+                    ReportText = "Нет данных для анализа.";
+                    StatusMessage = "Данные для отчета отсутствуют.";
+                    return;
                 }
 
-                StatusMessage = $"Отчет '{SelectedReportType}' сгенерирован. Периодов: {results.Count}";
+                var report = new StringBuilder();
+                report.AppendLine($"Отчет по анализу капитала: {SelectedReportType}");
+                report.AppendLine($"Дата генерации: {DateTime.Now:dd.MM.yyyy HH:mm}");
+                report.AppendLine(new string('=', 50));
+                report.AppendLine();
 
-                // Экспорт в Excel
-                using (var package = new ExcelPackage())
+                var latestResult = results.OrderBy(r => r.Period).Last();
+
+                if (_selectedReportType == "Полный отчет" || _selectedReportType == "Рентабельность капитала")
                 {
-                    var worksheet = package.Workbook.Worksheets.Add("Отчет по капиталу");
-                    worksheet.Cells[1, 1].Value = "Период";
-                    int col = 2;
-
-                    if (_selectedReportType == "Полный отчет" || _selectedReportType == "Рентабельность капитала")
-                        worksheet.Cells[1, col++].Value = "Рентабельность капитала (%)";
-                    if (_selectedReportType == "Полный отчет" || _selectedReportType == "Долговая нагрузка")
-                        worksheet.Cells[1, col++].Value = "Долговая нагрузка";
-                    if (_selectedReportType == "Полный отчет" || _selectedReportType == "Коэффициент автономии")
-                        worksheet.Cells[1, col++].Value = "Коэффициент автономии";
-                    if (_selectedReportType == "Полный отчет" || _selectedReportType == "Динамика капитала")
-                        worksheet.Cells[1, col++].Value = "Изменение капитала";
-
-                    for (int i = 0; i < results.Count; i++)
+                    double? roe = latestResult.ReturnOnEquity;
+                    report.AppendLine("Рентабельность капитала (ROE):");
+                    report.AppendLine($"Значение: {roe?.ToString("F2") ?? "нет данных"}%");
+                    if (roe.HasValue)
                     {
-                        var result = results[i];
-                        worksheet.Cells[i + 2, 1].Value = result.Period;
-                        col = 2;
-
-                        if (_selectedReportType == "Полный отчет" || _selectedReportType == "Рентабельность капитала")
-                            worksheet.Cells[i + 2, col++].Value = result.ReturnOnEquity?.ToString("F2");
-                        if (_selectedReportType == "Полный отчет" || _selectedReportType == "Долговая нагрузка")
-                            worksheet.Cells[i + 2, col++].Value = result.DebtToEquityRatio?.ToString("F2");
-                        if (_selectedReportType == "Полный отчет" || _selectedReportType == "Коэффициент автономии")
-                            worksheet.Cells[i + 2, col++].Value = result.AutonomyRatio?.ToString("F2");
-                        if (_selectedReportType == "Полный отчет" || _selectedReportType == "Динамика капитала")
-                            worksheet.Cells[i + 2, col++].Value = result.EquityChange?.ToString("F2");
+                        if (roe > 15)
+                            report.AppendLine("Оценка: Высокая рентабельность. Компания эффективно использует капитал.");
+                        else if (roe > 5)
+                            report.AppendLine("Оценка: Средняя рентабельность. Есть потенциал для роста.");
+                        else
+                            report.AppendLine("Оценка: Низкая рентабельность. Требуются меры для повышения доходности.");
+                        report.AppendLine("Рекомендации:");
+                        report.AppendLine("- Увеличьте операционную прибыль за счет оптимизации процессов.");
+                        report.AppendLine("- Рассмотрите инвестиции в высокодоходные проекты.");
                     }
+                    report.AppendLine();
+                }
 
-                    var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+                if (_selectedReportType == "Полный отчет" || _selectedReportType == "Долговая нагрузка")
+                {
+                    double? debtToEquity = latestResult.DebtToEquityRatio;
+                    report.AppendLine("Долговая нагрузка (Debt-to-Equity):");
+                    report.AppendLine($"Значение: {debtToEquity?.ToString("F2") ?? "нет данных"}");
+                    if (debtToEquity.HasValue)
                     {
-                        Filter = "Excel files (*.xlsx)|*.xlsx",
-                        FileName = $"Report_{SelectedReportType}_{DateTime.Now:yyyyMMdd}.xlsx"
-                    };
-                    if (saveFileDialog.ShowDialog() == true)
-                    {
-                        package.SaveAs(new System.IO.FileInfo(saveFileDialog.FileName));
-                        StatusMessage = $"Отчет экспортирован в {saveFileDialog.FileName}";
+                        if (debtToEquity < 0.5)
+                            report.AppendLine("Оценка: Низкая долговая нагрузка. Финансовая устойчивость высокая.");
+                        else if (debtToEquity < 1.5)
+                            report.AppendLine("Оценка: Умеренная долговая нагрузка. Контроль долгов необходим.");
+                        else
+                            report.AppendLine("Оценка: Высокая долговая нагрузка. Риски финансовой нестабильности.");
+                        report.AppendLine("Рекомендации:");
+                        report.AppendLine("- Снизьте зависимость от заемного капитала.");
+                        report.AppendLine("- Пересмотрите структуру долгов, выбрав более дешевые источники.");
                     }
+                    report.AppendLine();
+                }
+
+                if (_selectedReportType == "Полный отчет" || _selectedReportType == "Коэффициент автономии")
+                {
+                    double? autonomy = latestResult.AutonomyRatio;
+                    report.AppendLine("Коэффициент автономии:");
+                    report.AppendLine($"Значение: {autonomy?.ToString("F2") ?? "нет данных"}");
+                    if (autonomy.HasValue)
+                    {
+                        if (autonomy > 0.5)
+                            report.AppendLine("Оценка: Высокая автономия. Компания независима от внешнего финансирования.");
+                        else if (autonomy > 0.3)
+                            report.AppendLine("Оценка: Средняя автономия. Желательно увеличить собственный капитал.");
+                        else
+                            report.AppendLine("Оценка: Низкая автономия. Высокая зависимость от кредиторов.");
+                        report.AppendLine("Рекомендации:");
+                        report.AppendLine("- Увеличьте долю собственного капитала через реинвестирование прибыли.");
+                        report.AppendLine("- Сократите использование заемных средств.");
+                    }
+                    report.AppendLine();
+                }
+
+                if (_selectedReportType == "Полный отчет" || _selectedReportType == "Динамика капитала")
+                {
+                    double? equityChange = latestResult.EquityChange;
+                    report.AppendLine("Динамика собственного капитала:");
+                    report.AppendLine($"Значение: {equityChange?.ToString("F2") ?? "нет данных"}");
+                    if (equityChange.HasValue)
+                    {
+                        if (equityChange > 0)
+                            report.AppendLine("Оценка: Положительная динамика. Капитал растет.");
+                        else if (equityChange == 0)
+                            report.AppendLine("Оценка: Стабильный капитал. Рост отсутствует.");
+                        else
+                            report.AppendLine("Оценка: Отрицательная динамика. Капитал сокращается.");
+                        report.AppendLine("Рекомендации:");
+                        report.AppendLine("- Для роста: привлекайте инвесторов или реинвестируйте прибыль.");
+                        report.AppendLine("- Для снижения затрат: оптимизируйте операционные расходы.");
+                    }
+                    report.AppendLine();
+                }
+
+                report.AppendLine("Общие рекомендации:");
+                report.AppendLine("- Проведите аудит расходов для выявления неэффективных затрат.");
+                report.AppendLine("- Разработайте стратегию роста, ориентированную на новые рынки или продукты.");
+                report.AppendLine("- Регулярно мониторьте ключевые финансовые показатели.");
+
+                ReportText = report.ToString();
+                StatusMessage = $"Отчет '{SelectedReportType}' готов для сохранения.";
+            }
+            catch (Exception ex)
+            {
+                ReportText = "Ошибка при генерации отчета.";
+                StatusMessage = $"Ошибка: {ex.Message}";
+            }
+        }
+
+        private void GenerateAndSaveReport(object parameter)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(ReportText) || ReportText.StartsWith("Ошибка"))
+                {
+                    StatusMessage = "Нет отчета для сохранения. Сначала сгенерируйте отчет.";
+                    return;
+                }
+
+                var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Filter = "Text files (*.txt)|*.txt",
+                    FileName = $"Report_{SelectedReportType}_{DateTime.Now:yyyyMMdd}.txt"
+                };
+                if (saveFileDialog.ShowDialog() == true)
+                {
+                    File.WriteAllText(saveFileDialog.FileName, ReportText);
+                    StatusMessage = $"Отчет сохранен в {saveFileDialog.FileName}";
+                }
+                else
+                {
+                    StatusMessage = $"Сохранение отменено.";
                 }
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Ошибка при генерации отчета: {ex.Message}";
+                StatusMessage = $"Ошибка при сохранении: {ex.Message}";
             }
         }
 

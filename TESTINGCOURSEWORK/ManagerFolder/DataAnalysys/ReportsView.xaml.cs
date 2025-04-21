@@ -23,6 +23,7 @@ namespace Client.ManagerFolder.DataAnalysys
         public ReportsView()
         {
             InitializeComponent();
+            DataContext =  new ReportsViewModel();
         }
     }
 }

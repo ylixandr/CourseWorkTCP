@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:Client.ManagerFolder.DataAnalysys"
              xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
              mc:Ignorable="d" 
-             d:DesignHeight="450" Width="815"
+             d:DesignHeight="450" Width="857"
              Background="#F5F7FA">
     <UserControl.Resources>
         <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
@@ -26,6 +26,21 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+        <!-- Стиль для заголовков DataGrid -->
+        <Style x:Key="DataGridColumnHeaderStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#333333"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="ContentTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" TextWrapping="Wrap" TextAlignment="Center"/>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style x:Key="ComboBoxStyle" TargetType="ComboBox">
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="Padding" Value="5"/>
@@ -33,7 +48,7 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid Margin="10">
+    <Grid Margin="10,10,0,10" HorizontalAlignment="Left" Width="846">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -83,7 +98,7 @@
                 <lvc:PieChart Series="{Binding CapitalStructureSeries}" LegendLocation="Right" Margin="0,0,0,10" Height="200" Background="LightGray"/>
 
                 <!-- Таблица результатов -->
-                <DataGrid ItemsSource="{Binding AnalysisResults}" AutoGenerateColumns="False" CanUserSortColumns="True" IsReadOnly="True">
+                <DataGrid ItemsSource="{Binding AnalysisResults}" AutoGenerateColumns="False" CanUserSortColumns="True" IsReadOnly="True" Width="auto" Height="142">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Период" Binding="{Binding Period}" Width="*"/>
                         <DataGridTextColumn Header="Рентабельность капитала (%)" Binding="{Binding ReturnOnEquity, StringFormat={}{0:F2}}" Width="*">
@@ -122,4 +137,5 @@
         <!-- Статус -->
         <TextBlock Grid.Row="2" Text="{Binding StatusMessage}" FontSize="12" Foreground="#666666" Margin="0,10,0,0"/>
     </Grid>
+ 
 </UserControl>

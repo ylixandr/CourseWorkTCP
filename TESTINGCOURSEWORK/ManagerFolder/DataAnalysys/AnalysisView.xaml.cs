@@ -25,5 +25,10 @@ namespace Client.ManagerFolder.DataAnalysys
             InitializeComponent();
             DataContext = new AnalysisViewModel();
         }
+
+        private void PieChart_Loaded(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

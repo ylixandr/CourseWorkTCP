@@ -71,7 +71,7 @@
         <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="Предпросмотр" Style="{StaticResource ButtonStyle}" Command="{Binding PreviewCommand}"/>
             <Button Content="Импортировать" Style="{StaticResource ButtonStyle}" Command="{Binding ImportCommand}"/>
-            <Button Content="Отмена" Style="{StaticResource ButtonStyle}" Background="#6C757D" Command="{Binding CancelCommand}"/>
+            <Button Content="Отмена" Style="{StaticResource ButtonStyle}" Background="#6C757D" Command="{Binding CancelCommand}" Click="Button_Click"/>
         </StackPanel>
 
         <!-- Сообщение об ошибке -->

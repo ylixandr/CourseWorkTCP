@@ -24,5 +24,10 @@ namespace Client.ManagerFolder.DataAnalysys
             InitializeComponent();
             DataContext = new ImportWindowViewModel();
         }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

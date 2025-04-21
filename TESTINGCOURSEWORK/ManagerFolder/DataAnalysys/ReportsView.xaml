@@ -42,20 +42,12 @@
         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
             <TextBlock Text="Тип отчета:" FontSize="14" Foreground="#333333" VerticalAlignment="Center" Margin="0,0,10,0"/>
             <ComboBox ItemsSource="{Binding ReportTypes}" SelectedItem="{Binding SelectedReportType, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ComboBoxStyle}" Width="200"/>
-            <Button Content="Сгенерировать отчет" Style="{StaticResource ButtonStyle}" Command="{Binding GenerateReportCommand}"/>
+            <Button Content="Сгенерировать и сохранить отчет" Style="{StaticResource ButtonStyle}" Command="{Binding GenerateReportCommand}"/>
         </StackPanel>
 
-        <!-- Таблица результатов -->
-        <ScrollViewer Grid.Row="1" MaxHeight="300" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-            <DataGrid ItemsSource="{Binding ReportResults}" AutoGenerateColumns="False" CanUserSortColumns="True" IsReadOnly="True">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Период" Binding="{Binding Period}" Width="*"/>
-                    <DataGridTextColumn Header="Рентабельность капитала (%)" Binding="{Binding ReturnOnEquity, StringFormat={}{0:F2}}" Width="*"/>
-                    <DataGridTextColumn Header="Долговая нагрузка" Binding="{Binding DebtToEquityRatio, StringFormat={}{0:F2}}" Width="*"/>
-                    <DataGridTextColumn Header="Коэффициент автономии" Binding="{Binding AutonomyRatio, StringFormat={}{0:F2}}" Width="*"/>
-                    <DataGridTextColumn Header="Изменение капитала" Binding="{Binding EquityChange, StringFormat={}{0:F2}}" Width="*"/>
-                </DataGrid.Columns>
-            </DataGrid>
+        <!-- Предпросмотр отчета -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+            <TextBox Text="{Binding ReportText, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True" FontSize="14" Padding="5" Height="300" TextWrapping="Wrap"/>
         </ScrollViewer>
 
         <!-- Статус -->
