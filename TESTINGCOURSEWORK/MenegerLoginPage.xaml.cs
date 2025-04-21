@@ -1,4 +1,5 @@
-﻿using CourseWorkTest;
+﻿
+using CourseWorkTest;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,7 +46,12 @@ namespace TESTINGCOURSEWORK
                 MessageBox.Show("Invalid credentials");
             }
         }
-
+        private void Admin_click(object sender, MouseButtonEventArgs e)
+        {
+            AdminLoginPage loginPage = new AdminLoginPage();    
+            loginPage.Show();
+            this.Hide();
+        }
         private void Clear_MouseDown(object sender, MouseButtonEventArgs e)
         {
             loginTextBox.Text = "";

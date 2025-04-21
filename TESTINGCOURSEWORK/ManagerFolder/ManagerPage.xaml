@@ -6,174 +6,194 @@
         xmlns:local="clr-namespace:TESTINGCOURSEWORK"
         xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         mc:Ignorable="d"
-        Title="ManagerPage" Height="472" Width="1005">
-    <Grid RenderTransformOrigin="0.587,0.482" Margin="0,0,-13,0">
+        Title="ManagerPage" Height="472" Width="1005"
+        Background="#F5F7FA" WindowStyle="SingleBorderWindow" ResizeMode="CanResize">
+    <Window.Resources>
+        <!-- Стиль для кнопок меню -->
+        <Style x:Key="MenuButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#D6EAF8"/>
+            <Setter Property="Foreground" Value="#333333"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="10,5"/>
+            <Setter Property="Padding" Value="15,10"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#AED6F1"/>
+                    <Setter Property="Foreground" Value="#333333"/>
+                    <Setter Property="Cursor" Value="Hand"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#3498DB"/>
+                    <Setter Property="Foreground" Value="#FFFFFF"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Стиль для кнопок действий -->
+        <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#3498DB"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="5">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#5DADE2"/>
+                    <Setter Property="Cursor" Value="Hand"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#2980B9"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Стиль для заголовков столбцов DataGrid -->
+        <Style x:Key="DataGridColumnHeaderStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#D6EAF8"/>
+            <Setter Property="Foreground" Value="#333333"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="BorderBrush" Value="#3498DB"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridColumnHeader">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5,5,0,0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#AED6F1"/>
+                    <Setter Property="Cursor" Value="Hand"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Стиль для текста в ячейках -->
+        <Style x:Key="DataGridCellTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#333333"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="209*"/>
-            <ColumnDefinition Width="173*"/>
-            <ColumnDefinition Width="244*"/>
-            <ColumnDefinition Width="174*"/>
+            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="100"/>
-            <RowDefinition Height="60"/>
-            <RowDefinition Height="60"/>
-            <RowDefinition Height="60"/>
-            <RowDefinition Height="60"/>
-            <RowDefinition Height="60"/>
-            <RowDefinition Height="60"/>
 
-        </Grid.RowDefinitions>
-        <Grid x:Name="graphicsGrid" Visibility="Hidden" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,0,15,11" Grid.RowSpan="7">
-            <!-- Кнопки управления -->
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10">
-                <Button Content="График транзакций" Click="TransactionChartButton_Click" Margin="5" Width="200" Height="50" />
-                <Button Content="График зарплат" Click="SalaryChartButton_Click" Margin="5" Width="200" Height="50" />
-                <Button Content="График по статусам" Click="StatusChartButton_Click" Margin="5" Width="200" Height="50" />
+        <!-- Боковая панель меню -->
+        <Border Background="#E6F0FA" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,782,0">
+            <StackPanel Margin="0,20">
+                <TextBlock Text="Панель менеджера" FontSize="20" FontWeight="Bold" Foreground="#333333" Margin="15,10,10,20" HorizontalAlignment="Center"/>
+                <Button Content="Учет продукции" Style="{StaticResource MenuButtonStyle}" Click="Button_Click_Accounting"/>
+                <Button Content="Учет баланса" Style="{StaticResource MenuButtonStyle}" Click="BalanceDashboardButton_Click"/>
+                <Button Content="Персонал" Style="{StaticResource MenuButtonStyle}" Click="Employee_Button_Click"/>
+                <Button Content="Информация" Style="{StaticResource MenuButtonStyle}" Click="Finance_Button_Click"/>
+                <Button Content="Выход" Style="{StaticResource MenuButtonStyle}" Click="Exit_Button_Click" Margin="10,20,10,5"/>
             </StackPanel>
+        </Border>
 
-            <!-- График транзакций -->
-            <lvc:PieChart x:Name="TransactionPieChart" LegendLocation="Right" Margin="10,70,10,10" Hoverable="False" Visibility="Hidden">
-            </lvc:PieChart>
+        <!-- Основная область -->
+        <Grid Grid.Column="1" Background="#F5F7FA">
+            <!-- Панель редактирования -->
+            <Grid x:Name="topEditingPanel" VerticalAlignment="Top" Visibility="Visible" Background="#E6F0FA" Margin="10,00,10,0" Height="60">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Button Content="Экспорт в Excel" Style="{StaticResource ActionButtonStyle}" Click="Exxport_Button_Click" Grid.Column="0"/>
+                <Button Content="Уволить" Style="{StaticResource ActionButtonStyle}" Click="Delete_Button_Click" Grid.Column="1"/>
+                <Button Content="Добавить" Style="{StaticResource ActionButtonStyle}" Click="Add_Button_Click" Grid.Column="2"/>
+                <Button Content="Начислить" Style="{StaticResource ActionButtonStyle}" Click="Salary_Button_Click" Grid.Column="3"/>
+            </Grid>
 
-            <!-- График зарплат -->
-            <lvc:CartesianChart x:Name="SalaryBarChart" Margin="20,69,20,20" Visibility="Hidden">
-                <lvc:CartesianChart.AxisX>
-                    <lvc:Axis Title="Сотрудники" Labels="{Binding EmployeeNames}" />
-                </lvc:CartesianChart.AxisX>
-                <lvc:CartesianChart.AxisY>
-                    <lvc:Axis Title="Зарплата" LabelFormatter="{Binding SalaryFormatter}" />
-                </lvc:CartesianChart.AxisY>
-            </lvc:CartesianChart>
-
-            <!-- График по статусам -->
-            <lvc:PieChart x:Name="StatusPieChart" LegendLocation="Bottom" Margin="20,70,20,20" DataTooltip="{x:Null}" Hoverable="False" Visibility="Hidden">
-            </lvc:PieChart>
+            <!-- DataGrid для сотрудников -->
+           
+                <DataGrid Margin="10,80,10,10" x:Name="EmployeeDataGrid" ItemsSource="{Binding Employees}" Visibility="Hidden"
+                          AutoGenerateColumns="False" HeadersVisibility="Column" 
+                          CanUserAddRows="False" CanUserDeleteRows="False" IsReadOnly="True"
+                          Background="#FFFFFF" Foreground="#333333" RowBackground="#FFFFFF"
+                          AlternatingRowBackground="#F9FCFF" BorderThickness="0"
+                          GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#E6F0FA">
+                    <DataGrid.ColumnHeaderStyle>
+                        <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource DataGridColumnHeaderStyle}"/>
+                    </DataGrid.ColumnHeaderStyle>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="ID" Binding="{Binding EmployeeId}" Visibility="Hidden" Width="*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource DataGridCellTextStyle}"/>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Фамилия" Binding="{Binding LastName}" Width="*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource DataGridCellTextStyle}"/>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Отчество" Binding="{Binding MiddleName}" Visibility="Hidden" Width="*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource DataGridCellTextStyle}"/>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Имя" Binding="{Binding FirstName}" Width="*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource DataGridCellTextStyle}"/>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Позиция" Binding="{Binding Position}" Width="*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource DataGridCellTextStyle}"/>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Зарплата" Binding="{Binding Salary}" Width="*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource DataGridCellTextStyle}"/>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Дата найма" Binding="{Binding HireDate}" Width="*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource DataGridCellTextStyle}"/>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Дата рождения" Binding="{Binding BirthDate}" Width="*" Visibility="Hidden">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource DataGridCellTextStyle}"/>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+           
         </Grid>
-
-        <Grid x:Name ="topEditingPanel"  Grid.ColumnSpan="4" Visibility="Hidden">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="254*"/>
-                <ColumnDefinition Width="212*"/>
-                <ColumnDefinition Width="145*"/>
-                <ColumnDefinition Width="204*"/>
-                <ColumnDefinition Width="204*"/>
-            </Grid.ColumnDefinitions>
-            <Image Margin="194,0,0,10" Source="/blue.jpg" Stretch="Fill" Grid.ColumnSpan="5" >
-                <Image.Effect>
-                    <BlurEffect Radius="10"/>
-                </Image.Effect>
-            </Image>
-            <Button BorderBrush="Transparent" Background="Transparent" FontSize="24"  FontWeight="Bold" Content="Экспорт в Excel" Margin="8,34,7,28" Click="Exxport_Button_Click" Grid.Column="1" />
-            <Button BorderBrush="Transparent" Background="Transparent" FontSize="24"  FontWeight="Bold" Content="Уволить" Margin="12,34,23,28" Click="Delete_Button_Click" Grid.Column="2"/>
-            <Button  BorderBrush="Transparent" Background="Transparent" FontSize="24"  FontWeight="Bold" Content="Добавить" Margin="10,34,27,28" Click="Add_Button_Click" Grid.Column="3"/>
-            <Button  BorderBrush="Transparent" Background="Transparent" FontSize="24"  FontWeight="Bold" Content="Начислить" Margin="10,34,27,28" Click="Salary_Button_Click" Grid.Column="5"/>
-
-
-
-        </Grid>
-        <!--<Grid x:Name ="topEditingPanelForTransactions"  Grid.ColumnSpan="4" Visibility="Hidden">
-            <Image Margin="194,0,0,10" Source="/blue.jpg" Stretch="Fill" >
-                <Image.Effect>
-                    <BlurEffect Radius="10"/>
-                </Image.Effect>
-            </Image>
-            <Button BorderBrush="Transparent" Background="Transparent" FontSize="24"  FontWeight="Bold" Content="Экспорт в Excel" Margin="194,34,400,28" Click="Exxport_Button_Click"></Button>
-            <Button BorderBrush="Transparent" Background="Transparent" FontSize="24"  FontWeight="Bold" Content="Уволить" Margin="405,34,189,28" Click="Delete_Button_Click"></Button>
-            <Button  BorderBrush="Transparent" Background="Transparent" FontSize="24"  FontWeight="Bold" Content="Добавить" Margin="621,34,0,28" Click="Add_Button_Click"></Button>
-
-
-
-        </Grid>-->
-        
-
-        <DataGrid x:Name="EmployeeDataGrid" Grid.Row="1" Grid.ColumnSpan="3" Margin="1,0,14,10"
-           Grid.RowSpan="6" Height="350" VerticalAlignment="Bottom" 
-           AutoGenerateColumns="False" HeadersVisibility="Column" 
-           ColumnHeaderHeight="40" RowHeight="30"
-           CanUserAddRows="False" CanUserDeleteRows="False"
-           IsReadOnly="True"
-           ItemsSource="{Binding Employees}" Visibility="Hidden" Grid.Column="1">
-
-            <!-- Настройка колонок и заголовков -->
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="ID" Binding="{Binding EmployeeId}" Visibility="Hidden" Width="*"/>
-                <DataGridTextColumn Header="Фамилия" Binding="{Binding LastName}" Width="*"/>
-                <DataGridTextColumn Header="Фамилия" Binding="{Binding MiddleName}" Visibility="Hidden" Width="*"/>
-                <DataGridTextColumn Header="Имя" Binding="{Binding FirstName}" Width="*"/>
-                <DataGridTextColumn Header="Позиция" Binding="{Binding Position}" Width="*"/>
-                <DataGridTextColumn Header="Зарплата" Binding="{Binding Salary}" Width="*"/>
-                <DataGridTextColumn Header="Дата найма" Binding="{Binding HireDate}" Width="*"/>
-                <DataGridTextColumn Header="Дата найма" Binding="{Binding BirthDate}" Width="*" Visibility="Hidden"/>
-            </DataGrid.Columns>
-        </DataGrid>
-       
-        <Grid x:Name="ProductGrid" Visibility="Hidden" Grid.ColumnSpan="4" HorizontalAlignment="Left" Margin="255,0,0,4" Width="749">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition></ColumnDefinition>
-                <ColumnDefinition></ColumnDefinition>
-                <ColumnDefinition></ColumnDefinition>
-                <ColumnDefinition></ColumnDefinition>
-            </Grid.ColumnDefinitions>
-
-
-            <Image Grid.ColumnSpan="4" Margin="0,0,-9,0" Source="/blue.jpg" Stretch="Fill">
-                <Image.Effect>
-                    <BlurEffect Radius="10"/>
-                </Image.Effect>
-            </Image>
-
-
-            <Button FontWeight="Bold" BorderBrush="Transparent" Background="Transparent" FontSize="14" Content="Экспорт в Excel" Grid.Column="0" Margin="1,5,9,5" Click="ExportToExcelButtonProd_Click"/>
-   
-        </Grid>
-
-        <!-- DataGrid для отображения продукции -->
-        <DataGrid x:Name="ProductDataGrid" Grid.Row="1" Grid.ColumnSpan="3" Margin="1,0,14,10"
-          Grid.RowSpan="6" Height="350" VerticalAlignment="Bottom" 
-          AutoGenerateColumns="False" HeadersVisibility="Column" 
-          ColumnHeaderHeight="40" RowHeight="30"
-          CanUserAddRows="False" CanUserDeleteRows="False"
-          IsReadOnly="True"
-          ItemsSource="{Binding Products}" Visibility="Hidden" Grid.Column="1">
-
-            <!-- Настройка колонок для продукции -->
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="ID" Binding="{Binding ProductId}" Visibility="Hidden" Width="*"/>
-                <DataGridTextColumn Header="Название продукта" Binding="{Binding ProductName}" Width="*"/>
-                <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="*"/>
-                <DataGridTextColumn Header="Количество" Binding="{Binding Quantity}" Width="*"/>
-                <DataGridTextColumn Header="Ед. измерения" Binding="{Binding UnitOfMeasurement}" Width="*"/>
-                <DataGridTextColumn Header="Цена за единицу" Binding="{Binding UnitPrice}" Width="*"/>
-            </DataGrid.Columns>
-            <!-- Контекстное меню -->
-            <DataGrid.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="Удалить продукт" Click="DeleteProductMenuItem_Click" />
-                </ContextMenu>
-            </DataGrid.ContextMenu>
-        </DataGrid>
-
-
-
-        <Image Margin="5,0,7,0" Source="/blue.jpg" Stretch="Fill" Grid.RowSpan="7">
-            <Image.Effect>
-                <BlurEffect Radius="10"/>
-            </Image.Effect>
-        </Image>
-        <Image Margin="25,10,40,10" Source="/Images/MAINLOGO.png" Stretch="Fill"/>
-        <Button x:Name="supplierButtonClick"  Background="Transparent" BorderBrush="Transparent" VerticalAlignment="Center" HorizontalAlignment="Center" Click="supplier_Button_Click" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Поставщики" Grid.Row="1" Width="150" />
-        <Button Click="Button_Click_Accounting" Background="Transparent" BorderBrush="Transparent" Grid.Row="2" Content="Учет продукции" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
-
-
-      
-        <Button Click="BalanceDashboardButton_Click"  FontWeight="Bold" FontSize="24" Background="Transparent" HorizontalAlignment="Center"  BorderBrush="Transparent" Grid.Row="3" Content="Учет баланса"></Button>
-        <!--<Label  Margin="20,6,0,15" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Учет баланса;" HorizontalAlignment="Left" Grid.Row="3" Width="158"/>-->
-        <Button  Background="Transparent" BorderBrush="Transparent" Click="Employee_Button_Click" HorizontalAlignment="Center" FontSize="24" RenderTransformOrigin="0.162,0.648" FontWeight="Bold" Content="Персонал" Grid.Row="4" Width="124"></Button>
-        <Button Click="Finance_Button_Click" Content="Информация" BorderBrush="Transparent" Background="Transparent" FontSize="24" FontWeight="Bold" Grid.Row="5"/>
-        <Button Click="Exit_Button_Click" Content="Выход" BorderBrush="Transparent" Background="Transparent" FontSize="24" FontWeight="Bold" Grid.Row="6" Grid.ColumnSpan="2" Margin="0,0,220,13"/>
-       
-
-
     </Grid>
 </Window>

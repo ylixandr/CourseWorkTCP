@@ -80,7 +80,7 @@ public class Server
                 }
                 else if (credentials[0] == "manager")
                 {
-                    Console.WriteLine("Manager here it is");
+                    Console.WriteLine("Manager/admin here it is");
                     string username = credentials[1];
                     string password = credentials[2];
                     string code = credentials[3];
@@ -1140,7 +1140,7 @@ public class Server
 
 
             var user = await dbContext.Accounts
-                                       .SingleOrDefaultAsync(u => u.Login == username && u.Password == password && u.RoleId == 1);
+                                       .SingleOrDefaultAsync(u => u.Login == username && u.Password == password && u.RoleId == 2);
 
 
             return user != null;

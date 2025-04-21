@@ -26,7 +26,8 @@
            Foreground="Black"
            HorizontalAlignment="Center"
            Margin="0,0,0,20"
-           Grid.Row="0"/>
+           Grid.Row="0"
+               MouseDown="Admin_click"/>
 
         <Label Content="Введите логин"
            FontSize="20"

@@ -98,48 +98,7 @@ namespace TESTINGCOURSEWORK
             addEmployeePage.Show();
             this.Close();
         }
-        private async void DeleteProductMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            if (ProductDataGrid.SelectedItem is TCPServer.Product selectedProduct)
-            {
-                // Подтверждение удаления
-                var result = MessageBox.Show($"Вы уверены, что хотите удалить продукт: {selectedProduct.ProductName}?",
-                                              "Удаление продукта",
-                                              MessageBoxButton.YesNo,
-                                              MessageBoxImage.Warning);
-                if (result == MessageBoxResult.Yes)
-                {
-                    try
-                    {
-                        // Формируем запрос на сервер
-                        string request = $"deleteProduct:{selectedProduct.ProductId}";
-                        string response = await NetworkService.Instance.SendMessageAsync(request);
-
-                        // Проверяем ответ сервера
-                        if (response == "Product deleted")
-                        {
-                            MessageBox.Show("Продукт успешно удалён.");
-
-                            (ProductDataGrid.ItemsSource as ObservableCollection<TCPServer.Product>)?.Remove(selectedProduct);
-                            ProductDataGrid.Items.Refresh();
-
-                        }
-                        else
-                        {
-                            MessageBox.Show("Не удалось удалить продукт. Сервер вернул ошибку.");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Ошибка при удалении продукта: {ex.Message}");
-                    }
-                }
-            }
-            else
-            {
-                MessageBox.Show("Пожалуйста, выберите продукт перед удалением.");
-            }
-        }
+      
 
 
 
@@ -242,23 +201,6 @@ namespace TESTINGCOURSEWORK
             
         }
 
-        private void SaveReportToFile(string reportContent)
-        {
-            try
-            {
-                // Путь для сохранения файла
-                string filePath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "FinancialReport.txt");
-
-                // Запись в файл
-                File.WriteAllText(filePath, reportContent);
-
-                MessageBox.Show($"Отчет сохранен на рабочем столе как {filePath}", "Сохранение отчета", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка сохранения отчета: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
 
 
   
@@ -270,10 +212,8 @@ namespace TESTINGCOURSEWORK
             topEditingPanel.Visibility = Visibility.Hidden;
             EmployeeDataGrid.Visibility = Visibility.Hidden;
             
-            ProductGrid.Visibility = Visibility.Hidden;
-            ProductDataGrid.Visibility = Visibility.Hidden;
            
-            graphicsGrid.Visibility = Visibility.Hidden;
+           
 
         }
 
@@ -353,33 +293,7 @@ namespace TESTINGCOURSEWORK
             productDashboard.Show();
 
         }
-        private async void LoadProductData()
-        {
-            try
-            {
-                // Отправляем запрос на сервер для получения данных о продукции
-                string response = await NetworkService.Instance.SendMessageAsync("getProductData");
-
-                // Если данных нет, показываем сообщение
-                if (response == "NoData")
-                {
-                    ProductDataGrid.ItemsSource = null;
-                    MessageBox.Show("Нет данных о продукции.");
-                }
-                else
-                {
-                    // Десериализация данных в список продуктов
-                    var products = JsonConvert.DeserializeObject<List<TCPServer.Product>>(response);
-
-                    // Привязка данных к DataGrid
-                    ProductDataGrid.ItemsSource = products;
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка при загрузке данных о продукции: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
+   
 
         private async void ExportToExcelButtonProd_Click(object sender, RoutedEventArgs e)
         {
@@ -556,89 +470,7 @@ namespace TESTINGCOURSEWORK
             //}
         }
 
-        private async void StatusChartButton_Click(object sender, RoutedEventArgs e)
-        {
-            TransactionPieChart.Visibility = Visibility.Hidden;
-            SalaryBarChart.Visibility = Visibility.Hidden;
-
-            try
-            {
-                // Отправляем запрос на сервер
-                string response = await NetworkService.Instance.SendMessageAsync("getApplicationStatusSummary");
-
-                if (response == "NoData")
-                {
-                    MessageBox.Show("Нет данных для отображения.");
-                    return;
-                }
-
-                StatusPieChart.Visibility = Visibility.Visible;
-                // Десериализация данных
-                var statusData = JsonConvert.DeserializeObject<List<TCPServer.StatusSummary>>(response);
-
-                // Очищаем старые серии
-                StatusPieChart.Series.Clear();
-
-                // Создаем серию для каждого статуса
-                foreach (var data in statusData)
-                {
-                    StatusPieChart.Series.Add(new PieSeries
-                    {
-                        Title = data.StatusName,
-                        Values = new ChartValues<int> { data.Count },
-                        DataLabels = true,
-                        LabelPoint = chartPoint => $"{chartPoint.Y} ({chartPoint.Participation:P})"
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка: {ex.Message}");
-            }
-        }
-
-        private async void SalaryChartButton_Click(object sender, RoutedEventArgs e)
-        {
-            TransactionPieChart.Visibility = Visibility.Hidden;
-
-            StatusPieChart.Visibility = Visibility.Hidden;
-            try
-            {
-                // Отправляем запрос на сервер
-                string response = await NetworkService.Instance.SendMessageAsync("getEmployeeSalaries");
-
-                if (response == "NoData")
-                {
-                    MessageBox.Show("Нет данных для отображения.");
-                    return;
-                }
-                SalaryBarChart.Visibility = Visibility.Visible;
-                // Десериализация данных
-                var salaryData = JsonConvert.DeserializeObject<List<TCPServer.EmployeeSalary>>(response);
-
-                // Заполняем данные для графика
-                var employeeNames = salaryData.Select(e => $"{e.FirstName} {e.LastName}").ToArray();
-                var salaries = salaryData.Select(e => (double)e.Salary).ToArray();
-
-                SalaryBarChart.Series = new SeriesCollection
-        {
-            new ColumnSeries
-            {
-                Title = "Зарплаты",
-                Values = new ChartValues<double>(salaries)
-            }
-        };
-
-                SalaryBarChart.AxisX[0].Labels = employeeNames;
-
-                // Настраиваем формат отображения зарплат
-                SalaryBarChart.AxisY[0].LabelFormatter = value => $"{value:C}";
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка: {ex.Message}");
-            }
-        }
+      
 
         private void Exit_Button_Click(object sender, RoutedEventArgs e)
         {

@@ -120,7 +120,7 @@
                                     <ListView.View>
                                         <GridView>
                                             <GridViewColumn Header="Категория" DisplayMemberBinding="{Binding Category}"/>
-                                            <GridViewColumn Header="Сумма" DisplayMemberBinding="{Binding TotalAmount, StringFormat={}{0:F2}}"/>
+                                            <GridViewColumn Header="Сумма" DisplayMemberBinding="{Binding Total, StringFormat={}{0:F2}}"/>
                                         </GridView>
                                     </ListView.View>
                                 </ListView>
@@ -133,7 +133,7 @@
                                     <ListView.View>
                                         <GridView>
                                             <GridViewColumn Header="Категория" DisplayMemberBinding="{Binding Category}"/>
-                                            <GridViewColumn Header="Сумма" DisplayMemberBinding="{Binding TotalAmount, StringFormat={}{0:F2}}"/>
+                                            <GridViewColumn Header="Сумма" DisplayMemberBinding="{Binding Total, StringFormat={}{0:F2}}"/>
                                         </GridView>
                                     </ListView.View>
                                 </ListView>
